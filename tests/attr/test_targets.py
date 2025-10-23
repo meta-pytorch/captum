@@ -220,15 +220,15 @@ class TestTargets(BaseTest, metaclass=TargetsMeta):
     def test_simple_target_missing_error(self) -> None:
         net = BasicModel_MultiLayer()
         inp = torch.zeros((1, 3))
+        attr = IntegratedGradients(net)
         with self.assertRaises(AssertionError):
-            attr = IntegratedGradients(net)
             attr.attribute(inp)  # type: ignore[has-type]
 
     def test_multi_target_error(self) -> None:
         net = BasicModel_MultiLayer()
         inp = torch.zeros((1, 3))
+        attr = IntegratedGradients(net)
         with self.assertRaises(AssertionError):
-            attr = IntegratedGradients(net)
             attr.attribute(  # type: ignore[has-type]
                 inp, additional_forward_args=(None, True), target=(1, 0)
             )
