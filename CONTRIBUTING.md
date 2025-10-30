@@ -50,7 +50,7 @@ Github Actions will fail on your PR if it does not adhere to the ufmt or flake8 
 
 #### Type Hints
 
-Captum is fully typed using Python 3.9+
+Captum is fully typed using Python 3.10+
 [type hints](https://www.python.org/dev/peps/pep-0484/).
 We expect any contributions to also use proper type annotations, and we enforce
 consistency of these in our continuous integration tests.
@@ -63,7 +63,7 @@ Then run this script from the repository root:
 ```
 Note that we expect mypy to have version 0.760 or higher, and when type checking, use PyTorch 1.10 or
 higher due to fixes to the PyTorch type hints available. We also use the Literal feature which is
-available only in Python 3.9 or above.
+available only in Python 3.10 or above.
 
 We also use [pyre](https://pyre-check.org/) for type checking. For contributors, the nightly version of
 pyre is used which can be installed with pip `pip install pyre-check-nightly`. To run pyre, you can
