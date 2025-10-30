@@ -4,7 +4,7 @@
 
 import os
 from contextlib import AbstractContextManager, nullcontext
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
@@ -168,11 +168,7 @@ class CAV:
         cavs_path = CAV.assemble_save_path(cavs_path, model_id, concepts, layer)
 
         if os.path.exists(cavs_path):
-            # Necessary for Python >=3.7 and <3.9!
-            if TYPE_CHECKING:
-                ctx: AbstractContextManager[None, None]
-            else:
-                ctx: AbstractContextManager
+            ctx: AbstractContextManager[None, None]
             if hasattr(torch.serialization, "safe_globals"):
                 safe_globals = [
                     # pyre-ignore[16]: Module `numpy.core.multiarray` has no attribute
