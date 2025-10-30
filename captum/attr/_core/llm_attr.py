@@ -85,7 +85,7 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         *,
         input_values: List[TInputValue],
         target_names: List[str],
-        target_values: Optional[npt.ArrayLike] = None,
+        target_values: Optional[Union[npt.ArrayLike, List[TTargetValue]]] = None,
         aggregate_attr: npt.ArrayLike,
         element_attr: Optional[npt.ArrayLike] = None,
         aggregate_descriptor: str = "Aggregate",
@@ -104,11 +104,11 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         return self._aggregate_attr
 
     @aggregate_attr.setter
-    def aggregate_attr(self, seq_attr: npt.ArrayLike) -> None:
-        if isinstance(seq_attr, Tensor):
-            self._aggregate_attr = seq_attr
+    def aggregate_attr(self, aggregate_attr: npt.ArrayLike) -> None:
+        if isinstance(aggregate_attr, Tensor):
+            self._aggregate_attr = aggregate_attr
         else:
-            self._aggregate_attr = torch.tensor(seq_attr)
+            self._aggregate_attr = torch.tensor(aggregate_attr)
         # IDEA: in the future we might want to support higher dim seq_attr
         # (e.g. attention w.r.t. multiple layers, gradients w.r.t. different classes)
         assert len(self._aggregate_attr.shape) == 1, "seq_attr must be a 1D tensor"
@@ -121,13 +121,13 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         return self._element_attr
 
     @element_attr.setter
-    def element_attr(self, token_attr: Optional[npt.ArrayLike]) -> None:
-        if token_attr is None:
+    def element_attr(self, element_attr: Optional[npt.ArrayLike]) -> None:
+        if element_attr is None:
             self._element_attr = None
-        elif isinstance(token_attr, Tensor):
-            self._element_attr = token_attr
+        elif isinstance(element_attr, Tensor):
+            self._element_attr = element_attr
         else:
-            self._element_attr = torch.tensor(token_attr)
+            self._element_attr = torch.tensor(element_attr)
 
         if self._element_attr is not None:
             # IDEA: in the future we might want to support higher dim seq_attr
@@ -146,7 +146,9 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         return self._target_values
 
     @target_values.setter
-    def target_values(self, target_values: Optional[npt.ArrayLike]) -> None:
+    def target_values(
+        self, target_values: Optional[Union[npt.ArrayLike, List[TTargetValue]]]
+    ) -> None:
         if target_values is None:
             self._target_values = None
         elif isinstance(target_values, (Tensor, np.ndarray)):
