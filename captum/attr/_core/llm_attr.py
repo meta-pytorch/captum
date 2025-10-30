@@ -14,7 +14,9 @@ from typing import (
     Dict,
     Generic,
     List,
+    Literal,
     Optional,
+    overload,
     Tuple,
     Type,
     TYPE_CHECKING,
@@ -62,6 +64,26 @@ TInputValue = TypeVar("TInputValue")
 TTargetValue = TypeVar("TTargetValue")
 
 
+@overload
+def _to_tensor(
+    name: str, arr: Optional[npt.ArrayLike], none_ok: Literal[True] = ...
+) -> Optional[Tensor]: ...
+@overload
+def _to_tensor(
+    name: str, arr: Optional[npt.ArrayLike], none_ok: Literal[False] = ...
+) -> Tensor: ...
+def _to_tensor(
+    name: str, arr: Optional[npt.ArrayLike], none_ok: bool = False
+) -> Optional[Tensor]:
+    if arr is None:
+        if none_ok:
+            return None
+        raise TypeError(f"Expected array-like for `{name}` but received None!")
+    if not isinstance(arr, Tensor):
+        arr = torch.tensor(arr)
+    return arr
+
+
 @dataclass(kw_only=True)
 class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
     """
@@ -77,6 +99,8 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
     ]  # value for each target name e.g. token prob
     _aggregate_attr: Tensor  # 1D [# input_values]
     _element_attr: Optional[Tensor] = None  # 2D [# target_names, # input_values]
+    _aggregate_attr_var: Optional[Tensor] = None  # 1D [# input_values]
+    _element_attr_var: Optional[Tensor] = None  # 2D [# target_names, # input_values]
     aggregate_descriptor: str = "Aggregate"
     element_descriptor: str = "Element"
 
@@ -88,6 +112,8 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         target_values: Optional[Union[npt.ArrayLike, List[TTargetValue]]] = None,
         aggregate_attr: npt.ArrayLike,
         element_attr: Optional[npt.ArrayLike] = None,
+        aggregate_attr_var: Optional[npt.ArrayLike] = None,
+        element_attr_var: Optional[npt.ArrayLike] = None,
         aggregate_descriptor: str = "Aggregate",
         element_descriptor: str = "Element",
     ) -> None:
@@ -96,6 +122,8 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         self.target_values = target_values
         self.aggregate_attr = aggregate_attr
         self.element_attr = element_attr
+        self.aggregate_attr_var = aggregate_attr_var
+        self.element_attr_var = element_attr_var
         self.aggregate_descriptor = aggregate_descriptor
         self.element_descriptor = element_descriptor
 
@@ -105,10 +133,9 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
 
     @aggregate_attr.setter
     def aggregate_attr(self, aggregate_attr: npt.ArrayLike) -> None:
-        if isinstance(aggregate_attr, Tensor):
-            self._aggregate_attr = aggregate_attr
-        else:
-            self._aggregate_attr = torch.tensor(aggregate_attr)
+        self._aggregate_attr = _to_tensor(
+            "aggregate_attr", aggregate_attr, none_ok=False
+        )
         # IDEA: in the future we might want to support higher dim seq_attr
         # (e.g. attention w.r.t. multiple layers, gradients w.r.t. different classes)
         assert len(self._aggregate_attr.shape) == 1, "seq_attr must be a 1D tensor"
@@ -122,12 +149,7 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
 
     @element_attr.setter
     def element_attr(self, element_attr: Optional[npt.ArrayLike]) -> None:
-        if element_attr is None:
-            self._element_attr = None
-        elif isinstance(element_attr, Tensor):
-            self._element_attr = element_attr
-        else:
-            self._element_attr = torch.tensor(element_attr)
+        self._element_attr = _to_tensor("element_attr", element_attr, none_ok=True)
 
         if self._element_attr is not None:
             # IDEA: in the future we might want to support higher dim seq_attr
@@ -139,6 +161,39 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
                 "Expect token_attr to have shape "
                 f"({len(self.target_names), len(self.input_values)}), "
                 f"got {self._element_attr.shape}"
+            )
+
+    @property
+    def aggregate_attr_var(self) -> Optional[Tensor]:
+        return self._aggregate_attr_var
+
+    @aggregate_attr_var.setter
+    def aggregate_attr_var(self, aggregate_attr_var: Optional[npt.ArrayLike]) -> None:
+        self._aggregate_attr_var = _to_tensor(
+            "aggregate_attr_var", aggregate_attr_var, none_ok=True
+        )
+        if self._aggregate_attr_var is not None:
+            assert self._aggregate_attr_var.shape == self._aggregate_attr.shape, (
+                f"aggregate_attr ({self._aggregate_attr.shape}) must have same shape "
+                f"as aggregate_attr_var ({self._aggregate_attr_var.shape})"
+            )
+
+    @property
+    def element_attr_var(self) -> Optional[Tensor]:
+        return self._element_attr_var
+
+    @element_attr_var.setter
+    def element_attr_var(self, element_attr_var: Optional[npt.ArrayLike]) -> None:
+        self._element_attr_var = _to_tensor(
+            "element_attr_var", element_attr_var, none_ok=True
+        )
+        if self._element_attr_var is not None:
+            assert (
+                self._element_attr is not None
+            ), "element_attr must be set before setting element_attr_var"
+            assert self._element_attr_var.shape == self._element_attr.shape, (
+                f"element_attr ({self._element_attr.shape}) must have same shape "
+                f"as element_attr_var ({self._element_attr_var.shape})"
             )
 
     @property
@@ -378,6 +433,22 @@ class BaseLLMAttributionResult(ABC, Generic[TInputValue, TTargetValue]):
         self.element_attr = token_attr
 
     @property
+    def seq_attr_var(self) -> Optional[Tensor]:
+        return self.aggregate_attr_var
+
+    @seq_attr_var.setter
+    def seq_attr_var(self, seq_attr_var: Optional[npt.ArrayLike]) -> None:
+        self.aggregate_attr_var = seq_attr_var
+
+    @property
+    def token_attr_var(self) -> Optional[Tensor]:
+        return self.element_attr_var
+
+    @token_attr_var.setter
+    def token_attr_var(self, token_attr_var: Optional[npt.ArrayLike]) -> None:
+        self.element_attr_var = token_attr_var
+
+    @property
     def seq_attr_dict(self) -> Dict[TInputValue, float]:
         return self.aggregate_attr_dict
 
@@ -402,6 +473,8 @@ class LLMAttributionResult(BaseLLMAttributionResult[str, float]):
         output_tokens: List[str],
         seq_attr: npt.ArrayLike,
         token_attr: Optional[npt.ArrayLike] = None,
+        seq_attr_var: Optional[npt.ArrayLike] = None,
+        token_attr_var: Optional[npt.ArrayLike] = None,
         output_probs: Optional[npt.ArrayLike] = None,
     ) -> None:
         super().__init__(
@@ -410,6 +483,8 @@ class LLMAttributionResult(BaseLLMAttributionResult[str, float]):
             target_values=output_probs,
             aggregate_attr=seq_attr,
             element_attr=token_attr,
+            aggregate_attr_var=seq_attr_var,
+            element_attr_var=token_attr_var,
             aggregate_descriptor="Sequence",
             element_descriptor="Token",
         )
