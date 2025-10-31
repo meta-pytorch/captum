@@ -2,4 +2,4 @@
 first_party_detection = false
 
 [tool.black]
-target-version = ['py39']
+target-version = ['py310']
