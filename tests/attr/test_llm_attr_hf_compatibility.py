@@ -73,7 +73,7 @@ class TestLLMAttrHFCompatibility(BaseTest):
             "hf-internal-testing/tiny-random-LlamaForCausalLM"
         )
 
-        llm.to(self.device)
+        llm.to(self.device)  # type: ignore[arg-type]
         llm.eval()
         llm_attr = LLMAttribution(AttrClass(llm), tokenizer)
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # pyre-strict
+from typing import Any, Dict, List
 
 import torch
 from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
@@ -89,8 +90,7 @@ config and creates relevant test cases based on the config.
 # Set random seeds to ensure deterministic behavior
 set_all_random_seeds(1234)
 
-# pyre-fixme[5]: Global expression must be annotated.
-config = [
+config: List[Dict[str, Any]] = [
     # Attribution Method Configs
     # Primary Methods (Generic Configs)
     {

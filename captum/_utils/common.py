@@ -759,10 +759,10 @@ def _reduce_list(
     Applies reduction function to given list. If each element in the list is
     a Tensor, applies reduction function to all elements of the list, and returns
     the output Tensor / value. If each element is a boolean, apply any method (or).
-    If each element is a tuple, applies reduction
-    function to corresponding elements of each tuple in the list, and returns
+    If each element is a tuple/list, applies reduction
+    function to corresponding elements of each tuple/list in the list, and returns
     tuple of reduction function outputs with length matching the length of tuple
-    val_list[0]. It is assumed that all tuples in the list have the same length
+    val_list[0]. It is assumed that all tuples/lists in the list have the same length
     and red_func can be applied to all elements in each corresponding position.
     """
     assert len(val_list) > 0, "Cannot reduce empty list!"
@@ -774,7 +774,7 @@ def _reduce_list(
     elif isinstance(val_list[0], bool):
         # pyre-fixme[7]: Expected `TupleOrTensorOrBoolGeneric` but got `bool`.
         return any(val_list)
-    elif isinstance(val_list[0], tuple):
+    elif isinstance(val_list[0], (tuple, list)):
         final_out = []
         # pyre-fixme[6]: For 1st argument expected `pyre_extensions.ReadOnly[Sized]`
         #  but got `TupleOrTensorOrBoolGeneric`.
@@ -786,7 +786,7 @@ def _reduce_list(
     else:
         raise AssertionError(
             "Elements to be reduced can only be"
-            "either Tensors or tuples containing Tensors."
+            "either Tensors or tuples/lists containing Tensors."
         )
     # pyre-fixme[7]: Expected `TupleOrTensorOrBoolGeneric` but got `Tuple[Any, ...]`.
     return tuple(final_out)
@@ -906,6 +906,22 @@ def _get_max_feature_index(feature_mask: Tuple[Tensor, ...]) -> int:
     """
 
     return int(max(torch.max(mask).item() for mask in feature_mask if mask.numel()))
+
+
+def _get_feature_idx_to_tensor_idx(
+    formatted_feature_mask: Tuple[Tensor, ...],
+) -> Dict[int, List[int]]:
+    """
+    For a given tuple of tensors, return dict of tensor values to list of tensor
+    indices they appear in.
+    """
+    feature_idx_to_tensor_idx: Dict[int, List[int]] = {}
+    for i, mask in enumerate(formatted_feature_mask):
+        for feature_idx in torch.unique(mask):
+            if feature_idx.item() not in feature_idx_to_tensor_idx:
+                feature_idx_to_tensor_idx[feature_idx.item()] = []
+            feature_idx_to_tensor_idx[feature_idx.item()].append(i)
+    return feature_idx_to_tensor_idx
 
 
 def _maybe_expand_parameters(

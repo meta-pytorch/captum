@@ -904,16 +904,16 @@ class TestVLLMProvider(BaseTest):
 
     def test_get_logprobs_missing_tokenizer(self) -> None:
         """Test get_logprobs with missing tokenizer."""
+        provider = VLLMProvider(api_url=self.api_url, model_name=self.model_name)
         with self.assertRaises(ValueError) as context:
-            provider = VLLMProvider(api_url=self.api_url, model_name=self.model_name)
             provider.get_logprobs(self.input_prompt, self.target_str, None)
 
         self.assertIn("Tokenizer is required", str(context.exception))
 
     def test_get_logprobs_empty_target(self) -> None:
         """Test get_logprobs with empty target string."""
+        provider = VLLMProvider(api_url=self.api_url, model_name=self.model_name)
         with self.assertRaises(ValueError) as context:
-            provider = VLLMProvider(api_url=self.api_url, model_name=self.model_name)
             provider.get_logprobs(self.input_prompt, "", self.tokenizer)
 
         self.assertIn("Target string cannot be empty", str(context.exception))

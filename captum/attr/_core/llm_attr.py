@@ -6,11 +6,22 @@ from abc import ABC
 from copy import copy
 from dataclasses import dataclass
 from textwrap import dedent, shorten
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, Union
+
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
 
 import matplotlib.colors as mcolors
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 
@@ -34,6 +45,9 @@ from captum.attr._utils.interpretable_input import (
     TextTemplateInput,
     TextTokenInput,
 )
+
+if TYPE_CHECKING:
+    from matplotlib.pyplot import Axes, Figure
 from torch import nn, Tensor
 
 DEFAULT_GEN_ARGS: Dict[str, Any] = {
@@ -145,7 +159,7 @@ class LLMAttributionResult:
 
     def plot_token_attr(
         self, show: bool = False
-    ) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
+    ) -> Union[None, Tuple["Figure", "Axes"]]:
         """
         Generate a matplotlib plot for visualising the attribution
         of the output tokens.
@@ -166,6 +180,8 @@ class LLMAttributionResult:
         # used as the boundary of normalization
         # always keep 0 as the mid point to differentiate pos/neg attr
         max_abs_attr_val = token_attr.abs().max().item()
+
+        import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots()
 
@@ -243,9 +259,7 @@ class LLMAttributionResult:
         else:
             return fig, ax
 
-    def plot_seq_attr(
-        self, show: bool = False
-    ) -> Union[None, Tuple[plt.Figure, plt.Axes]]:
+    def plot_seq_attr(self, show: bool = False) -> Union[None, Tuple["Figure", "Axes"]]:
         """
         Generate a matplotlib plot for visualising the attribution
         of the output sequence.
@@ -254,6 +268,8 @@ class LLMAttributionResult:
             show (bool): whether to show the plot directly or return the figure and axis
                 Default: False
         """
+
+        import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots()
 

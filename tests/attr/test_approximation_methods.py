@@ -15,9 +15,10 @@ class Test(unittest.TestCase):
         super().__init__(methodName)
 
     def test_riemann_0(self) -> None:
+        step_sizes, alphas = riemann_builders()
         with self.assertRaises(AssertionError):
-            step_sizes, alphas = riemann_builders()
             step_sizes(0)
+        with self.assertRaises(AssertionError):
             alphas(0)
 
     def test_riemann_2(self) -> None:

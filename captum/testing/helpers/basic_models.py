@@ -432,6 +432,8 @@ class BasicModel_GradientLayerAttribution(nn.Module):
         self.linear3.weight = nn.Parameter(torch.ones(2, 4))
         self.linear3.bias = nn.Parameter(torch.tensor([-1.0, 1.0]))
 
+        self.list_output_layer = PassThroughLayerOutput()
+
         self.int_layer = PassThroughLayerOutput()  # sample layer with an int output
 
     @no_type_check
@@ -452,11 +454,13 @@ class BasicModel_GradientLayerAttribution(nn.Module):
 
         relu_out = self.relu(lin1_out)
         lin2_out = self.linear2(relu_out)
+        list_out = self.list_output_layer([nn.Linear(2, 2)(lin2_out) for _ in range(2)])
+        resized_list_out = torch.cat(list_out, dim=1)
 
         lin3_out = self.linear3(lin1_out_alt)
         int_output = self.int_layer(lin3_out.to(torch.int64))
 
-        output_tensors = torch.cat((lin2_out, int_output), dim=1)
+        output_tensors = torch.cat((resized_list_out, int_output), dim=1)
 
         return (
             output_tensors

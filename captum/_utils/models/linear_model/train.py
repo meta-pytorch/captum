@@ -3,7 +3,7 @@ import time
 import warnings
 from functools import reduce
 from types import ModuleType
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type
 
 import torch
 import torch.nn as nn
@@ -11,12 +11,13 @@ from captum._utils.models.linear_model.model import LinearModel
 from torch.utils.data import DataLoader
 
 
-# pyre-fixme[2]: Parameter must be annotated.
-def l2_loss(x1, x2, weights=None) -> torch.Tensor:
+def l2_loss(
+    x1: torch.Tensor, x2: torch.Tensor, weights: Optional[torch.Tensor] = None
+) -> torch.Tensor:
     if weights is None:
-        return torch.mean((x1 - x2) ** 2) / 2.0
+        return torch.mean(torch.pow(x1 - x2, 2)) / 2.0
     else:
-        return torch.sum((weights / weights.norm(p=1)) * ((x1 - x2) ** 2)) / 2.0
+        return torch.sum((weights / weights.norm(p=1)) * torch.pow(x1 - x2, 2)) / 2.0
 
 
 class ConvergenceTracker:
@@ -60,20 +61,19 @@ class LossWindow:
 
 
 def _init_linear_model(model: LinearModel, init_scheme: Optional[str] = None) -> None:
-    assert model.linear is not None
+    linear_layer = model.linear
+    assert linear_layer is not None
     if init_scheme is not None:
         assert init_scheme in ["xavier", "zeros"]
 
         with torch.no_grad():
             if init_scheme == "xavier":
-                # pyre-fixme[16]: `Optional` has no attribute `weight`.
-                torch.nn.init.xavier_uniform_(model.linear.weight)
+                torch.nn.init.xavier_uniform_(linear_layer.weight)
             else:
-                model.linear.weight.zero_()
+                linear_layer.weight.zero_()
 
-            # pyre-fixme[16]: `Optional` has no attribute `bias`.
-            if model.linear.bias is not None:
-                model.linear.bias.zero_()
+            if linear_layer.bias is not None:
+                linear_layer.bias.zero_()
 
 
 def _get_point(
@@ -103,8 +103,9 @@ def sgd_train_linear_model(
     reduce_lr: bool = True,
     initial_lr: float = 0.01,
     alpha: float = 1.0,
-    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    loss_fn: Callable = l2_loss,
+    loss_fn: Callable[
+        [torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor
+    ] = l2_loss,
     reg_term: Optional[int] = 1,
     patience: int = 10,
     threshold: float = 1e-4,
@@ -224,8 +225,8 @@ def sgd_train_linear_model(
 
                 loss = loss_fn(y, out, w)
                 if reg_term is not None:
-                    # pyre-fixme[16]: `Optional` has no attribute `weight`.
-                    reg = torch.norm(model.linear.weight, p=reg_term)  # type: ignore
+                    assert model.linear is not None
+                    reg = torch.norm(model.linear.weight, p=reg_term)
                     loss += reg.sum() * alpha
 
                 loss_window.append(loss.clone().detach())
@@ -269,18 +270,19 @@ def sgd_train_linear_model(
 
 
 class NormLayer(nn.Module):
-    # pyre-fixme[2]: Parameter must be annotated.
-    def __init__(self, mean, std, n=None, eps: float = 1e-8) -> None:
+    def __init__(
+        self,
+        mean: torch.Tensor,
+        std: torch.Tensor,
+        n: Optional[int] = None,
+        eps: float = 1e-8,
+    ) -> None:
         super().__init__()
-        # pyre-fixme[4]: Attribute must be annotated.
-        self.mean = mean
-        # pyre-fixme[4]: Attribute must be annotated.
-        self.std = std
+        self.mean: torch.Tensor = mean
+        self.std: torch.Tensor = std
         self.eps = eps
 
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return (x - self.mean) / (self.std + self.eps)
 
 
@@ -371,16 +373,23 @@ def sklearn_train_linear_model(
     else:
         w = None
 
+    mean, std = None, None
     if norm_input:
         mean, std = x.mean(0), x.std(0)
         x -= mean
         x /= std
 
     t1 = time.time()
-    # pyre-fixme[29]: `str` is not a function.
-    sklearn_model = reduce(  # type: ignore
-        lambda val, el: getattr(val, el), [sklearn] + sklearn_trainer.split(".")  # type: ignore  # noqa: E501
-    )(**construct_kwargs)
+    # Start with the sklearn module and navigate through the attribute path
+    sklearn_cls = cast(
+        Type[Any],
+        reduce(
+            lambda obj, attr: getattr(obj, attr),
+            sklearn_trainer.split("."),
+            sklearn,
+        ),
+    )
+    sklearn_model = sklearn_cls(**construct_kwargs)
     try:
         sklearn_model.fit(x, y, sample_weight=w, **fit_kwargs)
     except TypeError:
@@ -417,8 +426,7 @@ def sklearn_train_linear_model(
     )
 
     if norm_input:
-        # pyre-fixme[61]: `mean` is undefined, or not always defined.
-        # pyre-fixme[61]: `std` is undefined, or not always defined.
+        assert mean is not None and std is not None
         model.norm = NormLayer(mean, std)
 
     return {"train_time": t2 - t1}

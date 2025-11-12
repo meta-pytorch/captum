@@ -220,6 +220,41 @@ class Test(BaseTest):
             perturbations_per_eval=(1, 2, 3),
         )
 
+    def test_multi_input_ablation_with_int_input_tensor_and_float_baseline(
+        self,
+    ) -> None:
+        def sum_forward(*inps: torch.Tensor) -> torch.Tensor:
+            flattened = [torch.flatten(inp, start_dim=1) for inp in inps]
+            return torch.cat(flattened, dim=1).sum(1)
+
+        ablation_algo = FeatureAblation(sum_forward)
+        inp1 = torch.tensor([[0, 1], [3, 4]])
+        inp2 = torch.tensor(
+            [
+                [[0.1, 0.2], [0.3, 0.2]],
+                [[0.4, 0.5], [0.3, 0.2]],
+            ]
+        )
+        inp3 = torch.tensor([[0], [1]])
+
+        expected = (
+            torch.tensor([[-0.2, 0.8], [2.8, 3.8]]),
+            torch.tensor(
+                [
+                    [[-3.0, -2.9], [-2.8, -2.9]],
+                    [[-2.7, -2.6], [-2.8, -2.9]],
+                ]
+            ),
+            torch.tensor([[-0.4], [0.6]]),
+        )
+        self._ablation_test_assert(
+            ablation_algo,
+            (inp1, inp2, inp3),
+            expected,
+            target=None,
+            baselines=(0.2, 3.1, 0.4),
+        )
+
     def test_multi_input_ablation_with_mask_weighted(self) -> None:
         ablation_algo = FeatureAblation(BasicModel_MultiLayer_MultiInput())
         ablation_algo.use_weights = True
@@ -272,57 +307,33 @@ class Test(BaseTest):
         mask1 = torch.tensor([[1, 1, 1], [0, 1, 0]])
         mask2 = torch.tensor([[0, 1, 2]])
         mask3 = torch.tensor([[0, 1, 2], [0, 0, 0]])
-        expected = (
-            [[492.0, 492.0, 492.0], [200.0, 200.0, 200.0]],
-            [[80.0, 200.0, 120.0], [0.0, 400.0, 0.0]],
-            [[0.0, 400.0, 40.0], [60.0, 60.0, 60.0]],
-        )
-        expected_cross_tensor = (
+        expected_out = (
             [[1092.0, 1092.0, 1092.0], [260.0, 600.0, 260.0]],
             [[80.0, 1092.0, 160.0], [260.0, 600.0, 0.0]],
             [[80.0, 1092.0, 160.0], [260.0, 260.0, 260.0]],
         )
-        for test_enable_cross_tensor_attribution, expected_out in [
-            (True, expected_cross_tensor),
-            (False, expected),
-        ]:
-            self._ablation_test_assert(
-                ablation_algo,
-                (inp1, inp2, inp3),
-                expected_out,
-                additional_input=(1,),
-                feature_mask=(mask1, mask2, mask3),
-                test_enable_cross_tensor_attribution=[
-                    test_enable_cross_tensor_attribution
-                ],
-            )
-
-        expected_with_baseline = (
-            [[468.0, 468.0, 468.0], [184.0, 192.0, 184.0]],
-            [[68.0, 188.0, 108.0], [-12.0, 388.0, -12.0]],
-            [[-16.0, 384.0, 24.0], [12.0, 12.0, 12.0]],
+        self._ablation_test_assert(
+            ablation_algo,
+            (inp1, inp2, inp3),
+            expected_out,
+            additional_input=(1,),
+            feature_mask=(mask1, mask2, mask3),
         )
+
         expected_cross_tensor_with_baseline = (
             [[1040.0, 1040.0, 1040.0], [184.0, 580.0, 184.0]],
             [[52.0, 1040.0, 132.0], [184.0, 580.0, -12.0]],
             [[52.0, 1040.0, 132.0], [184.0, 184.0, 184.0]],
         )
-        for test_enable_cross_tensor_attribution, expected_out in [
-            (True, expected_cross_tensor_with_baseline),
-            (False, expected_with_baseline),
-        ]:
-            self._ablation_test_assert(
-                ablation_algo,
-                (inp1, inp2, inp3),
-                expected_out,
-                additional_input=(1,),
-                feature_mask=(mask1, mask2, mask3),
-                baselines=(2, 3.0, 4),
-                perturbations_per_eval=(1, 2, 3),
-                test_enable_cross_tensor_attribution=[
-                    test_enable_cross_tensor_attribution
-                ],
-            )
+        self._ablation_test_assert(
+            ablation_algo,
+            (inp1, inp2, inp3),
+            expected_cross_tensor_with_baseline,
+            additional_input=(1,),
+            feature_mask=(mask1, mask2, mask3),
+            baselines=(2, 3.0, 4),
+            perturbations_per_eval=(1, 2, 3),
+        )
 
     def test_multi_input_ablation_with_mask_nt(self) -> None:
         ablation_algo = NoiseTunnel(FeatureAblation(BasicModel_MultiLayer_MultiInput()))
@@ -846,50 +857,47 @@ class Test(BaseTest):
         perturbations_per_eval: Tuple[int, ...] = (1,),
         baselines: BaselineType = None,
         target: TargetType = 0,
-        test_enable_cross_tensor_attribution: List[bool] = [True, False],
         test_future: bool = False,
         **kwargs: Any,
     ) -> None:
-        for enable_cross_tensor_attribution in test_enable_cross_tensor_attribution:
-            for batch_size in perturbations_per_eval:
-                self.assertTrue(ablation_algo.multiplies_by_inputs)
-                if isinstance(ablation_algo, FeatureAblation) and test_future:
-                    attributions = ablation_algo.attribute_future(
-                        test_input,
-                        target=target,
-                        feature_mask=feature_mask,
-                        additional_forward_args=additional_input,
-                        baselines=baselines,
-                        perturbations_per_eval=batch_size,
-                        **kwargs,
-                    ).wait()
-                else:
-                    attributions = ablation_algo.attribute(
-                        test_input,
-                        target=target,
-                        feature_mask=feature_mask,
-                        additional_forward_args=additional_input,
-                        baselines=baselines,
-                        perturbations_per_eval=batch_size,
-                        enable_cross_tensor_attribution=enable_cross_tensor_attribution,
-                        **kwargs,
-                    )
-                if isinstance(expected_ablation, tuple):
-                    for i in range(len(expected_ablation)):
-                        expected = expected_ablation[i]
-                        if not isinstance(expected, torch.Tensor):
-                            expected = torch.tensor(expected)
+        for batch_size in perturbations_per_eval:
+            self.assertTrue(ablation_algo.multiplies_by_inputs)
+            if isinstance(ablation_algo, FeatureAblation) and test_future:
+                attributions = ablation_algo.attribute_future(
+                    test_input,
+                    target=target,
+                    feature_mask=feature_mask,
+                    additional_forward_args=additional_input,
+                    baselines=baselines,
+                    perturbations_per_eval=batch_size,
+                    **kwargs,
+                ).wait()
+            else:
+                attributions = ablation_algo.attribute(
+                    test_input,
+                    target=target,
+                    feature_mask=feature_mask,
+                    additional_forward_args=additional_input,
+                    baselines=baselines,
+                    perturbations_per_eval=batch_size,
+                    **kwargs,
+                )
+            if isinstance(expected_ablation, tuple):
+                for i in range(len(expected_ablation)):
+                    expected = expected_ablation[i]
+                    if not isinstance(expected, torch.Tensor):
+                        expected = torch.tensor(expected)
 
-                        self.assertEqual(attributions[i].shape, expected.shape)
-                        self.assertEqual(attributions[i].dtype, expected.dtype)
-                        assertTensorAlmostEqual(self, attributions[i], expected)
-                else:
-                    if not isinstance(expected_ablation, torch.Tensor):
-                        expected_ablation = torch.tensor(expected_ablation)
+                    self.assertEqual(attributions[i].shape, expected.shape)
+                    self.assertEqual(attributions[i].dtype, expected.dtype)
+                    assertTensorAlmostEqual(self, attributions[i], expected)
+            else:
+                if not isinstance(expected_ablation, torch.Tensor):
+                    expected_ablation = torch.tensor(expected_ablation)
 
-                    self.assertEqual(attributions.shape, expected_ablation.shape)
-                    self.assertEqual(attributions.dtype, expected_ablation.dtype)
-                    assertTensorAlmostEqual(self, attributions, expected_ablation)
+                self.assertEqual(attributions.shape, expected_ablation.shape)
+                self.assertEqual(attributions.dtype, expected_ablation.dtype)
+                assertTensorAlmostEqual(self, attributions, expected_ablation)
 
 
 if __name__ == "__main__":

@@ -46,8 +46,8 @@ def apply_gradient_requirements(
      a tensor originally required grad is returned.
     """
     assert isinstance(
-        inputs, tuple
-    ), "Inputs should be wrapped in a tuple prior to preparing for gradients"
+        inputs, (tuple, list)
+    ), "Inputs should be wrapped in a tuple or list prior to preparing for gradients"
     grad_required = []
     for index, input in enumerate(inputs):
         assert isinstance(input, torch.Tensor), "Given input is not a torch.Tensor"
@@ -298,9 +298,9 @@ def _forward_layer_distributed_eval(
         # pyre-fixme[2]: Parameter must be annotated.
         def forward_hook(module, inp, out=None):
             eval_tsrs = inp if attribute_to_layer_input else out
-            is_eval_tuple = isinstance(eval_tsrs, tuple)
+            is_eval_tuple_or_list = isinstance(eval_tsrs, (tuple, list))
 
-            if not is_eval_tuple:
+            if not is_eval_tuple_or_list:
                 eval_tsrs = (eval_tsrs,)
             if require_layer_grads:
                 apply_gradient_requirements(eval_tsrs, warn=False)
@@ -310,11 +310,16 @@ def _forward_layer_distributed_eval(
                 # otherwise `backward()` on the last output layer won't execute.
                 if forward_hook_with_return:
                     saved_layer[original_module][eval_tsrs[0].device] = eval_tsrs
-                    eval_tsrs_to_return = tuple(
-                        eval_tsr.clone() for eval_tsr in eval_tsrs
-                    )
-                    if not is_eval_tuple:
-                        eval_tsrs_to_return = eval_tsrs_to_return[0]
+                    if not is_eval_tuple_or_list:
+                        eval_tsrs_to_return = eval_tsrs[0].clone()
+                    elif isinstance(eval_tsrs, list):
+                        eval_tsrs_to_return = [
+                            eval_tsr.clone() for eval_tsr in eval_tsrs
+                        ]
+                    else:
+                        eval_tsrs_to_return = tuple(
+                            eval_tsr.clone() for eval_tsr in eval_tsrs
+                        )
                     return eval_tsrs_to_return
                 else:
                     saved_layer[original_module][eval_tsrs[0].device] = tuple(

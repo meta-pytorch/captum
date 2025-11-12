@@ -12,7 +12,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        cuda_arch_version: ["12.1"]
+        cuda_arch_version: ["12.6"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
@@ -22,7 +22,9 @@ jobs:
       gpu-arch-version: ${{ matrix.cuda_arch_version }}
       script: |
         python3 -m pip install --upgrade pip --progress-bar off
-        python3 -m pip install -e .[dev] --progress-bar off
+        python3 -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126 --progress-bar off
+        python3 -m pip install -e .[dev] --extra-index-url https://download.pytorch.org/whl/cu126 --progress-bar off
+        python3 -m pip install transformers --progress-bar off
 
         # Build package
         python3 -m pip install build --progress-bar off
