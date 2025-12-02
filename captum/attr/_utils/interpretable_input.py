@@ -1,7 +1,9 @@
 # pyre-strict
 from abc import ABC, abstractmethod
-from typing import Callable, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
+import numpy as np
+import PIL.Image
 import torch
 
 from captum._utils.typing import TokenizerLike
@@ -123,9 +125,7 @@ class InterpretableInput(ABC):
         pass
 
     @abstractmethod
-    def to_model_input(
-        self, perturbed_tensor: Optional[Tensor] = None
-    ) -> Union[str, Tensor]:
+    def to_model_input(self, perturbed_tensor: Optional[Tensor] = None) -> Any:
         """
         Get the (perturbed) input in the format required by the model
         based on the given (perturbed) interpretable representation.
@@ -486,3 +486,161 @@ class TextTokenInput(InterpretableInput):
 
     def format_attr(self, itp_attr: Tensor) -> Tensor:
         return itp_attr
+
+
+class ImageMaskInput(InterpretableInput):
+    """
+    ImageMaskInput is an implementation of InterpretableInput for the image, whose
+    interpretable features are certain image segments (e.g., groups of pixels).
+    It takes an image and its corresponding segmentation masks .
+    Its interpretable representation will be a binary tensor of the number of
+    the image segment features whose values indicates if the image segment is
+    “presence” or “absence”. By default, its model input will be the masked out image.
+    But it also accepts an optional processor function, which converts the image into
+    the model inputs if the model does not directly consume images.
+    A typical example is MM LLM, which requires the image to be processed with
+    other texts into the tokenized multi-modality tensors.
+
+    Args:
+
+        image (PIL.Image.Image): an opened PIL image file.
+        mask (Tensor, optional): the mask to group the image pixels into
+                segment features. It must be in the same shape as the image size
+                and assign each pixel a mask index.
+                Pixels with the same index will be seen as a single
+                interpretable feature, which means they must be perturbed together
+                and end with same attributions. When mask is None, the entire image is
+                considered as one interpretable feature.
+                Default: None
+        baseline (Tuple[int, int, int], optional): the baseline RGB value for
+                the “absent” image pixels.
+                Default: (255, 255, 255)
+        processor_fn (Callable, optional): function convert the image into
+                the model input. A common example is the multi-modality LLM processor
+                function which take an input image to encode with any text prompt
+                and outputs the inputs for the LLM
+
+    Examples::
+
+        >>> def processor_fn(image):
+        >>>    messages = [
+        >>>        {
+        >>>            "role": "user",
+        >>>            "content": [
+        >>>                {"type": "image"},
+        >>>                {
+        >>>                    "type": "text",
+        >>>                    "text": "Please describe the image in detail.",
+        >>>                },
+        >>>            ],
+        >>>        }
+        >>>    ]
+        >>>
+        >>>    prompt = processor.apply_chat_template(
+        >>>        messages, add_generation_prompt=True
+        >>>    )
+        >>>
+        >>>    return processor(
+        >>>        text=prompt,
+        >>>        images=image,
+        >>>        return_tensors="pt",
+        >>>    ).to(model.device)
+        >>>
+        >>> image = Image.open("test.jpg")
+        >>>
+        >>> # Split horizontally: left half = 0, right half = 1
+        >>> mask = torch.zeros(image.size[::-1], dtype=torch.int32)
+        >>> mask[:, image.size[0] // 2:] = 1
+        >>>
+        >>> image_mask_inp = ImageMaskInput(
+        >>>     image=image,
+        >>>     mask=mask,
+        >>>     processor_fn=processor_fn,
+        >>> )
+        >>>
+        >>> text_inp.to_tensor()
+        >>> # torch.tensor([[1, 1]])
+        >>>
+        >>> text_inp.to_model_input(torch.tensor([[0, 1]]))
+        >>> # model inputs where the right half of the image is masked out
+
+    """
+
+    image: PIL.Image.Image
+    mask: Tensor
+    baseline: Tuple[int, int, int]
+    processor_fn: Callable[[PIL.Image.Image], Any]
+    n_itp_features: int
+    original_model_inputs: Any
+    mask_id_to_idx: Dict[int, int]
+    values: List[str]
+
+    def __init__(
+        self,
+        image: PIL.Image.Image,
+        mask: Optional[Tensor] = None,
+        baseline: Tuple[int, int, int] = (255, 255, 255),
+        processor_fn: Callable[[PIL.Image.Image], Any] = lambda x: x,
+    ) -> None:
+        super().__init__()
+
+        self.processor_fn = processor_fn
+        self.image = image
+        self.baseline = baseline
+
+        # Create a dummy mask if None is provided
+        if mask is None:
+            # Create a mask with all zeros (entire image as one segment)
+            image_shape = (image.size[1], image.size[0])  # (height, width)
+            mask = torch.zeros(image_shape, dtype=torch.int32)
+        else:
+            # Validate that mask size matches image size
+            image_shape = (image.size[1], image.size[0])  # (height, width)
+            assert (
+                mask.shape == image_shape
+            ), f"mask shape {mask.shape} must match image shape {image_shape}"
+
+        self.mask = mask
+        mask_ids = torch.unique(mask)
+        self.n_itp_features = len(mask_ids)
+        self.mask_id_to_idx = {int(mid): i for i, mid in enumerate(mask_ids)}
+
+        self.original_model_inputs = processor_fn(image)
+
+        # temporarily for compatibility with AttributionResult
+        # which use the values for plot legends
+        self.values = [f"image_feature_{mid}" for mid in mask_ids]
+
+    def to_tensor(self) -> Tensor:
+        return torch.tensor([[1.0] * self.n_itp_features])
+
+    def to_model_input(self, perturbed_tensor: Optional[Tensor] = None) -> Any:
+        if perturbed_tensor is None:
+            return self.original_model_inputs
+
+        img_array = np.array(self.image)
+
+        for mask_id, itp_idx in self.mask_id_to_idx.items():
+            if perturbed_tensor[0][itp_idx] == 0:
+                mask_positions = self.mask == mask_id
+                img_array[mask_positions] = self.baseline
+
+        perturbed_image = PIL.Image.fromarray(img_array.astype("uint8"))
+
+        return self.processor_fn(perturbed_image)
+
+    def format_attr(self, itp_attr: Tensor) -> Tensor:
+        device = itp_attr.device
+
+        # Map mask IDs to continuous indices
+        image_shape = self.mask.shape
+        formatted_mask = torch.zeros_like(self.mask, device=device)
+        for mask_id, itp_idx in self.mask_id_to_idx.items():
+            formatted_mask[self.mask == mask_id] = itp_idx
+
+        formatted_attr = _scatter_itp_attr_by_mask(
+            itp_attr,
+            (1, *image_shape),
+            formatted_mask.unsqueeze(0),
+        )
+        return formatted_attr

@@ -3,25 +3,64 @@
 # pyre-strict
 
 import typing
-from types import TracebackType
 from typing import (
     Any,
     Callable,
-    cast,
     Iterable,
     Iterator,
-    Literal,
     Optional,
+    Protocol,
+    runtime_checkable,
     TextIO,
-    Type,
     TypeVar,
     Union,
 )
 
 from tqdm.auto import tqdm
+from typing_extensions import Self
 
 T = TypeVar("T")
-IterableType = TypeVar("IterableType")
+IterableType = TypeVar("IterableType", covariant=True)
+
+
+@runtime_checkable
+class BaseProgress(Protocol):
+    """
+    Protocol defining the base progress bar interfaced with
+    context manager support.
+    Note: This protocol is based on the tqdm type stubs.
+    """
+
+    def __enter__(self) -> Self: ...
+
+    def __exit__(
+        self,
+        exc_type: object,
+        exc_value: object,
+        exc_traceback: object,
+    ) -> None: ...
+
+    def close(self) -> None: ...
+
+
+@runtime_checkable
+class IterableProgress(BaseProgress, Iterable[IterableType], Protocol[IterableType]):
+    """Protocol for progress bars that support iteration.
+
+    Note: This protocol is based on the tqdm type stubs.
+    """
+
+    ...
+
+
+@runtime_checkable
+class Progress(BaseProgress, Protocol):
+    """Protocol for progress bars that support manual updates.
+    Note: This protocol is based on the tqdm type stubs.
+    """
+
+    # This is a weird definition of Progress, but it's what tqdm does.
+    def update(self, n: float | None = 1) -> bool | None: ...
 
 
 class DisableErrorIOWrapper(object):
@@ -56,7 +95,7 @@ class DisableErrorIOWrapper(object):
         return self._wrapped_run(self._wrapped.flush, *args, **kwargs)
 
 
-class NullProgress(Iterable[IterableType]):
+class NullProgress(IterableProgress[IterableType], Progress):
     """Passthrough class that implements the progress API.
 
     This class implements the tqdm and SimpleProgressBar api but
@@ -74,25 +113,27 @@ class NullProgress(Iterable[IterableType]):
         del args, kwargs
         self.iterable = iterable
 
-    def __enter__(self) -> "NullProgress[IterableType]":
+    def __iter__(self) -> Iterator[IterableType]:
+        iterable = self.iterable
+        if not iterable:
+            yield from ()
+            return
+        for it in iterable:
+            yield it
+
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
         self,
-        exc_type: Union[Type[BaseException], None],
-        exc_value: Union[BaseException, None],
-        exc_traceback: Union[TracebackType, None],
-    ) -> Literal[False]:
-        return False
+        exc_type: object,
+        exc_value: object,
+        exc_traceback: object,
+    ) -> None:
+        self.close()
 
-    def __iter__(self) -> Iterator[IterableType]:
-        if not self.iterable:
-            return
-        for it in cast(Iterable[IterableType], self.iterable):
-            yield it
-
-    def update(self, amount: int = 1) -> None:
-        pass
+    def update(self, n: float | None = 1) -> bool | None:
+        return None
 
     def close(self) -> None:
         pass
@@ -106,7 +147,7 @@ def progress(
     file: Optional[TextIO] = None,
     mininterval: float = 0.5,
     **kwargs: object,
-) -> tqdm: ...
+) -> Progress: ...
 
 
 @typing.overload
@@ -117,7 +158,7 @@ def progress(
     file: Optional[TextIO] = None,
     mininterval: float = 0.5,
     **kwargs: object,
-) -> tqdm: ...
+) -> IterableProgress[IterableType]: ...
 
 
 def progress(
@@ -127,7 +168,7 @@ def progress(
     file: Optional[TextIO] = None,
     mininterval: float = 0.5,
     **kwargs: object,
-) -> tqdm:
+) -> Union[Progress, IterableProgress[IterableType]]:
     return tqdm(
         iterable,
         desc=desc,

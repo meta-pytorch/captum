@@ -581,7 +581,6 @@ class BasicModel_MultiLayer_with_Future(nn.Module):
             self.relu(lin1_out)
         else:
             relu_out = self.relu(lin1_out)
-        # pyre-fixme [29]: `typing.Type[Future]` is not a function
         result = Future()
         lin2_out = self.linear2(relu_out)
         if multidim_output:

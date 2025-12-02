@@ -4,7 +4,7 @@
 
 import logging
 import math
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, cast, Dict, Iterable, List, Optional, Tuple, Union
 
 import torch
 from captum._utils.common import (
@@ -19,7 +19,7 @@ from captum._utils.common import (
     _run_forward,
 )
 from captum._utils.exceptions import FeatureAblationFutureError
-from captum._utils.progress import progress
+from captum._utils.progress import NullProgress, progress, Progress
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._utils.attribution import PerturbationAttribution
 from captum.attr._utils.common import (
@@ -30,15 +30,213 @@ from captum.log import log_usage
 from torch import dtype, Tensor
 from torch.futures import collect_all, Future
 
-from tqdm.auto import tqdm
-
-IterableType = TypeVar("IterableType")
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
+def _parse_forward_out(forward_output: object) -> Tensor:
+    """
+    A temp wrapper for global _run_forward util to force forward output
+    type assertion & conversion.
+    Remove after the strict logic is supported by all attr classes
+    """
+    if isinstance(forward_output, Tensor):
+        return forward_output
+
+    assert isinstance(forward_output, (int, float)), (
+        "the return of forward_func must be a tensor, int, or float,"
+        f" received: {forward_output}"
+    )
+
+    # using python built-in type as torch dtype
+    # int -> torch.int64, float -> torch.float64
+    # ref: https://github.com/pytorch/pytorch/pull/21215
+    return torch.tensor(forward_output, dtype=cast(dtype, type(forward_output)))
+
+
+def process_initial_eval(
+    initial_eval: Tensor,
+    inputs: Iterable[Tensor],
+    use_weights: bool = False,
+) -> Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]:
+
+    # number of elements in the output of forward_func
+    n_outputs = initial_eval.numel()
+
+    # flatten eval outputs into 1D (n_outputs)
+    # add the leading dim for n_feature_perturbed
+    flattened_initial_eval = initial_eval.reshape(1, -1)
+
+    # Initialize attribution totals and counts
+    attrib_type = flattened_initial_eval.dtype
+
+    # Shape of attribution is the outputs * inputs dimensions.
+    # where the inputs dimension should remove the batch size dimension.
+    total_attrib = [
+        # attribute w.r.t each output element
+        torch.zeros(
+            (n_outputs, *input.shape[1:]),
+            dtype=attrib_type,
+            device=input.device,
+        )
+        for input in inputs
+    ]
+
+    # Weights are used in cases where ablations may be overlapping.
+    weights = []
+    if use_weights:
+        weights = [
+            torch.zeros((n_outputs, *input.shape[1:]), device=input.device)
+            for input in inputs
+        ]
+
+    return (
+        total_attrib,
+        weights,
+        initial_eval,
+        flattened_initial_eval,
+        n_outputs,
+        attrib_type,
+    )
+
+
+def format_result(
+    total_attrib: List[Tensor],
+    weights: List[Tensor],
+    is_inputs_tuple: bool,
+    use_weights: bool,
+) -> Union[Tensor, Tuple[Tensor, ...]]:
+    """
+    Normalizes attributions by weights if enabled and
+    formats output as single tensor or tuple.
+    """
+    # Divide total attributions by counts and return formatted attributions
+    if use_weights:
+        attrib = tuple(
+            single_attrib.float() / weight
+            for single_attrib, weight in zip(total_attrib, weights)
+        )
+    else:
+        attrib = tuple(total_attrib)
+    return _format_output(is_inputs_tuple, attrib)
+
+
+def check_output_shape_valid(
+    inputs: TensorOrTupleOfTensorsGeneric,
+    num_examples: int,
+    initial_eval: Tensor,
+    modified_eval: Tensor,
+    perturbations_per_eval: int,
+) -> None:
+    """
+    Validates that the forward function's output shape scales correctly with
+    input batch size when perturbations_per_eval > 1.
+
+    When multiple perturbations are evaluated simultaneously
+    (perturbations_per_eval > 1),
+    the forward function must return outputs whose first dimension grows proportionally
+    with the input batch size. This ensures the forward function is not aggregating
+    results across the batch, which would prevent correct attribution calculation.
+
+    Args:
+        inputs (Tensor or tuple[Tensor, ...]): Input tensors used for evaluation.
+                    The first dimension of inputs[0] is used to determine current
+                    batch size.
+        num_examples (int): The original number of examples (batch size) before
+                    expansion for perturbations.
+        initial_eval (Tensor): Output from forward function with original batch size
+                    (perturbations_per_eval = 1). Used as baseline for shape comparison.
+        modified_eval (Tensor): Output from forward function with expanded batch size
+                    (batch_size = num_examples * n_perturb).
+        perturbations_per_eval (int): Number of perturbations processed simultaneously.
+                    Validation only occurs when this value is greater than 1.
+
+    Raises:
+        AssertionError: If perturbations_per_eval > 1 and the output shape does not
+                    scale correctly. Specifically, if modified_eval.shape[0] is not
+                    equal to n_perturb * initial_eval.shape[0], where n_perturb is
+                    the ratio of current batch size to original batch size.
+    """
+
+    if perturbations_per_eval > 1:
+        # if perturbations_per_eval > 1, the output shape must grow with
+        # input and not be aggregated
+        current_batch_size = inputs[0].shape[0]
+
+        # number of perturbation, which is not the same as
+        # perturbations_per_eval when not enough features to perturb
+        n_perturb: int = current_batch_size // num_examples
+        mod_perturb: int = current_batch_size % num_examples
+        current_output_shape = modified_eval.shape
+
+        # use initial_eval as the forward of perturbations_per_eval = 1
+        initial_output_shape = initial_eval.shape
+
+        assert (
+            # check if the output is not a scalar
+            current_output_shape
+            and initial_output_shape
+            and mod_perturb == 0
+            # check if the output grow in same ratio, i.e., not agg
+            and current_output_shape[0] == n_perturb * initial_output_shape[0]
+        ), (
+            "When perturbations_per_eval > 1, forward_func's output "
+            "should be a tensor whose 1st dim grow with the input "
+            f"batch size: when input batch size is {num_examples}, "
+            f"the output shape is {initial_output_shape}; "
+            f"when input batch size is {current_batch_size}, "
+            f"the output shape is {current_output_shape}"
+        )
+
+
+def _should_skip_inputs_and_warn(
+    current_feature_idxs: List[int],
+    feature_idx_to_tensor_idx: Dict[int, List[int]],
+    formatted_inputs: Tuple[Tensor, ...],
+    min_examples_per_batch_grouped: Optional[int] = None,
+) -> bool:
+    """
+    Determines whether a feature group should be skipped during attribution computation.
+
+    This method checks two conditions that would cause a feature group to be skipped:
+    1. If min_examples_per_batch_grouped is specified and any input tensor in the
+       feature group has a batch size (0th dimension) smaller than this threshold.
+    2. If all input tensors in the feature group are empty (contain no elements).
+
+    Returns:
+        bool: True if the feature group should be skipped, False otherwise.
+    """
+    should_skip = False
+    all_empty = True
+    tensor_idx_list = []
+    for feature_idx in current_feature_idxs:
+        tensor_idx_list += feature_idx_to_tensor_idx[feature_idx]
+    for tensor_idx in set(tensor_idx_list):
+        if all_empty and torch.numel(formatted_inputs[tensor_idx]) != 0:
+            all_empty = False
+        if min_examples_per_batch_grouped is not None and (
+            formatted_inputs[tensor_idx].shape[0] < min_examples_per_batch_grouped
+        ):
+            should_skip = True
+            break
+    if should_skip:
+        logger.warning(
+            f"Skipping feature group {current_feature_idxs} since it contains "
+            f"at least one input tensor with 0th dim less than "
+            f"{min_examples_per_batch_grouped}"
+        )
+        return True
+    if all_empty:
+        logger.info(
+            f"Skipping feature group {current_feature_idxs} since all "
+            f"input tensors are empty"
+        )
+        return True
+    return False
+
+
 class FeatureAblation(PerturbationAttribution):
-    r"""
+    """
     A perturbation based approach to computing attribution, involving
     replacing each input feature with a given baseline / reference, and
     computing the difference in output. By default, each scalar value within
@@ -278,7 +476,8 @@ class FeatureAblation(PerturbationAttribution):
             >>> attr = ablator.attribute(input, target=1, feature_mask=feature_mask)
         """
         # Keeps track whether original input is a tuple or not before
-        # converting it into a tuple.
+        # converting it into a tuple. We return the attribution as tuple in the
+        # end if the inputs were a tuple.
         is_inputs_tuple = _is_tuple(inputs)
 
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
@@ -291,7 +490,7 @@ class FeatureAblation(PerturbationAttribution):
             isinstance(perturbations_per_eval, int) and perturbations_per_eval >= 1
         ), "Perturbations per evaluation must be an integer and at least 1."
         with torch.no_grad():
-            attr_progress = None
+            attr_progress: Progress
             if show_progress:
                 attr_progress = self._attribute_progress_setup(
                     formatted_inputs,
@@ -299,7 +498,10 @@ class FeatureAblation(PerturbationAttribution):
                     **kwargs,
                     perturbations_per_eval=perturbations_per_eval,
                 )
-                attr_progress.update(0)
+            else:
+                attr_progress = NullProgress()
+
+            attr_progress.update(0)
 
             # Computes initial evaluation with all features, which is compared
             # to each ablated result.
@@ -309,8 +511,8 @@ class FeatureAblation(PerturbationAttribution):
                 target,
                 formatted_additional_forward_args,
             )
-            if attr_progress is not None:
-                attr_progress.update()
+
+            attr_progress.update()
 
             total_attrib: List[Tensor] = []
             weights: List[Tensor] = []
@@ -323,7 +525,7 @@ class FeatureAblation(PerturbationAttribution):
                     "when using the attribute function, initial_eval should have "
                     f"non-Future type rather than {type(initial_eval)}"
                 )
-
+            initial_eval = _parse_forward_out(initial_eval)
             (
                 total_attrib,
                 weights,
@@ -331,9 +533,8 @@ class FeatureAblation(PerturbationAttribution):
                 flattened_initial_eval,
                 n_outputs,
                 attrib_type,
-            ) = self._process_initial_eval(
-                initial_eval,
-                formatted_inputs,
+            ) = process_initial_eval(
+                initial_eval, formatted_inputs, use_weights=self.use_weights
             )
 
             total_attrib, weights = self._attribute_with_cross_tensor_feature_masks(
@@ -353,12 +554,13 @@ class FeatureAblation(PerturbationAttribution):
                 **kwargs,
             )
 
-        if attr_progress is not None:
-            attr_progress.close()
+        attr_progress.close()
 
         return cast(
             TensorOrTupleOfTensorsGeneric,
-            self._generate_result(total_attrib, weights, is_inputs_tuple),
+            format_result(
+                total_attrib, weights, is_inputs_tuple, use_weights=self.use_weights
+            ),
         )
 
     def _attribute_with_cross_tensor_feature_masks(
@@ -368,7 +570,7 @@ class FeatureAblation(PerturbationAttribution):
         target: TargetType,
         baselines: BaselineType,
         formatted_feature_mask: Tuple[Tensor, ...],
-        attr_progress: Optional[tqdm],
+        attr_progress: Progress,
         flattened_initial_eval: Tensor,
         initial_eval: Tensor,
         n_outputs: int,
@@ -461,27 +663,33 @@ class FeatureAblation(PerturbationAttribution):
                 current_target,
                 current_additional_args,
             )
+            modified_eval = _parse_forward_out(modified_eval)
 
-            if attr_progress is not None:
-                attr_progress.update()
+            attr_progress.update()
 
             assert not isinstance(modified_eval, torch.Future), (
                 "when use_futures is True, modified_eval should have "
                 f"non-Future type rather than {type(modified_eval)}"
             )
-
+            # Just do the check once.
+            if not self._is_output_shape_valid:
+                check_output_shape_valid(
+                    inputs=current_inputs,
+                    num_examples=num_examples,
+                    initial_eval=initial_eval,
+                    modified_eval=modified_eval,
+                    perturbations_per_eval=perturbations_per_eval,
+                )
+                self._is_output_shape_valid = True
             total_attrib, weights = self._process_ablated_out_full(
-                modified_eval,
-                current_masks,
-                flattened_initial_eval,
-                initial_eval,
-                current_inputs,
-                n_outputs,
-                num_examples,
-                total_attrib,
-                weights,
-                attrib_type,
-                perturbations_per_eval,
+                modified_eval=modified_eval,
+                current_mask=current_masks,
+                flattened_initial_eval=flattened_initial_eval,
+                inputs=current_inputs,
+                n_outputs=n_outputs,
+                total_attrib=total_attrib,
+                weights=weights,
+                attrib_type=attrib_type,
             )
         return total_attrib, weights
 
@@ -496,34 +704,12 @@ class FeatureAblation(PerturbationAttribution):
         feature_idx_to_tensor_idx: Dict[int, List[int]],
         formatted_inputs: Tuple[Tensor, ...],
     ) -> bool:
-        should_skip = False
-        all_empty = True
-        tensor_idx_list = []
-        for feature_idx in current_feature_idxs:
-            tensor_idx_list += feature_idx_to_tensor_idx[feature_idx]
-        for tensor_idx in set(tensor_idx_list):
-            if all_empty and torch.numel(formatted_inputs[tensor_idx]) != 0:
-                all_empty = False
-            if self._min_examples_per_batch_grouped is not None and (
-                formatted_inputs[tensor_idx].shape[0]
-                < cast(int, self._min_examples_per_batch_grouped)
-            ):
-                should_skip = True
-                break
-        if should_skip:
-            logger.warning(
-                f"Skipping feature group {current_feature_idxs} since it contains "
-                f"at least one input tensor with 0th dim less than "
-                f"{self._min_examples_per_batch_grouped}"
-            )
-            return True
-        if all_empty:
-            logger.info(
-                f"Skipping feature group {current_feature_idxs} since all "
-                f"input tensors are empty"
-            )
-            return True
-        return False
+        return _should_skip_inputs_and_warn(
+            current_feature_idxs=current_feature_idxs,
+            feature_idx_to_tensor_idx=feature_idx_to_tensor_idx,
+            formatted_inputs=formatted_inputs,
+            min_examples_per_batch_grouped=self._min_examples_per_batch_grouped,
+        )
 
     def _construct_ablated_input_across_tensors(
         self,
@@ -586,8 +772,9 @@ class FeatureAblation(PerturbationAttribution):
                     "initial_eval_to_processed_initial_eval_fut: "
                     "initial_eval should be a Tensor"
                 )
-            result = self._process_initial_eval(
-                initial_eval_processed, formatted_inputs
+            initial_eval_processed = _parse_forward_out(initial_eval_processed)
+            result = process_initial_eval(
+                initial_eval_processed, formatted_inputs, use_weights=self.use_weights
             )
 
         except FeatureAblationFutureError as e:
@@ -626,7 +813,7 @@ class FeatureAblation(PerturbationAttribution):
             isinstance(perturbations_per_eval, int) and perturbations_per_eval >= 1
         ), "Perturbations per evaluation must be an integer and at least 1."
         with torch.no_grad():
-            attr_progress = None
+            attr_progress: Progress
             if show_progress:
                 attr_progress = self._attribute_progress_setup(
                     formatted_inputs,
@@ -634,7 +821,9 @@ class FeatureAblation(PerturbationAttribution):
                     **kwargs,
                     perturbations_per_eval=perturbations_per_eval,
                 )
-                attr_progress.update(0)
+            else:
+                attr_progress = NullProgress()
+            attr_progress.update(0)
 
             # Computes initial evaluation with all features, which is compared
             # to each ablated result.
@@ -645,8 +834,7 @@ class FeatureAblation(PerturbationAttribution):
                 formatted_additional_forward_args,
             )
 
-            if attr_progress is not None:
-                attr_progress.update()
+            attr_progress.update()
 
             processed_initial_eval_fut: Optional[
                 Future[Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]]
@@ -687,7 +875,7 @@ class FeatureAblation(PerturbationAttribution):
         target: TargetType,
         baselines: BaselineType,
         formatted_feature_mask: Tuple[Tensor, ...],
-        attr_progress: Optional[tqdm],
+        attr_progress: Progress,
         processed_initial_eval_fut: Future[
             Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]
         ],
@@ -781,8 +969,7 @@ class FeatureAblation(PerturbationAttribution):
                 current_additional_args,
             )
 
-            if attr_progress is not None:
-                attr_progress.update()
+            attr_progress.update()
 
             if not isinstance(modified_eval, torch.Future):
                 raise AssertionError(
@@ -826,8 +1013,7 @@ class FeatureAblation(PerturbationAttribution):
 
             all_modified_eval_futures.append(ablated_out_fut)
 
-        if attr_progress is not None:
-            attr_progress.close()
+        attr_progress.close()
 
         return self._generate_async_result_cross_tensor(
             all_modified_eval_futures,
@@ -857,7 +1043,7 @@ class FeatureAblation(PerturbationAttribution):
         feature_mask: Tuple[Tensor, ...],
         perturbations_per_eval: int,
         **kwargs: Any,
-    ) -> tqdm:
+    ) -> Progress:
         total_forwards = math.ceil(
             get_total_features_from_mask(feature_mask) / perturbations_per_eval
         )
@@ -886,10 +1072,8 @@ class FeatureAblation(PerturbationAttribution):
             )
 
         result_fut = collect_all(accumulate_fut_list).then(
-            lambda x: self._generate_result(
-                total_attrib,
-                weights,
-                is_inputs_tuple,
+            lambda x: format_result(
+                total_attrib, weights, is_inputs_tuple, use_weights=self.use_weights
             )
         )
 
@@ -923,6 +1107,7 @@ class FeatureAblation(PerturbationAttribution):
                     "total_attrib, weights, initial_eval, "
                     "flattened_initial_eval, n_outputs, attrib_type "
                 )
+            modified_eval = _parse_forward_out(modified_eval)
             if not isinstance(modified_eval, Tensor):
                 raise AssertionError(
                     "_eval_fut_to_ablated_out_fut_cross_tensor: "
@@ -936,13 +1121,21 @@ class FeatureAblation(PerturbationAttribution):
                 n_outputs,
                 attrib_type,
             ) = initial_eval_tuple
+            # Just do the check once.
+            if not self._is_output_shape_valid:
+                check_output_shape_valid(
+                    inputs=current_inputs,
+                    num_examples=num_examples,
+                    initial_eval=initial_eval,
+                    modified_eval=modified_eval,
+                    perturbations_per_eval=perturbations_per_eval,
+                )
+                self._is_output_shape_valid = True
+
             total_attrib, weights = self._process_ablated_out_full(
                 modified_eval=modified_eval,
                 inputs=current_inputs,
                 current_mask=current_mask,
-                perturbations_per_eval=perturbations_per_eval,
-                num_examples=num_examples,
-                initial_eval=initial_eval,
                 flattened_initial_eval=flattened_initial_eval,
                 n_outputs=n_outputs,
                 total_attrib=total_attrib,
@@ -955,116 +1148,17 @@ class FeatureAblation(PerturbationAttribution):
             ) from e
         return total_attrib, weights
 
-    def _parse_forward_out(self, forward_output: Tensor) -> Tensor:
-        """
-        A temp wrapper for global _run_forward util to force forward output
-        type assertion & conversion.
-        Remove after the strict logic is supported by all attr classes
-        """
-        if isinstance(forward_output, Tensor):
-            return forward_output
-
-        output_type = type(forward_output)
-        assert output_type is int or output_type is float, (
-            "the return of forward_func must be a tensor, int, or float,"
-            f" received: {forward_output}"
-        )
-
-        # using python built-in type as torch dtype
-        # int -> torch.int64, float -> torch.float64
-        # ref: https://github.com/pytorch/pytorch/pull/21215
-        return torch.tensor(forward_output, dtype=cast(dtype, output_type))
-
-    def _process_initial_eval(
-        self,
-        initial_eval: Tensor,
-        inputs: TensorOrTupleOfTensorsGeneric,
-    ) -> Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]:
-        initial_eval = self._parse_forward_out(initial_eval)
-
-        # number of elements in the output of forward_func
-        n_outputs = initial_eval.numel() if isinstance(initial_eval, Tensor) else 1
-
-        # flatten eval outputs into 1D (n_outputs)
-        # add the leading dim for n_feature_perturbed
-        flattened_initial_eval = initial_eval.reshape(1, -1)
-
-        # Initialize attribution totals and counts
-        attrib_type = flattened_initial_eval.dtype
-
-        total_attrib = [
-            # attribute w.r.t each output element
-            torch.zeros(
-                (n_outputs,) + input.shape[1:],
-                dtype=attrib_type,
-                device=input.device,
-            )
-            for input in inputs
-        ]
-
-        # Weights are used in cases where ablations may be overlapping.
-        weights = []
-        if self.use_weights:
-            weights = [
-                torch.zeros((n_outputs,) + input.shape[1:], device=input.device).float()
-                for input in inputs
-            ]
-
-        return (
-            total_attrib,
-            weights,
-            initial_eval,
-            flattened_initial_eval,
-            n_outputs,
-            attrib_type,
-        )
-
     def _process_ablated_out_full(
         self,
         modified_eval: Tensor,
         current_mask: Tuple[Optional[Tensor], ...],
         flattened_initial_eval: Tensor,
-        initial_eval: Tensor,
         inputs: TensorOrTupleOfTensorsGeneric,
         n_outputs: int,
-        num_examples: int,
         total_attrib: List[Tensor],
         weights: List[Tensor],
         attrib_type: dtype,
-        perturbations_per_eval: int,
     ) -> Tuple[List[Tensor], List[Tensor]]:
-        modified_eval = self._parse_forward_out(modified_eval)
-        # if perturbations_per_eval > 1, the output shape must grow with
-        # input and not be aggregated
-        current_batch_size = inputs[0].shape[0]
-
-        # number of perturbation, which is not the same as
-        # perturbations_per_eval when not enough features to perturb
-        n_perturb = current_batch_size / num_examples
-        if perturbations_per_eval > 1 and not self._is_output_shape_valid:
-
-            current_output_shape = modified_eval.shape
-
-            # use initial_eval as the forward of perturbations_per_eval = 1
-            initial_output_shape = initial_eval.shape
-
-            assert (
-                # check if the output is not a scalar
-                current_output_shape
-                and initial_output_shape
-                # check if the output grow in same ratio, i.e., not agg
-                and current_output_shape[0] == n_perturb * initial_output_shape[0]
-            ), (
-                "When perturbations_per_eval > 1, forward_func's output "
-                "should be a tensor whose 1st dim grow with the input "
-                f"batch size: when input batch size is {num_examples}, "
-                f"the output shape is {initial_output_shape}; "
-                f"when input batch size is {current_batch_size}, "
-                f"the output shape is {current_output_shape}"
-            )
-
-            self._is_output_shape_valid = True
-
         # reshape the leading dim for n_feature_perturbed
         # flatten each feature's eval outputs into 1D of (n_outputs)
         modified_eval = modified_eval.reshape(-1, n_outputs)
@@ -1086,19 +1180,3 @@ class FeatureAblation(PerturbationAttribution):
             total_attrib[i] += (eval_diff * mask.to(attrib_type)).sum(dim=0)
 
         return total_attrib, weights
-
-    def _generate_result(
-        self,
-        total_attrib: List[Tensor],
-        weights: List[Tensor],
-        is_inputs_tuple: bool,
-    ) -> Union[Tensor, Tuple[Tensor, ...]]:
-        # Divide total attributions by counts and return formatted attributions
-        if self.use_weights:
-            attrib = tuple(
-                single_attrib.float() / weight
-                for single_attrib, weight in zip(total_attrib, weights)
-            )
-        else:
-            attrib = tuple(total_attrib)
-        return _format_output(is_inputs_tuple, attrib)

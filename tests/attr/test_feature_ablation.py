@@ -12,7 +12,13 @@ from typing import Any, cast, List, Tuple, Union
 import torch
 from captum._utils.common import _construct_future_forward
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
-from captum.attr._core.feature_ablation import FeatureAblation
+from captum.attr._core.feature_ablation import (
+    _parse_forward_out,
+    _should_skip_inputs_and_warn,
+    check_output_shape_valid,
+    FeatureAblation,
+    format_result,
+)
 from captum.attr._core.noise_tunnel import NoiseTunnel
 from captum.attr._utils.attribution import Attribution
 from captum.testing.helpers import BaseTest
@@ -595,7 +601,6 @@ class Test(BaseTest):
             fut.set_result(out)
 
         def forward_func(inp: Tensor) -> torch.futures.Future[Tensor]:
-            # pyre-fixme[29]: `typing.Type[torch.futures.Future]` is not a function.
             fut: torch.futures.Future[Tensor] = torch.futures.Future()
             t = threading.Thread(target=slow_set_future, args=(fut, inp))
             t.start()
@@ -898,6 +903,254 @@ class Test(BaseTest):
                 self.assertEqual(attributions.shape, expected_ablation.shape)
                 self.assertEqual(attributions.dtype, expected_ablation.dtype)
                 assertTensorAlmostEqual(self, attributions, expected_ablation)
+
+
+class TestParseForwardOutput(BaseTest):
+
+    def test_parse_forward_out_tensor_passthrough(self) -> None:
+        input_tensor = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+        result = _parse_forward_out(input_tensor)
+
+        self.assertIs(result, input_tensor)
+        assertTensorAlmostEqual(self, result, input_tensor)
+
+    def test_parse_forward_out_python_int(self) -> None:
+        input_value = 42
+        result = _parse_forward_out(input_value)
+
+        self.assertIsInstance(result, Tensor)
+        self.assertEqual(result.dtype, torch.int64)
+        assertTensorAlmostEqual(self, result, torch.tensor(42))
+
+    def test_parse_forward_out_python_float(self) -> None:
+        input_value = 3.14
+        result = _parse_forward_out(input_value)
+
+        self.assertIsInstance(result, Tensor)
+        self.assertEqual(result.dtype, torch.float64)
+        assertTensorAlmostEqual(self, result, torch.tensor(3.14))
+
+    def test_parse_forward_out_invalid_none(self) -> None:
+        with self.assertRaises(AssertionError):
+            _parse_forward_out(None)
+
+
+class TestFormatResult(BaseTest):
+
+    def test_format_result_single_tensor_no_weights(self) -> None:
+        total_attrib: list[torch.Tensor] = [
+            torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        ]
+        weights: list[torch.Tensor] = []
+        is_inputs_tuple = False
+        use_weights = False
+
+        result = format_result(total_attrib, weights, is_inputs_tuple, use_weights)
+
+        self.assertIsInstance(result, Tensor)
+        assert isinstance(result, Tensor)  # Type narrowing for pyre
+        self.assertEqual(result.shape, (2, 3))
+        assertTensorAlmostEqual(
+            self, result, torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        )
+
+    def test_format_result_tuple_output_no_weights(self) -> None:
+        total_attrib: list[torch.Tensor] = [
+            torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+            torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+        ]
+        weights: list[torch.Tensor] = []
+        is_inputs_tuple = True
+        use_weights = False
+
+        result = format_result(total_attrib, weights, is_inputs_tuple, use_weights)
+
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        assertTensorAlmostEqual(self, result[0], torch.tensor([[1.0, 2.0], [3.0, 4.0]]))
+        assertTensorAlmostEqual(self, result[1], torch.tensor([[5.0, 6.0], [7.0, 8.0]]))
+
+    def test_format_result_single_tensor_with_weights(self) -> None:
+        total_attrib: list[torch.Tensor] = [
+            torch.tensor([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]])
+        ]
+        weights: list[torch.Tensor] = [
+            torch.tensor([[2.0, 4.0, 5.0], [8.0, 10.0, 12.0]])
+        ]
+        is_inputs_tuple = False
+        use_weights = True
+
+        result = format_result(total_attrib, weights, is_inputs_tuple, use_weights)
+
+        self.assertIsInstance(result, Tensor)
+        expected = torch.tensor([[5.0, 5.0, 6.0], [5.0, 5.0, 5.0]])
+        assertTensorAlmostEqual(self, result, expected)
+
+    def test_format_result_tuple_output_with_weights(self) -> None:
+        total_attrib: list[torch.Tensor] = [
+            torch.tensor([[10.0, 20.0], [30.0, 40.0]]),
+            torch.tensor([[50.0, 60.0], [70.0, 80.0]]),
+        ]
+        weights: list[torch.Tensor] = [
+            torch.tensor([[2.0, 4.0], [5.0, 8.0]]),
+            torch.tensor([[10.0, 12.0], [14.0, 16.0]]),
+        ]
+        is_inputs_tuple = True
+        use_weights = True
+
+        result = format_result(total_attrib, weights, is_inputs_tuple, use_weights)
+
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        assertTensorAlmostEqual(self, result[0], torch.tensor([[5.0, 5.0], [6.0, 5.0]]))
+        assertTensorAlmostEqual(self, result[1], torch.tensor([[5.0, 5.0], [5.0, 5.0]]))
+
+    def test_format_result_integer_dtype_no_weights(self) -> None:
+        total_attrib: list[torch.Tensor] = [
+            torch.tensor([[1, 2, 3], [4, 5, 6]], dtype=torch.int32)
+        ]
+        weights: list[torch.Tensor] = []
+        is_inputs_tuple = False
+        use_weights = False
+
+        result = format_result(total_attrib, weights, is_inputs_tuple, use_weights)
+
+        self.assertIsInstance(result, Tensor)
+        assert isinstance(result, Tensor)  # Type narrowing for pyre
+        self.assertEqual(result.dtype, torch.int32)
+        assertTensorAlmostEqual(
+            self, result, torch.tensor([[1, 2, 3], [4, 5, 6]], dtype=torch.int32)
+        )
+
+
+class TestCheckOutputShapeValid(BaseTest):
+    def test_valid_output_shape_scaling(self) -> None:
+        inputs = (torch.randn(4, 3),)
+        num_examples = 2
+        initial_eval = torch.randn(2, 5)
+        modified_eval = torch.randn(4, 5)
+        perturbations_per_eval = 2
+
+        check_output_shape_valid(
+            inputs=inputs,
+            num_examples=num_examples,
+            initial_eval=initial_eval,
+            modified_eval=modified_eval,
+            perturbations_per_eval=perturbations_per_eval,
+        )
+
+    def test_invalid_output_shape_scaling(self) -> None:
+        inputs = (torch.randn(4, 3),)
+        num_examples = 2
+        initial_eval = torch.randn(2, 5)
+        modified_eval = torch.randn(6, 5)
+        perturbations_per_eval = 2
+
+        with self.assertRaises(AssertionError):
+            check_output_shape_valid(
+                inputs=inputs,
+                num_examples=num_examples,
+                initial_eval=initial_eval,
+                modified_eval=modified_eval,
+                perturbations_per_eval=perturbations_per_eval,
+            )
+
+    def test_skip_validation_when_perturbations_per_eval_is_one(self) -> None:
+        inputs = (torch.randn(4, 3),)
+        num_examples = 2
+        initial_eval = torch.randn(2, 5)
+        modified_eval = torch.randn(3, 5)
+        perturbations_per_eval = 1
+
+        check_output_shape_valid(
+            inputs=inputs,
+            num_examples=num_examples,
+            initial_eval=initial_eval,
+            modified_eval=modified_eval,
+            perturbations_per_eval=perturbations_per_eval,
+        )
+
+    def test_invalid_batch_size_not_divisible_by_num_examples(self) -> None:
+        inputs = (torch.randn(5, 3),)
+        num_examples = 2
+        initial_eval = torch.randn(2, 5)
+        modified_eval = torch.randn(5, 5)
+        perturbations_per_eval = 2
+
+        with self.assertRaises(AssertionError):
+            check_output_shape_valid(
+                inputs=inputs,
+                num_examples=num_examples,
+                initial_eval=initial_eval,
+                modified_eval=modified_eval,
+                perturbations_per_eval=perturbations_per_eval,
+            )
+
+
+class TestShouldSkipInputsAndWarn(BaseTest):
+    def test_skip_when_batch_size_less_than_min_examples(self) -> None:
+        current_feature_idxs = [0, 1]
+        feature_idx_to_tensor_idx = {0: [0], 1: [0]}
+        formatted_inputs = (torch.tensor([[1.0, 2.0], [3.0, 4.0]]),)
+        min_examples_per_batch_grouped = 3
+
+        with unittest.mock.patch(
+            "captum.attr._core.feature_ablation.logger"
+        ) as mock_logger:
+            result = _should_skip_inputs_and_warn(
+                current_feature_idxs,
+                feature_idx_to_tensor_idx,
+                formatted_inputs,
+                min_examples_per_batch_grouped,
+            )
+
+        self.assertTrue(result)
+        mock_logger.warning.assert_called_once()
+
+    def test_no_skip_when_batch_size_equal_to_min_examples(self) -> None:
+        current_feature_idxs = [0, 1]
+        feature_idx_to_tensor_idx = {0: [0], 1: [0]}
+        formatted_inputs = (torch.tensor([[1.0, 2.0], [3.0, 4.0]]),)
+        min_examples_per_batch_grouped = 2
+
+        result = _should_skip_inputs_and_warn(
+            current_feature_idxs,
+            feature_idx_to_tensor_idx,
+            formatted_inputs,
+            min_examples_per_batch_grouped,
+        )
+
+        self.assertFalse(result)
+
+    def test_skip_when_all_tensors_empty(self) -> None:
+        current_feature_idxs = [0]
+        feature_idx_to_tensor_idx = {0: [0]}
+        formatted_inputs = (torch.tensor([]),)
+
+        with unittest.mock.patch(
+            "captum.attr._core.feature_ablation.logger"
+        ) as mock_logger:
+            result = _should_skip_inputs_and_warn(
+                current_feature_idxs,
+                feature_idx_to_tensor_idx,
+                formatted_inputs,
+            )
+
+        self.assertTrue(result)
+        mock_logger.info.assert_called_once()
+
+    def test_no_skip_when_tensors_not_empty(self) -> None:
+        current_feature_idxs = [0, 1]
+        feature_idx_to_tensor_idx = {0: [0], 1: [0]}
+        formatted_inputs = (torch.tensor([[1.0, 2.0], [3.0, 4.0]]),)
+
+        result = _should_skip_inputs_and_warn(
+            current_feature_idxs,
+            feature_idx_to_tensor_idx,
+            formatted_inputs,
+        )
+
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":
