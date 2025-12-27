@@ -79,6 +79,11 @@ target is not given. When None, the default arguments are used,
 {“max_new_tokens”: 25, “do_sample”: False,
 “temperature”: None, “top_p”: None}
 Defaults: None</p></li>
+<li><p><strong>use_cached_outputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to use cached outputs when
+generating tokens in sequence. Only support huggingface
+GenerationMixin, since this functionality has to depend on the
+actual APIs of the model
+Defaults: True.</p></li>
 <li><p><strong>**kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>) – any extra keyword arguments passed to the call of the
 underlying attribute function of the given attribution instance</p></li>
 </ul>

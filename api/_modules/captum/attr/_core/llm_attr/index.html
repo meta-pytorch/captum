@@ -648,47 +648,43 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">use_cached_outputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">_inspect_forward</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="c1"># Lazily import transformers_typing to avoid importing transformers package if</span>
-        <span class="c1"># it isn't needed</span>
-        <span class="kn">from</span> <span class="nn">captum._utils.transformers_typing</span> <span class="kn">import</span> <span class="p">(</span>
-            <span class="n">Cache</span><span class="p">,</span>
-            <span class="n">DynamicCache</span><span class="p">,</span>
-            <span class="n">supports_caching</span><span class="p">,</span>
-            <span class="n">update_model_kwargs</span><span class="p">,</span>
-        <span class="p">)</span>
-
         <span class="n">perturbed_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_model_input</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">to_model_input</span><span class="p">(</span><span class="n">perturbed_tensor</span><span class="p">))</span>
         <span class="n">init_model_inp</span> <span class="o">=</span> <span class="n">perturbed_input</span>
 
         <span class="n">model_inp</span> <span class="o">=</span> <span class="n">init_model_inp</span>
+
+        <span class="c1"># model's forward function kwargs modifications</span>
+        <span class="c1"># we assume the model should extends GenerationMixin</span>
+        <span class="c1"># need trace its generate fn to understand how to set args for model forward</span>
+        <span class="c1"># https://github.com/huggingface/transformers/blob/main/src/transformers/generation/utils.py#L2252</span>
         <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_inp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model_inp</span><span class="o">.</span><span class="n">device</span>
         <span class="p">)</span>
-        <span class="n">model_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"attention_mask"</span><span class="p">:</span> <span class="n">attention_mask</span><span class="p">}</span>
-        <span class="c1"># If applicable, update model kwargs for transformers models</span>
-        <span class="n">update_model_kwargs</span><span class="p">(</span>
-            <span class="n">model_kwargs</span><span class="o">=</span><span class="n">model_kwargs</span><span class="p">,</span>
-            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
-            <span class="n">input_ids</span><span class="o">=</span><span class="n">model_inp</span><span class="p">,</span>
-            <span class="n">caching</span><span class="o">=</span><span class="n">use_cached_outputs</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"attention_mask"</span><span class="p">:</span> <span class="n">attention_mask</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">use_cached_outputs</span><span class="p">:</span>
+            <span class="n">cache_position</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+                <span class="n">model_inp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model_inp</span><span class="o">.</span><span class="n">device</span>
+            <span class="p">)</span>
+            <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"cache_position"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_position</span>
+            <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"use_cache"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"use_cache"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="n">log_prob_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">target_token</span> <span class="ow">in</span> <span class="n">target_tokens</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">use_cached_outputs</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1"># If applicable, convert past_key_values to DynamicCache for</span>
-                    <span class="c1"># transformers models</span>
-                    <span class="k">if</span> <span class="p">(</span>
-                        <span class="n">Cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                        <span class="ow">and</span> <span class="n">DynamicCache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                        <span class="ow">and</span> <span class="n">supports_caching</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span><span class="p">,</span> <span class="n">Cache</span><span class="p">)</span>
-                    <span class="p">):</span>
-                        <span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span> <span class="o">=</span> <span class="n">DynamicCache</span><span class="o">.</span><span class="n">from_legacy_cache</span><span class="p">(</span>
-                            <span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span>
-                        <span class="p">)</span>
+                    <span class="c1"># Lazily import to avoid importing transformers package</span>
+                    <span class="c1"># if it isn't needed</span>
+                    <span class="kn">from</span> <span class="nn">captum._utils.transformers_typing</span> <span class="kn">import</span> <span class="p">(</span>
+                        <span class="n">convert_legacy_cache_if_needed</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span> <span class="o">=</span> <span class="n">convert_legacy_cache_if_needed</span><span class="p">(</span>
+                        <span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span>
+                    <span class="p">)</span>
                     <span class="c1"># nn.Module typing suggests non-base attributes are modules or</span>
                     <span class="c1"># tensors</span>
                     <span class="n">_update_model_kwargs_for_generation</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
@@ -714,6 +710,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="p">)</span>
                 <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">]</span> <span class="o">=</span> <span class="n">attention_mask</span>
                 <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">model_inp</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
+
             <span class="n">new_token_logits</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">logits</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">new_token_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
@@ -771,6 +768,11 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                    {"max_new_tokens": 25, "do_sample": False,</span>
 <span class="sd">                    "temperature": None, "top_p": None}</span>
 <span class="sd">                    Defaults: None</span>
+<span class="sd">            use_cached_outputs (bool, optional): whether to use cached outputs when</span>
+<span class="sd">                    generating tokens in sequence. Only support huggingface</span>
+<span class="sd">                    GenerationMixin, since this functionality has to depend on the</span>
+<span class="sd">                    actual APIs of the model</span>
+<span class="sd">                    Defaults: True.</span>
 <span class="sd">            **kwargs (Any): any extra keyword arguments passed to the call of the</span>
 <span class="sd">                    underlying attribute function of the given attribution instance</span>
 
