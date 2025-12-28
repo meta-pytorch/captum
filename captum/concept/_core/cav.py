@@ -171,8 +171,6 @@ class CAV:
             ctx: AbstractContextManager[None, None]
             if hasattr(torch.serialization, "safe_globals"):
                 safe_globals = [
-                    # pyre-ignore[16]: Module `numpy.core.multiarray` has no attribute
-                    # `_reconstruct`
                     np.core.multiarray._reconstruct,  # type: ignore[attr-defined]
                     np.ndarray,
                     np.dtype,

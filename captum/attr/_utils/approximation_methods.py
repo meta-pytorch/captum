@@ -2,7 +2,7 @@
 
 # pyre-strict
 from enum import Enum
-from typing import Callable, cast, List, Tuple
+from typing import Callable, List, Tuple
 
 import torch
 
@@ -126,15 +126,13 @@ def gauss_legendre_builders() -> (
     def step_sizes(n: int) -> List[float]:
         assert n > 0, "The number of steps has to be larger than zero"
         # Scaling from 2 to 1
-        return cast(
-            NDArray[np.float64], 0.5 * np.polynomial.legendre.leggauss(n)[1]
-        ).tolist()
+        result: NDArray[np.float64] = 0.5 * np.polynomial.legendre.leggauss(n)[1]
+        return result.tolist()
 
     def alphas(n: int) -> List[float]:
         assert n > 0, "The number of steps has to be larger than zero"
         # Scaling from [-1, 1] to [0, 1]
-        return cast(
-            NDArray[np.float64], 0.5 * (1 + np.polynomial.legendre.leggauss(n)[0])
-        ).tolist()
+        result: NDArray[np.float64] = 0.5 * (1 + np.polynomial.legendre.leggauss(n)[0])
+        return result.tolist()
 
     return step_sizes, alphas

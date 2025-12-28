@@ -581,6 +581,7 @@ class BasicModel_MultiLayer_with_Future(nn.Module):
             self.relu(lin1_out)
         else:
             relu_out = self.relu(lin1_out)
+        # pyre-ignore[29]: `Future` is callable at runtime
         result = Future()
         lin2_out = self.linear2(relu_out)
         if multidim_output:

@@ -574,6 +574,7 @@ def _format_outputs(
 # pyre-fixme[24] Callable requires 2 arguments
 def _construct_future_forward(original_forward: Callable) -> Callable:
     def future_forward(*args: Any, **kwargs: Any) -> torch.futures.Future[Tensor]:
+        # pyre-ignore[29]: `Future` is callable at runtime
         fut: torch.futures.Future[Tensor] = torch.futures.Future()
         fut.set_result(original_forward(*args, **kwargs))
         return fut
