@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 import io
 import unittest
 import unittest.mock
@@ -119,9 +119,9 @@ class Test(BaseTest):
         )
 
     def test_simple_multi_input_int_to_float(self) -> None:
-        net = BasicModel3()
+        net: BasicModel3 = BasicModel3()
 
-        def wrapper_func(*inp):
+        def wrapper_func(*inp: Tensor) -> Tensor:
             return net(*inp).float()
 
         inp1 = torch.tensor([[-10], [3]])
@@ -316,7 +316,7 @@ class Test(BaseTest):
         self.assertEqual(attributions, None)
 
     @unittest.mock.patch("sys.stderr", new_callable=io.StringIO)
-    def test_simple_input_with_show_progress(self, mock_stderr) -> None:
+    def test_simple_input_with_show_progress(self, mock_stderr: io.StringIO) -> None:
         net = BasicModel_MultiLayer()
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)
 
@@ -344,7 +344,7 @@ class Test(BaseTest):
 
     def _occlusion_test_assert(
         self,
-        model: Callable,
+        model: Callable[..., Tensor],
         test_input: TensorOrTupleOfTensorsGeneric,
         expected_ablation: Union[
             float,
