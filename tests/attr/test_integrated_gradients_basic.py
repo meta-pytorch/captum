@@ -405,20 +405,21 @@ class Test(BaseTest):
         """
         ig = IntegratedGradients(model, multiply_by_inputs=multiply_by_inputs)
         self.assertEqual(ig.multiplies_by_inputs, multiply_by_inputs)
+        inputs_tuple: Tuple[Tensor, ...]
         if not isinstance(inputs, tuple):
-            inputs = (inputs,)  # type: ignore
-        # pyre-fixme[35]: Target cannot be annotated.
-        inputs: Tuple[Tensor, ...]
+            inputs_tuple = (cast(Tensor, inputs),)
+        else:
+            inputs_tuple = inputs
 
         if baselines is not None and not isinstance(baselines, tuple):
             baselines = (baselines,)
 
         if baselines is None:
-            baselines = _tensorize_baseline(inputs, _zeros(inputs))
+            baselines = _tensorize_baseline(inputs_tuple, _zeros(inputs_tuple))
 
         if type == "vanilla":
             attributions, delta = ig.attribute(  # type: ignore[has-type]
-                inputs,
+                inputs_tuple,
                 baselines,
                 additional_forward_args=additional_forward_args,
                 method=approximation_method,
@@ -428,7 +429,7 @@ class Test(BaseTest):
             )
             model.zero_grad()
             attributions_without_delta, delta = ig.attribute(  # type: ignore[has-type]
-                inputs,
+                inputs_tuple,
                 baselines,
                 additional_forward_args=additional_forward_args,
                 method=approximation_method,
@@ -437,11 +438,11 @@ class Test(BaseTest):
                 return_convergence_delta=True,
             )
             model.zero_grad()
-            self.assertEqual([inputs[0].shape[0]], list(delta.shape))
+            self.assertEqual([inputs_tuple[0].shape[0]], list(delta.shape))
             delta_external = ig.compute_convergence_delta(
                 attributions,
                 baselines,
-                inputs,
+                inputs_tuple,
                 target=target,
                 additional_forward_args=additional_forward_args,
             )
@@ -450,7 +451,7 @@ class Test(BaseTest):
             nt = NoiseTunnel(ig)
             n_samples = 5
             attributions, delta = nt.attribute(
-                inputs,
+                inputs_tuple,
                 nt_type=type,
                 nt_samples=n_samples,
                 stdevs=0.00000002,
@@ -463,7 +464,7 @@ class Test(BaseTest):
                 nt_samples_batch_size=nt_samples_batch_size,
             )
             attributions_without_delta = nt.attribute(
-                inputs,
+                inputs_tuple,
                 nt_type=type,
                 nt_samples=n_samples,
                 stdevs=0.00000002,
@@ -475,9 +476,9 @@ class Test(BaseTest):
                 nt_samples_batch_size=3,
             )
             self.assertEqual(nt.multiplies_by_inputs, multiply_by_inputs)
-            self.assertEqual([inputs[0].shape[0] * n_samples], list(delta.shape))
+            self.assertEqual([inputs_tuple[0].shape[0] * n_samples], list(delta.shape))
 
-        for input, attribution in zip(inputs, attributions):
+        for input, attribution in zip(inputs_tuple, attributions):
             self.assertEqual(attribution.shape, input.shape)
         if multiply_by_inputs:
             assertTensorAlmostEqual(self, delta, torch.zeros(delta.shape), 0.07, "max")
@@ -504,20 +505,21 @@ class Test(BaseTest):
         approximation_method: str = "gausslegendre",
     ) -> None:
         ig = IntegratedGradients(model)
+        inputs_tuple: Tuple[Tensor, ...]
         if not isinstance(inputs, tuple):
-            inputs = (inputs,)  # type: ignore
-        # pyre-fixme[35]: Target cannot be annotated.
-        inputs: Tuple[Tensor, ...]
+            inputs_tuple = (cast(Tensor, inputs),)
+        else:
+            inputs_tuple = inputs
 
         if baselines is not None and not isinstance(baselines, tuple):
             baselines = (baselines,)
 
         if baselines is None:
-            baselines = _tensorize_baseline(inputs, _zeros(inputs))
+            baselines = _tensorize_baseline(inputs_tuple, _zeros(inputs_tuple))
 
         for internal_batch_size in [None, 10, 20]:
             attributions, delta = ig.attribute(  # type: ignore[has-type]
-                inputs,
+                inputs_tuple,
                 baselines,
                 additional_forward_args=additional_forward_args,
                 method=approximation_method,
@@ -527,9 +529,9 @@ class Test(BaseTest):
                 return_convergence_delta=True,
             )
             total_delta = 0.0
-            for i in range(inputs[0].shape[0]):
+            for i in range(inputs_tuple[0].shape[0]):
                 attrib_indiv, delta_indiv = ig.attribute(  # type: ignore[has-type]
-                    tuple(input[i : i + 1] for input in inputs),
+                    tuple(input[i : i + 1] for input in inputs_tuple),
                     tuple(baseline[i : i + 1] for baseline in baselines),
                     additional_forward_args=additional_forward_args,
                     method=approximation_method,
