@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
-from typing import Dict, List, Literal, Optional, overload, Union
+from typing import Dict, List, Literal, Optional, overload, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -20,7 +20,11 @@ from torch import Tensor
 
 
 class DummyTokenizer:
-    def __init__(self, vocab_list) -> None:
+    token_to_id: Dict[str, int]
+    id_to_token: List[str]
+    unk_idx: int
+
+    def __init__(self, vocab_list: List[str]) -> None:
         self.token_to_id = {v: i for i, v in enumerate(vocab_list)}
         self.id_to_token = vocab_list
         self.unk_idx = len(vocab_list) + 1
@@ -105,7 +109,9 @@ class TestTextTemplateInput(BaseTest):
             ),
         ]
     )
-    def test_input(self, template, values) -> None:
+    def test_input(
+        self, template: str, values: Union[List[str], Dict[str, str]]
+    ) -> None:
         tt_input = TextTemplateInput(template, values)
 
         expected_tensor = torch.tensor([[1.0] * 4])
@@ -126,7 +132,12 @@ class TestTextTemplateInput(BaseTest):
             ),
         ]
     )
-    def test_input_with_baselines(self, template, values, baselines) -> None:
+    def test_input_with_baselines(
+        self,
+        template: str,
+        values: Union[List[str], Dict[str, str]],
+        baselines: Union[List[str], Dict[str, str]],
+    ) -> None:
         perturbed_tensor = torch.tensor([[1.0, 0.0, 1.0, 0.0]])
 
         # single instance baselines
@@ -143,7 +154,12 @@ class TestTextTemplateInput(BaseTest):
             ),
         ]
     )
-    def test_input_with_mask(self, template, values, mask) -> None:
+    def test_input_with_mask(
+        self,
+        template: str,
+        values: Union[List[str], Dict[str, str]],
+        mask: Union[List[int], Dict[str, int]],
+    ) -> None:
         tt_input = TextTemplateInput(template, values, mask=mask)
 
         expected_tensor = torch.tensor([[1.0] * 2])
@@ -164,7 +180,12 @@ class TestTextTemplateInput(BaseTest):
             ),
         ]
     )
-    def test_format_attr(self, template, values, mask) -> None:
+    def test_format_attr(
+        self,
+        template: str,
+        values: Union[List[str], Dict[str, str]],
+        mask: Union[List[int], Dict[str, int]],
+    ) -> None:
         tt_input = TextTemplateInput(template, values, mask=mask)
 
         attr = torch.tensor([[0.1, 0.2]])
@@ -238,7 +259,10 @@ class TestTextTokenInput(BaseTest):
 
 class TestImageMaskInput(BaseTest):
     def _create_test_image(
-        self, width: int = 10, height: int = 10, color: tuple = (255, 0, 0)
+        self,
+        width: int = 10,
+        height: int = 10,
+        color: Tuple[int, int, int] = (255, 0, 0),
     ) -> PIL.Image.Image:
         """Helper method to create a test PIL image."""
         img_array = np.full((height, width, 3), color, dtype=np.uint8)
