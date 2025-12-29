@@ -1,4 +1,4 @@
-# pyre-unsafe
+# pyre-strict
 from typing import cast, Dict, List, Tuple, Union
 
 from captum.attr._utils.baselines import ProductBaselines
@@ -37,13 +37,15 @@ class TestProductBaselines(BaseTest):
         baseline_sample = baselines()
 
         self.assertIsInstance(baseline_sample, dict)
-        baseline_sample = cast(dict, baseline_sample)
+        baseline_sample = cast(Dict[str, int], baseline_sample)
 
         for sample_key, sample_val in baseline_sample.items():
             self.assertIn(sample_val, baseline_values[sample_key])
 
     def test_dict_tuple_key(self) -> None:
-        baseline_values: Dict[Union[str, Tuple[str, ...]], List] = {
+        baseline_values: Dict[
+            Union[str, Tuple[str, ...]], List[Union[Tuple[int, str], int]]
+        ] = {
             ("f1", "f2"): [(1, "1"), (2, "2"), (3, "3")],
             "f3": [4, 5],
         }
@@ -53,7 +55,7 @@ class TestProductBaselines(BaseTest):
         baseline_sample = baselines()
 
         self.assertIsInstance(baseline_sample, dict)
-        baseline_sample = cast(dict, baseline_sample)
+        baseline_sample = cast(Dict[str, Union[str, int]], baseline_sample)
 
         self.assertEqual(len(baseline_sample), 3)
 
