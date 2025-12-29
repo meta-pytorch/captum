@@ -117,8 +117,7 @@ class DummyTokenizer:
 
     def decode(self, token_ids: Tensor) -> str:
         tokens = self.convert_ids_to_tokens(token_ids.tolist())
-        # pyre-fixme[7]: Expected `str` but got `Union[List[str], str]`.
-        return tokens if isinstance(tokens, str) else " ".join(tokens)
+        return cast(str, tokens) if isinstance(tokens, str) else " ".join(tokens)
 
     def __call__(
         self,
@@ -247,54 +246,59 @@ class DummyLLM(nn.Module):
     ),
 )
 class TestLLMAttr(BaseTest):
-    # pyre-fixme[13]: Attribute `device` is never initialized.
-    device: str
-    # pyre-fixme[13]: Attribute `use_cached_outputs` is never initialized.
-    use_cached_outputs: bool
+    device: str = "cpu"
+    use_cached_outputs: bool = False
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `comprehension
     @parameterized.expand(
         [
+            # FeatureAblation
             (
-                AttrClass,
-                delta,
-                n_samples,
-                torch.tensor(true_seq_attr),
-                torch.tensor(true_tok_attr),
-            )
-            for AttrClass, delta, n_samples, true_seq_attr, true_tok_attr in zip(
-                (FeatureAblation, ShapleyValueSampling, ShapleyValues),  # AttrClass
-                (0.001, 0.001, 0.001),  # delta
-                (None, 1000, None),  # n_samples
-                (  # true_seq_attr
-                    [-0.0007, -0.0031, -0.0126, 0.0102],  # FeatureAblation
-                    [0.0021, -0.0047, -0.0193, 0.0302],  # ShapleyValueSampling
-                    [0.0021, -0.0047, -0.0193, 0.0302],  # ShapleyValues
-                ),
-                (  # true_tok_attr
-                    [  # FeatureAblation
+                FeatureAblation,
+                0.001,
+                None,
+                torch.tensor([-0.0007, -0.0031, -0.0126, 0.0102]),
+                torch.tensor(
+                    [
                         [0.0075, 0.0007, -0.0006, 0.0010],
                         [-0.0062, -0.0073, -0.0079, -0.0003],
                         [-0.0020, -0.0050, -0.0056, -0.0011],
                         [0.0113, 0.0034, 0.0006, 0.0047],
                         [-0.0112, 0.0050, 0.0009, 0.0058],
-                    ],
-                    [  # ShapleyValueSampling
-                        [0.0037, -0.0006, -0.0011, -0.0029],
-                        [0.0005, 0.0002, -0.0134, 0.0081],
-                        [0.0017, 0.0010, -0.0098, 0.0028],
-                        [0.0100, -0.0021, 0.0025, 0.0087],
-                        [-0.0138, -0.0031, 0.0025, 0.0134],
-                    ],
-                    [  # ShapleyValues
-                        [0.0037, -0.0006, -0.0011, -0.0029],
-                        [0.0005, 0.0002, -0.0134, 0.0081],
-                        [0.0017, 0.0010, -0.0098, 0.0028],
-                        [0.0100, -0.0021, 0.0025, 0.0087],
-                        [-0.0138, -0.0031, 0.0025, 0.0134],
-                    ],
+                    ]
                 ),
-            )
+            ),
+            # ShapleyValueSampling
+            (
+                ShapleyValueSampling,
+                0.001,
+                1000,
+                torch.tensor([0.0021, -0.0047, -0.0193, 0.0302]),
+                torch.tensor(
+                    [
+                        [0.0037, -0.0006, -0.0011, -0.0029],
+                        [0.0005, 0.0002, -0.0134, 0.0081],
+                        [0.0017, 0.0010, -0.0098, 0.0028],
+                        [0.0100, -0.0021, 0.0025, 0.0087],
+                        [-0.0138, -0.0031, 0.0025, 0.0134],
+                    ]
+                ),
+            ),
+            # ShapleyValues
+            (
+                ShapleyValues,
+                0.001,
+                None,
+                torch.tensor([0.0021, -0.0047, -0.0193, 0.0302]),
+                torch.tensor(
+                    [
+                        [0.0037, -0.0006, -0.0011, -0.0029],
+                        [0.0005, 0.0002, -0.0134, 0.0081],
+                        [0.0017, 0.0010, -0.0098, 0.0028],
+                        [0.0100, -0.0021, 0.0025, 0.0087],
+                        [-0.0138, -0.0031, 0.0025, 0.0134],
+                    ]
+                ),
+            ),
         ]
     )
     def test_llm_attr(
@@ -305,7 +309,7 @@ class TestLLMAttr(BaseTest):
         true_seq_attr: Tensor,
         true_tok_attr: Tensor,
     ) -> None:
-        attr_kws: Dict[str, int] = {}
+        attr_kws: Dict[str, Any] = {}
         if n_samples is not None:
             attr_kws["n_samples"] = n_samples
 
@@ -320,10 +324,7 @@ class TestLLMAttr(BaseTest):
             inp,
             "m n o p q",
             use_cached_outputs=self.use_cached_outputs,
-            # pyre-fixme[6]: In call `LLMAttribution.attribute`,
-            # for 4th positional argument, expected
-            # `Optional[typing.Callable[..., typing.Any]]` but got `int`.
-            **attr_kws,  # type: ignore
+            **attr_kws,
         )
 
         self.assertEqual(res.seq_attr.shape, (4,))
@@ -387,26 +388,24 @@ class TestLLMAttr(BaseTest):
         # equals to the sum of each token attr
         assertTensorAlmostEqual(self, res.seq_attr, cast(Tensor, res.token_attr).sum(0))
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `comprehension
     @parameterized.expand(
         [
+            # Lime
             (
-                AttrClass,
-                delta,
-                n_samples,
-                torch.tensor(true_seq_attr),
-                interpretable_model,
-            )
-            for AttrClass, delta, n_samples, true_seq_attr, interpretable_model in zip(
-                (Lime, KernelShap),
-                (0.003, 0.001),
-                (1000, 2500),
-                (
-                    [0.0000, -0.0032, -0.0158, 0.0231],
-                    [0.0021, -0.0047, -0.0193, 0.0302],
-                ),
-                (SkLearnLasso(alpha=0.001), None),
-            )
+                Lime,
+                0.003,
+                1000,
+                torch.tensor([0.0000, -0.0032, -0.0158, 0.0231]),
+                SkLearnLasso(alpha=0.001),
+            ),
+            # KernelShap
+            (
+                KernelShap,
+                0.001,
+                2500,
+                torch.tensor([0.0021, -0.0047, -0.0193, 0.0302]),
+                None,
+            ),
         ]
     )
     def test_llm_attr_without_token(
@@ -513,8 +512,7 @@ class TestLLMAttr(BaseTest):
     ("device",), [("cpu",), ("cuda",)] if torch.cuda.is_available() else [("cpu",)]
 )
 class TestLLMGradAttr(BaseTest):
-    # pyre-fixme[13]: Attribute `device` is never initialized.
-    device: str
+    device: str = "cpu"
 
     @parameterized.expand(
         [
@@ -1076,52 +1074,58 @@ class DummyRemoteLLMProvider(RemoteLLMProvider):
     ("device",), [("cpu",), ("cuda",)] if torch.cuda.is_available() else [("cpu",)]
 )
 class TestRemoteLLMAttr(BaseTest):
-    # pyre-fixme[13]: Attribute `device` is never initialized.
-    device: str
+    device: str = "cpu"
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument
     @parameterized.expand(
         [
+            # FeatureAblation
             (
-                AttrClass,
-                delta,
-                n_samples,
-                torch.tensor(true_seq_attr),
-                torch.tensor(true_tok_attr),
-            )
-            for AttrClass, delta, n_samples, true_seq_attr, true_tok_attr in zip(
-                (FeatureAblation, ShapleyValueSampling, ShapleyValues),  # AttrClass
-                (0.001, 0.001, 0.001),  # delta
-                (None, 1000, None),  # n_samples
-                (  # true_seq_attr
-                    [0.5, 1.0, 1.5, 2.0],  # FeatureAblation
-                    [0.5, 1.0, 1.5, 2.0],  # ShapleyValueSampling
-                    [0.5, 1.0, 1.5, 2.0],  # ShapleyValues
+                FeatureAblation,
+                0.001,
+                None,
+                torch.tensor([0.5, 1.0, 1.5, 2.0]),
+                torch.tensor(
+                    [
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                    ]
                 ),
-                (  # true_tok_attr
-                    [  # FeatureAblation
+            ),
+            # ShapleyValueSampling
+            (
+                ShapleyValueSampling,
+                0.001,
+                1000,
+                torch.tensor([0.5, 1.0, 1.5, 2.0]),
+                torch.tensor(
+                    [
                         [0.1, 0.2, 0.3, 0.4],
                         [0.1, 0.2, 0.3, 0.4],
                         [0.1, 0.2, 0.3, 0.4],
                         [0.1, 0.2, 0.3, 0.4],
                         [0.1, 0.2, 0.3, 0.4],
-                    ],
-                    [  # ShapleyValueSampling
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                    ],
-                    [  # ShapleyValues
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                        [0.1, 0.2, 0.3, 0.4],
-                    ],
+                    ]
                 ),
-            )
+            ),
+            # ShapleyValues
+            (
+                ShapleyValues,
+                0.001,
+                None,
+                torch.tensor([0.5, 1.0, 1.5, 2.0]),
+                torch.tensor(
+                    [
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                        [0.1, 0.2, 0.3, 0.4],
+                    ]
+                ),
+            ),
         ]
     )
     def test_remote_llm_attr(
@@ -1132,7 +1136,7 @@ class TestRemoteLLMAttr(BaseTest):
         true_seq_attr: Tensor,
         true_tok_attr: Tensor,
     ) -> None:
-        attr_kws: Dict[str, int] = {}
+        attr_kws: Dict[str, Any] = {}
         if n_samples is not None:
             attr_kws["n_samples"] = n_samples
 
@@ -1153,11 +1157,7 @@ class TestRemoteLLMAttr(BaseTest):
         res = remote_llm_attr.attribute(
             inp,
             "m n o p q",
-            # use_cached_outputs=self.use_cached_outputs,
-            # pyre-fixme[6]: In call `LLMAttribution.attribute`,
-            # for 4th positional argument, expected
-            # `Optional[typing.Callable[..., typing.Any]]` but got `int`.
-            **attr_kws,  # type: ignore
+            **attr_kws,
         )
 
         self.assertEqual(res.seq_attr.shape, (4,))
@@ -1235,26 +1235,24 @@ class TestRemoteLLMAttr(BaseTest):
         # equals to the sum of each token attr
         assertTensorAlmostEqual(self, res.seq_attr, cast(Tensor, res.token_attr).sum(0))
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument
     @parameterized.expand(
         [
+            # Lime
             (
-                AttrClass,
-                delta,
-                n_samples,
-                torch.tensor(true_seq_attr),
-                interpretable_model,
-            )
-            for AttrClass, delta, n_samples, true_seq_attr, interpretable_model in zip(
-                (Lime, KernelShap),
-                (0.003, 0.001),
-                (1000, 2500),
-                (
-                    [0.4956, 0.9957, 1.4959, 1.9959],
-                    [0.5, 1.0, 1.5, 2.0],
-                ),
-                (SkLearnLasso(alpha=0.001), None),
-            )
+                Lime,
+                0.003,
+                1000,
+                torch.tensor([0.4956, 0.9957, 1.4959, 1.9959]),
+                SkLearnLasso(alpha=0.001),
+            ),
+            # KernelShap
+            (
+                KernelShap,
+                0.001,
+                2500,
+                torch.tensor([0.5, 1.0, 1.5, 2.0]),
+                None,
+            ),
         ]
     )
     def test_remote_llm_attr_without_token(
