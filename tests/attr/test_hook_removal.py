@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 from enum import Enum
 from typing import Any, Callable, cast, Dict, Optional, Tuple, Type
@@ -52,7 +52,7 @@ class ErrorModule(Module):
         super().__init__()
         self.relu = torch.nn.ReLU()
 
-    def forward(*args, **kwargs):
+    def forward(self, *args: Any, **kwargs: Any) -> None:
         raise AssertionError("Raising error on execution")
 
 
@@ -63,7 +63,9 @@ class HookRemovalMeta(type):
     that no forward, backward or forward pre hooks remain on any modules.
     """
 
-    def __new__(cls, name: str, bases: Tuple, attrs: Dict):
+    def __new__(
+        cls, name: str, bases: Tuple[Type[Any], ...], attrs: Dict[str, Any]
+    ) -> "HookRemovalMeta":
         created_tests: Dict[Tuple[Type[Attribution], HookRemovalMode], bool] = {}
         for test_config in config:
             (
@@ -121,13 +123,13 @@ class HookRemovalMeta(type):
         args: Dict[str, Any],
         noise_tunnel: bool,
         mode: HookRemovalMode,
-    ) -> Callable:
+    ) -> Callable[..., None]:
         """
         This method creates a single hook removal test for the given
         algorithm and parameters.
         """
 
-        def hook_removal_test_assert(self) -> None:
+        def hook_removal_test_assert(self: "TestHookRemoval") -> None:
             attr_method: Attribution
             expect_error = False
             if layer is not None:
@@ -138,7 +140,7 @@ class HookRemovalMeta(type):
                     else:
                         _set_deep_layer_value(model, layer, ErrorModule())
                 target_layer = get_target_layer(model, layer)
-                internal_algorithm = cast(Type[InternalAttribution], algorithm)
+                internal_algorithm = cast(Type[InternalAttribution[Module]], algorithm)
                 attr_method = internal_algorithm(model, target_layer)
             else:
                 attr_method = algorithm(model)
@@ -162,7 +164,7 @@ class HookRemovalMeta(type):
             else:
                 attr_method.attribute(**args)
 
-            def check_leftover_hooks(module):
+            def check_leftover_hooks(module: Module) -> None:
                 self.assertEqual(len(module._forward_hooks), 0)
                 self.assertEqual(len(module._backward_hooks), 0)
                 self.assertEqual(len(module._forward_pre_hooks), 0)
