@@ -25,7 +25,6 @@ jobs:
         # Fix the version of numpy to install to avoid pyre issues
         pip install --upgrade numpy==2.1.3
         ./scripts/run_mypy.sh
-        # Disabling pyre check until numpy issues are resolved
-        # pyre check
+        pyre check
         # Run Tests
         python3 -m pytest -ra --cov=. --cov-report term-missing
