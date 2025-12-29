@@ -27,7 +27,7 @@ class KernelShap(Lime):
     https://arxiv.org/abs/1705.07874
     """
 
-    def __init__(self, forward_func: Callable[..., Tensor]) -> None:
+    def __init__(self, forward_func: Callable[..., Union[int, float, Tensor]]) -> None:
         r"""
         Args:
 
