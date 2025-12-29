@@ -34,6 +34,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span><span class="p">,</span> <span class="n">shorten</span>
@@ -539,8 +540,9 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">gen_args</span> <span class="o">=</span> <span class="n">DEFAULT_GEN_ARGS</span>
 
             <span class="n">model_inp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_model_input</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">to_model_input</span><span class="p">())</span>
-            <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">generate_func</span><span class="p">(</span><span class="n">model_inp</span><span class="p">,</span> <span class="o">**</span><span class="n">gen_args</span><span class="p">)</span>
-            <span class="n">target_tokens</span> <span class="o">=</span> <span class="n">output_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">model_inp</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">:]</span>
+            <span class="n">input_token_len</span> <span class="o">=</span> <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">generate_func</span><span class="p">(</span><span class="o">**</span><span class="n">model_inp</span><span class="p">,</span> <span class="o">**</span><span class="n">gen_args</span><span class="p">)</span>
+            <span class="n">target_tokens</span> <span class="o">=</span> <span class="n">output_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">input_token_len</span><span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">gen_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"gen_args must be None when target is given"</span>
 
@@ -562,18 +564,30 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="p">)</span>
         <span class="k">return</span> <span class="n">target_tokens</span>
 
-    <span class="k">def</span> <span class="nf">_format_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_format_model_input</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">model_input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Convert str to tokenized tensor</span>
-<span class="sd">        to make LLMAttribution work with model inputs of both</span>
-<span class="sd">        raw text and text token tensors</span>
+<span class="sd">        Modern LLMs usually expect a series of inputs, primarily including input_ids</span>
+<span class="sd">        This fun ensures the model input from InterpretableInput to be a dict-like</span>
+<span class="sd">        - convert str to tokenized tensor input_ids</span>
+<span class="sd">        - for tensor, assume it is input_ids. Wrap in a dict</span>
+<span class="sd">        - for other dict-like, assume they are processed correctly by any processor.</span>
+<span class="sd">          E.g., BatchFeature returned by transformers processor. Convert to dict</span>
 <span class="sd">        """</span>
         <span class="c1"># return tensor(1, n_tokens)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_input</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">model_input</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">device</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">model_input</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">model_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">model_input</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_input</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">input_ids</span> <span class="o">=</span> <span class="n">model_input</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"input_ids"</span><span class="p">:</span> <span class="n">input_ids</span><span class="p">}</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">model_input</span><span class="p">,</span> <span class="n">Mapping</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"Invalid model input. </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">model_input</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">model_input</span><span class="p">}</span>
 
 
 <div class="viewcode-block" id="LLMAttribution">
@@ -651,25 +665,26 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">perturbed_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_model_input</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">to_model_input</span><span class="p">(</span><span class="n">perturbed_tensor</span><span class="p">))</span>
         <span class="n">init_model_inp</span> <span class="o">=</span> <span class="n">perturbed_input</span>
 
-        <span class="n">model_inp</span> <span class="o">=</span> <span class="n">init_model_inp</span>
+        <span class="n">model_inp</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">init_model_inp</span><span class="p">}</span>
 
         <span class="c1"># model's forward function kwargs modifications</span>
         <span class="c1"># we assume the model should extends GenerationMixin</span>
         <span class="c1"># need trace its generate fn to understand how to set args for model forward</span>
         <span class="c1"># https://github.com/huggingface/transformers/blob/main/src/transformers/generation/utils.py#L2252</span>
-        <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
-            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_inp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model_inp</span><span class="o">.</span><span class="n">device</span>
-        <span class="p">)</span>
-        <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"attention_mask"</span><span class="p">:</span> <span class="n">attention_mask</span><span class="p">}</span>
+
+        <span class="n">input_ids</span> <span class="o">=</span> <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"attention_mask"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model_inp</span><span class="p">:</span>
+            <span class="n">model_inp</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_ids</span><span class="o">.</span><span class="n">device</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">use_cached_outputs</span><span class="p">:</span>
-            <span class="n">cache_position</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
-                <span class="n">model_inp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model_inp</span><span class="o">.</span><span class="n">device</span>
+            <span class="n">model_inp</span><span class="p">[</span><span class="s2">"cache_position"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+                <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_ids</span><span class="o">.</span><span class="n">device</span>
             <span class="p">)</span>
-            <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"cache_position"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_position</span>
-            <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"use_cache"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">model_inp</span><span class="p">[</span><span class="s2">"use_cache"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"use_cache"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">model_inp</span><span class="p">[</span><span class="s2">"use_cache"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="n">log_prob_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="kc">None</span>
@@ -691,33 +706,38 @@ src="/_sphinx/documentation_options.js"></script>
                         <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]],</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_update_model_kwargs_for_generation</span><span class="p">,</span>
                     <span class="p">)</span>
-                    <span class="n">model_kwargs</span> <span class="o">=</span> <span class="n">_update_model_kwargs_for_generation</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
-                        <span class="n">outputs</span><span class="p">,</span> <span class="n">model_kwargs</span>
+                    <span class="n">model_inp</span> <span class="o">=</span> <span class="n">_update_model_kwargs_for_generation</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+                        <span class="n">outputs</span><span class="p">,</span> <span class="n">model_inp</span>
                     <span class="p">)</span>
                 <span class="c1"># nn.Module typing suggests non-base attributes are modules or tensors</span>
                 <span class="n">prep_inputs_for_generation</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
                     <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]],</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prepare_inputs_for_generation</span><span class="p">,</span>
                 <span class="p">)</span>
-                <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">prep_inputs_for_generation</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
-                    <span class="n">model_inp</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span>
-                <span class="p">)</span>
+                <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">prep_inputs_for_generation</span><span class="p">(</span><span class="o">**</span><span class="n">model_inp</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
                 <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="o">**</span><span class="n">model_inputs</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Update attention mask to adapt to input size change</span>
+                <span class="n">input_ids</span> <span class="o">=</span> <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span>
                 <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
-                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_inp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model_inp</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=</span><span class="n">input_ids</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                 <span class="p">)</span>
-                <span class="n">model_kwargs</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">]</span> <span class="o">=</span> <span class="n">attention_mask</span>
-                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">model_inp</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
+                <span class="n">model_inp</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">]</span> <span class="o">=</span> <span class="n">attention_mask</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="o">**</span><span class="n">model_inp</span><span class="p">)</span>
 
             <span class="n">new_token_logits</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">logits</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">new_token_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="n">log_prob_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log_probs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">target_token</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
 
-            <span class="n">model_inp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">model_inp</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="n">target_token</span><span class="p">]])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span>
+            <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">],</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="n">target_token</span><span class="p">]])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                <span class="p">),</span>
+                <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="n">total_log_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">log_prob_list</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -732,7 +752,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">target_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">target_log_probs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">_inspect_forward</span><span class="p">:</span>
-            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">init_model_inp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">init_model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">target_tokens</span><span class="p">)</span>
 
             <span class="c1"># callback for externals to inspect (prompt, response, seq_prob)</span>
@@ -1000,9 +1020,10 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">target_tokens</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># 1D tensor of target token ids</span>
         <span class="n">cur_target_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>  <span class="c1"># current target index</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># TODO: support model that needs more than just input_ids</span>
         <span class="n">perturbed_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr</span><span class="o">.</span><span class="n">_format_model_input</span><span class="p">(</span>
             <span class="n">inp</span><span class="o">.</span><span class="n">to_model_input</span><span class="p">(</span><span class="n">perturbed_tensor</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="p">)[</span><span class="s2">"input_ids"</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">cur_target_idx</span><span class="p">:</span>
             <span class="c1"># the input batch size can be expanded by attr method</span>
