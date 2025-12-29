@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
-from typing import List
+# pyre-strict
+from typing import List, Optional, Tuple, Union
 
 import torch
 from captum.attr import ClassSummarizer, CommonStats
 from captum.testing.helpers import BaseTest
+from torch import Tensor
 
 
 class Test(BaseTest):
-    def class_test(self, data, classes, x_sizes) -> None:
+    def class_test(
+        self,
+        data: List[Tuple[Tuple[Tensor, ...], object]],
+        classes: List[object],
+        x_sizes: Tuple[Tuple[int, ...], ...],
+    ) -> None:
         summarizer = ClassSummarizer(stats=CommonStats())
         for x, y in data:
             summarizer.update(x, y)
@@ -49,7 +55,7 @@ class Test(BaseTest):
             ((3, 2, 10, 3), (1,)),
             # ((20,),),
         ]
-        list_of_classes: List[List] = [
+        list_of_classes: List[List[object]] = [
             list(range(100)),
             ["%d" % i for i in range(100)],
             list(range(300, 400)),
@@ -58,8 +64,10 @@ class Test(BaseTest):
             for sizes, classes in zip(sizes_to_test, list_of_classes):
 
                 def create_batch_labels(
-                    batch_idx, batch_size=batch_size, classes=classes
-                ):
+                    batch_idx: int,
+                    batch_size: Optional[int] = batch_size,
+                    classes: List[object] = classes,
+                ) -> Union[object, List[object]]:
                     if batch_size is None:
                         # batch_size = 1
                         return classes[batch_idx]
