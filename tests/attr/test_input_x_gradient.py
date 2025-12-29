@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 from typing import cast, Optional
 
 import torch
@@ -93,10 +93,14 @@ class Test(BaseTest):
                 self.assertEqual(input.shape, attribution.shape)
         elif isinstance(attributions, Tensor):
             if nt_type == "vanilla":
-                self._assert_attribution(expected_grads, inputs, attributions)
+                self._assert_attribution(
+                    cast(Tensor, expected_grads), cast(Tensor, inputs), attributions
+                )
             self.assertEqual(cast(Tensor, inputs).shape, attributions.shape)
 
-    def _assert_attribution(self, expected_grad, input, attribution: Tensor) -> None:
+    def _assert_attribution(
+        self, expected_grad: Tensor, input: Tensor, attribution: Tensor
+    ) -> None:
         assertTensorAlmostEqual(
             self,
             attribution,
