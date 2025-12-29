@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 from typing import cast, Optional, Tuple, Union
 
 import torch
@@ -122,7 +122,7 @@ class Test(BaseTest):
         expected: TensorOrTupleOfTensorsGeneric,
         additional_forward_args: Optional[object] = None,
         nt_type: str = "vanilla",
-        n_samples_batch_size=None,
+        n_samples_batch_size: Optional[int] = None,
     ) -> Union[Tensor, Tuple[Tensor, ...]]:
         saliency = Saliency(model)
 
