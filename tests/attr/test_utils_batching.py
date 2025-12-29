@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
+
+from typing import List, Tuple
 
 import torch
 from captum.attr._utils.batching import (
@@ -10,6 +12,7 @@ from captum.attr._utils.batching import (
 )
 from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
+from torch import Tensor
 
 
 class Test(BaseTest):
@@ -34,10 +37,18 @@ class Test(BaseTest):
         self.assertEqual(spliced_tuple[1], "test")
 
     def test_batched_generator(self) -> None:
-        def sample_operator(inputs, additional_forward_args, target_ind, scale):
+        def sample_operator(
+            inputs: Tuple[Tensor, ...],
+            additional_forward_args: Tuple[Tensor, int],
+            target_ind: int,
+            scale: int,
+        ) -> Tuple[Tensor, Tensor, int]:
+            # pyre-ignore[7]: sum() returns Tensor when inputs are Tensors
+            inputs_sum: Tensor = sum(inputs)  # type: ignore[arg-type,assignment]
+            add_args_tensor: Tensor = additional_forward_args[0]
             return (
-                scale * (sum(inputs)),
-                scale * sum(additional_forward_args),
+                scale * inputs_sum,  # pyre-ignore[58]
+                scale * add_args_tensor,  # pyre-ignore[58]
                 target_ind,
             )
 
@@ -64,10 +75,18 @@ class Test(BaseTest):
             _batched_operator(lambda x: x, inputs=inp1, internal_batch_size=0)
 
     def test_batched_operator(self) -> None:
-        def _sample_operator(inputs, additional_forward_args, target_ind, scale):
+        def _sample_operator(
+            inputs: Tuple[Tensor, ...],
+            additional_forward_args: Tensor,
+            target_ind: List[int],
+            scale: float,
+        ) -> Tuple[Tensor, Tensor]:
+            # pyre-ignore[7]: sum() returns Tensor when inputs are Tensors
+            inputs_sum: Tensor = sum(inputs)  # type: ignore[arg-type,assignment]
+            add_args_sum: Tensor = additional_forward_args.sum()
             return (
-                scale * (sum(inputs)),
-                scale * sum(additional_forward_args) + target_ind[0],
+                scale * inputs_sum,  # pyre-ignore[58]
+                scale * add_args_sum + target_ind[0],
             )
 
         inp1 = torch.tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
