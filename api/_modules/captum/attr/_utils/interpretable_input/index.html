@@ -703,6 +703,17 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor_fn</span><span class="p">(</span><span class="n">perturbed_image</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Attribution for interpretable image segments</span>
+<span class="sd">        Returns: 2D tensor of shape (1, n_itp_features)</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">itp_attr</span>
+
+    <span class="k">def</span> <span class="nf">format_pixel_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Attribution for image pixels</span>
+<span class="sd">        Returns: 3D tensor of shape (1, height, width)</span>
+<span class="sd">        """</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">itp_attr</span><span class="o">.</span><span class="n">device</span>
 
         <span class="c1"># Map mask IDs to continuous indices</span>
