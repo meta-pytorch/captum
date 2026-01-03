@@ -32,7 +32,17 @@ src="/_sphinx/documentation_options.js"></script>
 <h1>Source code for captum.attr._utils.interpretable_input</h1><div class="highlight"><pre>
 <span></span><span class="c1"># pyre-strict</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">PIL.Image</span>
@@ -40,6 +50,9 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">TokenizerLike</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">Figure</span>
 
 
 <span class="k">def</span> <span class="nf">_scatter_itp_attr_by_mask</span><span class="p">(</span>
@@ -734,6 +747,19 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor_fn</span><span class="p">(</span><span class="n">perturbed_image</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">get_mask_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get the list of binary masks for each interpretable feature.</span>
+<span class="sd">        If mask_list is provided, return it directly. Otherwise, create</span>
+<span class="sd">        a list of binary masks from the mask tensor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Tensor]: list of binary masks, one for each interpretable feature</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_list</span> <span class="ow">or</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">==</span> <span class="n">mask_id</span> <span class="k">for</span> <span class="n">mask_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_id_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">]</span>
+
     <span class="k">def</span> <span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Attribution for interpretable image segments</span>
@@ -779,6 +805,81 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">formatted_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">formatted_attr</span>
+
+    <span class="k">def</span> <span class="nf">plot_mask_overlay</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">border_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">show_legends</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">"Figure"</span><span class="p">,</span> <span class="s2">"Axes"</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        util to help visualize the mask segementation</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            show: If True, display the plot immediately using plt.show().</span>
+<span class="sd">                  If False, return the figure and axes objects.</span>
+<span class="sd">            border_width: Width of the border around each segment in pixels.</span>
+<span class="sd">                          Set to 0 to disable borders. Default is 0.</span>
+<span class="sd">            show_legends: If True, display the mask id for each segment at its</span>
+<span class="sd">                          centroid. Default is True.</span>
+<span class="sd">        """</span>
+
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+        <span class="c1"># scipy is not within install_requires of captum</span>
+        <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">binary_erosion</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s2">"white"</span><span class="p">)</span>
+
+        <span class="c1"># random colors for all interpretable features</span>
+        <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.6</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">opacity</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_itp_features</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">mask_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mask_list</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">mask</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">mid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mask_list</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_id_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">mask_np</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">mask_np</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">mask_image</span> <span class="o">=</span> <span class="n">mask_np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">color</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mask_image</span><span class="p">)</span>
+
+            <span class="c1"># Add border inside each segment using erosion</span>
+            <span class="k">if</span> <span class="n">border_width</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">eroded</span> <span class="o">=</span> <span class="n">binary_erosion</span><span class="p">(</span><span class="n">mask_np</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">border_width</span><span class="p">)</span>
+                <span class="n">border</span> <span class="o">=</span> <span class="n">mask_np</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">eroded</span>
+                <span class="n">border_color</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">*</span><span class="n">color</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="mf">0.8</span><span class="p">])</span>
+                <span class="n">border_image</span> <span class="o">=</span> <span class="n">border</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">border_color</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">border_image</span><span class="p">)</span>
+
+            <span class="c1"># Calculate centroid and display mask id</span>
+            <span class="k">if</span> <span class="n">show_legends</span> <span class="ow">and</span> <span class="n">mask_np</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_np</span><span class="p">)</span>
+                <span class="n">centroid_y</span><span class="p">,</span> <span class="n">centroid_x</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">cols</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                    <span class="n">centroid_x</span><span class="p">,</span>
+                    <span class="n">centroid_y</span><span class="p">,</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">mid</span><span class="p">),</span>
+                    <span class="n">color</span><span class="o">=</span><span class="s2">"white"</span><span class="p">,</span>
+                    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
+                    <span class="n">bbox</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">"boxstyle"</span><span class="p">:</span> <span class="s2">"round,pad=0.2"</span><span class="p">,</span>
+                        <span class="s2">"facecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
+                        <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span>
 </pre></div>
 </div>
 </div>
