@@ -49,6 +49,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">TokenizerLike</span>
+<span class="kn">from</span> <span class="nn">captum.attr._utils.visualization</span> <span class="kn">import</span> <span class="n">draw_mask_border</span><span class="p">,</span> <span class="n">draw_mask_legend</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -823,9 +824,6 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-        <span class="c1"># scipy is not within install_requires of captum</span>
-        <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">binary_erosion</span>
-
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
         <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
@@ -848,30 +846,12 @@ src="/_sphinx/documentation_options.js"></script>
 
             <span class="c1"># Add border inside each segment using erosion</span>
             <span class="k">if</span> <span class="n">border_width</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">eroded</span> <span class="o">=</span> <span class="n">binary_erosion</span><span class="p">(</span><span class="n">mask_np</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">border_width</span><span class="p">)</span>
-                <span class="n">border</span> <span class="o">=</span> <span class="n">mask_np</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">eroded</span>
                 <span class="n">border_color</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">*</span><span class="n">color</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="mf">0.8</span><span class="p">])</span>
-                <span class="n">border_image</span> <span class="o">=</span> <span class="n">border</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">border_color</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">border_image</span><span class="p">)</span>
+                <span class="n">draw_mask_border</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">mask_np</span><span class="p">,</span> <span class="n">border_width</span><span class="p">,</span> <span class="n">border_color</span><span class="p">)</span>
 
             <span class="c1"># Calculate centroid and display mask id</span>
-            <span class="k">if</span> <span class="n">show_legends</span> <span class="ow">and</span> <span class="n">mask_np</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_np</span><span class="p">)</span>
-                <span class="n">centroid_y</span><span class="p">,</span> <span class="n">centroid_x</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">cols</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
-                    <span class="n">centroid_x</span><span class="p">,</span>
-                    <span class="n">centroid_y</span><span class="p">,</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">mid</span><span class="p">),</span>
-                    <span class="n">color</span><span class="o">=</span><span class="s2">"white"</span><span class="p">,</span>
-                    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                    <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
-                    <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
-                    <span class="n">bbox</span><span class="o">=</span><span class="p">{</span>
-                        <span class="s2">"boxstyle"</span><span class="p">:</span> <span class="s2">"round,pad=0.2"</span><span class="p">,</span>
-                        <span class="s2">"facecolor"</span><span class="p">:</span> <span class="s2">"black"</span><span class="p">,</span>
-                        <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
-                    <span class="p">},</span>
-                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">show_legends</span><span class="p">:</span>
+                <span class="n">draw_mask_legend</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">mask_np</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">mid</span><span class="p">))</span>
 
         <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 

@@ -193,7 +193,7 @@ which includes the necessary properties of the attribution.
 It also provides utilities to help present and plot the result in different forms.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="captum.attr.LLMAttributionResult.plot_image_heatmap">
-<span class="sig-name descname"><span class="pre">plot_image_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_token_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/captum/attr/_core/llm_attr.html#LLMAttributionResult.plot_image_heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#captum.attr.LLMAttributionResult.plot_image_heatmap" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot_image_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_token_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">border_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_legends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/captum/attr/_core/llm_attr.html#LLMAttributionResult.plot_image_heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#captum.attr.LLMAttributionResult.plot_image_heatmap" title="Link to this definition">¶</a></dt>
 <dd><p>Plot the image in the input with the overlay of salience based on
 the attribution. Only available for certain multi-modality input types.</p>
 <dl class="field-list simple">
@@ -207,6 +207,12 @@ If None, use the sequence attribuition. If int, use the attribution of
 the token at the given index. If tuple[int, int], like (m, n), use the
 summed token attribution of tokens from m to n (noninclusive)
 Default: None</p></li>
+<li><p><strong>border_width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Width of the border around each mask segment in pixels.
+Set to 0 to disable borders. Only used when input has mask_list.
+Default: 2</p></li>
+<li><p><strong>show_legends</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, display the mask id for each segment at its
+centroid. Only used when input has mask_list.
+Default: True</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
