@@ -117,7 +117,7 @@ def assertTupleOfListOfTensorsAlmostEqual(
                 "List lengths at tuple index "
                 f"{i} differ: {len(actual_list)} != {len(expected_list)}"
             )
-            for j, (a_tensor, e_tensor) in enumerate(zip(actual_list, expected_list)):
+            for a_tensor, e_tensor in zip(actual_list, expected_list):
                 assertTensorAlmostEqual(test, a_tensor, e_tensor, delta, mode)
     else:
         assertTensorAlmostEqual(test, actual, expected, delta, mode)
