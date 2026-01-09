@@ -101,7 +101,7 @@ dlrm = DLRM_Net(
 
 
 model_path = 'models/kg.pt'
-ld_model = torch.load(model_path)
+ld_model = torch.load(model_path, weights_only=False)
 
 dlrm.load_state_dict(ld_model["state_dict"])
 dlrm = dlrm.to(device)
