@@ -134,7 +134,7 @@ new_pred_fgsm, score_fgsm = get_prediction(net, perturbed_image_fgsm)
 # In[9]:
 
 
-image_show(image, pred+ " " + str(score.item()))
+image_show(image, pred + " " + str(score.item()))
 image_show(unnormalize(perturbed_image_fgsm), new_pred_fgsm + " " + str(score_fgsm.item()))
 
 
@@ -154,11 +154,11 @@ new_pred_pgd, score_pgd = get_prediction(net, perturbed_image_pgd)
 # In[12]:
 
 
-image_show(image, pred+ " " + str(score.item()))
+image_show(image, pred + " " + str(score.item()))
 image_show(unnormalize(perturbed_image_pgd.detach()), new_pred_pgd + " " + str(score_pgd.item()))
 
 
-# As seen above, the perturbed input is classified as a ship, confirming the targetted attack was successful. 
+# As seen above, the perturbed input is classified as a ship, confirming the targeted attack was successful. 
 
 # ## Robustness Metrics
 
@@ -166,7 +166,7 @@ image_show(unnormalize(perturbed_image_pgd.detach()), new_pred_pgd + " " + str(s
 
 # In addition to adversarial attacks, we have developed an AttackComparator, which allows quantifying model performance against any set of perturbations or attacks, including custom transformations.
 # 
-# In this section, we will use the AttackComparator to measure how this model performs against the FGSM / PGD attacks described above as well as torchvision transforms. Note that the attack comparator can be used with any perturbation or attack functions.
+# In this section, we will use the AttackComparator to measure how this model performs against the FGSM / PGD attacks described above as well as torchvision transforms. Note that the AttackComparator can be used with any perturbation or attack functions.
 
 # We will first define the desired metric function, which calculates the desired metrics we would like to evaluate and compare for different attacks. The metric function takes the model output as well as any other arguments necessary, such as the target label.
 
@@ -213,7 +213,7 @@ comparator.evaluate(image, target=label) # perturbations_per_eval can be set to 
 
 # From these results, we see that random rotations generally lead to a correct prediction, but the worst-case rotation still led to a misclassified result as well as the FGSM attack.
 
-# The comparator also allows us to aggregate results over a series of batches. We start by resetting the stored metrics from this example, and evaluate a series of batches from the test dataset. Once complete, we can look at the summary returned by the Attack Comparator.
+# The comparator also allows us to aggregate results over a series of batches. We start by resetting the stored metrics from this example, and evaluate a series of batches from the test dataset. Once complete, we can look at the summary returned by the AttackComparator.
 
 # In[17]:
 
@@ -272,7 +272,7 @@ min_pert = MinParamPerturbation(forward_func=net, attack=gaussian_blur, arg_name
 alt_im, kernel_size = min_pert.evaluate(image, target=label)
 print("Minimum Kernel Size for Misclassification: ", kernel_size)
 
-# We see that a kernel size of 5 was the minimum necessary to misclassify this image. Let's look at the perturbed image and corresponding prediction, and how this compares with the original.
+# We see that a kernel size of 7 was the minimum necessary to misclassify this image. Let's look at the perturbed image and corresponding prediction, and how this compares with the original.
 
 # In[24]:
 
@@ -282,7 +282,7 @@ new_pred_blur, score_blur = get_prediction(net, alt_im, normalize_im=True)
 image_show(alt_im, new_pred_blur + " " + str(score_blur.item()))
 
 # Original
-image_show(image, pred+ " " + str(score.item()))
+image_show(image, pred + " " + str(score.item()))
 
 
 # We see that the blurred image is now predicted as a car rather than a truck.

@@ -306,7 +306,7 @@
 <div class="prompt input_prompt">In [9]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">image_show</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pred</span><span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">image_show</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pred</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 <span class="n">image_show</span><span class="p">(</span><span class="n">unnormalize</span><span class="p">(</span><span class="n">perturbed_image_fgsm</span><span class="p">),</span> <span class="n">new_pred_fgsm</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score_fgsm</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 </pre></div>
 </div>
@@ -359,7 +359,7 @@
 <div class="prompt input_prompt">In [12]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">image_show</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pred</span><span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">image_show</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pred</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 <span class="n">image_show</span><span class="p">(</span><span class="n">unnormalize</span><span class="p">(</span><span class="n">perturbed_image_pgd</span><span class="o">.</span><span class="n">detach</span><span class="p">()),</span> <span class="n">new_pred_pgd</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score_pgd</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 </pre></div>
 </div>
@@ -387,7 +387,7 @@
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As seen above, the perturbed input is classified as a ship, confirming the targetted attack was successful.</p>
+<p>As seen above, the perturbed input is classified as a ship, confirming the targeted attack was successful.</p>
 </div>
 </div>
 </div>
@@ -409,7 +409,7 @@
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>In addition to adversarial attacks, we have developed an AttackComparator, which allows quantifying model performance against any set of perturbations or attacks, including custom transformations.</p>
-<p>In this section, we will use the AttackComparator to measure how this model performs against the FGSM / PGD attacks described above as well as torchvision transforms. Note that the attack comparator can be used with any perturbation or attack functions.</p>
+<p>In this section, we will use the AttackComparator to measure how this model performs against the FGSM / PGD attacks described above as well as torchvision transforms. Note that the AttackComparator can be used with any perturbation or attack functions.</p>
 </div>
 </div>
 </div>
@@ -520,7 +520,7 @@
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The comparator also allows us to aggregate results over a series of batches. We start by resetting the stored metrics from this example, and evaluate a series of batches from the test dataset. Once complete, we can look at the summary returned by the Attack Comparator.</p>
+<p>The comparator also allows us to aggregate results over a series of batches. We start by resetting the stored metrics from this example, and evaluate a series of batches from the test dataset. Once complete, we can look at the summary returned by the AttackComparator.</p>
 </div>
 </div>
 </div>
@@ -677,7 +677,7 @@
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We see that a kernel size of 5 was the minimum necessary to misclassify this image. Let's look at the perturbed image and corresponding prediction, and how this compares with the original.</p>
+<p>We see that a kernel size of 7 was the minimum necessary to misclassify this image. Let's look at the perturbed image and corresponding prediction, and how this compares with the original.</p>
 </div>
 </div>
 </div>
@@ -691,7 +691,7 @@
 <span class="n">image_show</span><span class="p">(</span><span class="n">alt_im</span><span class="p">,</span> <span class="n">new_pred_blur</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score_blur</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 
 <span class="c1"># Original</span>
-<span class="n">image_show</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pred</span><span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<span class="n">image_show</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pred</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 </pre></div>
 </div>
 </div>
