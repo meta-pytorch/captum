@@ -5,7 +5,7 @@
 
 # This notebook demonstrates how to apply model interpretability algorithms on pretrained deep learning models (ResNet, VGG) using a handpicked image and visualizes the attributions for each pixel by overlaying them on the image.
 # 
-# The interpretation algorithms that we use in this notebook are `Integrated Gradients` (w/ and w/o noise tunnel),  `GradientShap`, `Occlusion`, and `LRP`. A noise tunnel allows smoothing the attributions after adding gaussian noise to each input sample.
+# The interpretation algorithms that we use in this notebook are `Integrated Gradients` (w/ and w/o noise tunnel),  `GradientShap`, `Occlusion`, and `LRP`. A noise tunnel smooths the attributions after adding gaussian noise to each input sample.
 #   
 #   **Note:** Before running this tutorial, please install the torchvision, PIL, and matplotlib packages.
 
@@ -37,7 +37,7 @@ from captum.attr._utils.lrp_rules import EpsilonRule, GammaRule, Alpha1_Beta0_Ru
 # ## 1. Loading the model and the dataset
 # 
 
-# Load pretrained Resnet model and sets it to eval mode.
+# Load pretrained Resnet model and set it to eval mode.
 
 # In[4]:
 

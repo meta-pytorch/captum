@@ -87,7 +87,7 @@
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>This notebook demonstrates how to apply model interpretability algorithms on pretrained deep learning models (ResNet, VGG) using a handpicked image and visualizes the attributions for each pixel by overlaying them on the image.</p>
-<p>The interpretation algorithms that we use in this notebook are <code>Integrated Gradients</code> (w/ and w/o noise tunnel),  <code>GradientShap</code>, <code>Occlusion</code>, and <code>LRP</code>. A noise tunnel allows smoothing the attributions after adding gaussian noise to each input sample.</p>
+<p>The interpretation algorithms that we use in this notebook are <code>Integrated Gradients</code> (w/ and w/o noise tunnel),  <code>GradientShap</code>, <code>Occlusion</code>, and <code>LRP</code>. A noise tunnel smooths the attributions after adding gaussian noise to each input sample.</p>
 <p><strong>Note:</strong> Before running this tutorial, please install the torchvision, PIL, and matplotlib packages.</p>
 </div>
 </div>
@@ -133,7 +133,7 @@
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Load pretrained Resnet model and sets it to eval mode.</p>
+<p>Load pretrained Resnet model and set it to eval mode.</p>
 </div>
 </div>
 </div>
