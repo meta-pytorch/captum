@@ -11,6 +11,8 @@
 
 
 # Initial imports
+import os
+import requests
 import numpy as np
 
 import torch
@@ -26,16 +28,25 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import pandas as pd
 
-# We will begin by importing and cleaning the dataset. Download the dataset from https://hbiostat.org/data/repo/titanic3.csv and update the cell below with the path to the dataset csv.
+# We will begin by importing and cleaning the dataset. The code cell below will automatically download the titanic3.csv dataset from https://hbiostat.org/data/repo/titanic3.csv and save it to the tutorials/data/ folder if it is not already present.
+
+# In[2]:
+
+
+dataset_path = "data/titanic3.csv"
+url = 'https://hbiostat.org/data/repo/titanic3.csv'
+
+# Download the file if it's not already there
+if not os.path.exists(dataset_path):
+    print(f"Downloading {url} to {dataset_path}...")
+    response = requests.get(url)
+    with open(dataset_path, 'wb') as f:
+        f.write(response.content)
+    print("Download complete.")
+else:
+    print(f"{dataset_path} already exists.")
 
 # In[3]:
-
-
-# Download dataset from: https://hbiostat.org/data/repo/titanic3.csv
-# Update path to dataset here.
-dataset_path = "titanic3.csv"
-
-# In[5]:
 
 
 # Read dataset from csv file.
@@ -43,7 +54,7 @@ titanic_data = pd.read_csv(dataset_path)
 
 # With the data loaded, we now preprocess the data by converting some categorical features such as gender, location of embarkation, and passenger class into one-hot encodings (separate feature columns for each class with 0 / 1). We also remove some features that are more difficult to analyze, such as name, and fill missing values in age and fare with the average values.
 
-# In[7]:
+# In[4]:
 
 
 titanic_data = pd.concat([titanic_data,
@@ -73,7 +84,7 @@ titanic_data = titanic_data.drop(['name','ticket','cabin','boat','body','home.de
 
 # We now convert the data to numpy arrays and separate the training and test sets.
 
-# In[9]:
+# In[5]:
 
 
 # Set random seed for reproducibility.
@@ -95,7 +106,7 @@ test_labels = labels[test_indices]
 
 # We are now ready to define the neural network architecture we will use for the task. We have defined a simple architecture using 2 hidden layers, the first with 12 hidden units and the second with 8 hidden units, each with Sigmoid non-linearity. The final layer performs a softmax operation and has 2 units, corresponding to the outputs of either survived (1) or not survived (0).
 
-# In[11]:
+# In[6]:
 
 
 import torch
@@ -119,7 +130,7 @@ class TitanicSimpleNNModel(nn.Module):
 
 # We can either use a pretrained model or train the network using the training data for 200 epochs. Note that the results of later steps may not match if retraining. The pretrained model can be downloaded here: https://github.com/pytorch/captum/blob/master/tutorials/models/titanic_model.pt
 
-# In[13]:
+# In[7]:
 
 
 net = TitanicSimpleNNModel()
@@ -150,14 +161,14 @@ else:
 
 # We can now evaluate the training and test accuracies of our model.
 
-# In[15]:
+# In[8]:
 
 
 out_probs = net(input_tensor).detach().numpy()
 out_classes = np.argmax(out_probs, axis=1)
 print("Train Accuracy:", sum(out_classes == train_labels) / len(train_labels))
 
-# In[17]:
+# In[9]:
 
 
 test_input_tensor = torch.from_numpy(test_features).type(torch.FloatTensor)
@@ -171,7 +182,7 @@ print("Test Accuracy:", sum(out_classes == test_labels) / len(test_labels))
 
 # To apply Integrated Gradients, we first create an IntegratedGradients object, providing the model object.
 
-# In[19]:
+# In[10]:
 
 
 ig = IntegratedGradients(net)
@@ -182,7 +193,7 @@ ig = IntegratedGradients(net)
 # 
 # The returned values of the attribute method are the attributions, which match the size of the given inputs, and delta, which approximates the error between the approximated integral and true integral.
 
-# In[21]:
+# In[11]:
 
 
 test_input_tensor.requires_grad_()
@@ -191,7 +202,7 @@ attr = attr.detach().numpy()
 
 # To understand these attributions, we can first average them across all the inputs and print / visualize the average attribution for each feature.
 
-# In[23]:
+# In[12]:
 
 
 # Helper method to print importances and visualize distribution
@@ -214,7 +225,7 @@ visualize_importances(feature_names, np.mean(attr, axis=0))
 # 
 # For instance, we can visualize the distribution of attributions for sibsp, the number of siblings / spouses.
 
-# In[25]:
+# In[13]:
 
 
 plt.hist(attr[:,1], 100);
@@ -224,7 +235,7 @@ plt.title("Distribution of Sibsp Attribution Values");
 
 # To better understand this, we can bucket the examples by the value of the sibsp feature and plot the average attribution for the feature. In the plot below, the size of the dot is proportional to the number of examples with that value.
 
-# In[27]:
+# In[14]:
 
 
 bin_means, bin_edges, _ = stats.binned_statistic(test_features[:,1], attr[:,1], statistic='mean', bins=6)
@@ -245,14 +256,14 @@ plt.ylabel("Average Attribution");
 
 # To use Layer Conductance, we create a LayerConductance object passing in the model as well as the module (layer) whose output we would like to understand. In this case, we choose net.sigmoid1, the output of the first hidden layer.
 
-# In[29]:
+# In[15]:
 
 
 cond = LayerConductance(net, net.sigmoid1)
 
 # We can now obtain the conductance values for all the test examples by calling attribute on the LayerConductance object. LayerConductance also requires a target index for networks with mutliple outputs, defining the index of the output for which gradients are computed. Similar to feature attributions, we provide target=1, corresponding to survival. LayerConductance also utilizes a baseline, but we simply use the default zero baseline as in Integrated Gradients.
 
-# In[31]:
+# In[16]:
 
 
 cond_vals = cond.attribute(test_input_tensor,target=1)
@@ -260,14 +271,14 @@ cond_vals = cond_vals.detach().numpy()
 
 # We can begin by visualizing the average conductance for each neuron.
 
-# In[33]:
+# In[17]:
 
 
 visualize_importances(range(12),np.mean(cond_vals, axis=0),title="Average Neuron Importances", axis_title="Neurons")
 
 # We can also look at the distribution of each neuron's attributions. Below we look at the distributions for neurons 7 and 9, and we can confirm that their attribution distributions are very close to 0, suggesting they are not learning substantial features.
 
-# In[35]:
+# In[18]:
 
 
 plt.hist(cond_vals[:,9], 100);
@@ -279,7 +290,7 @@ plt.title("Neuron 7 Distribution");
 
 # Now, we can look at the distributions of neurons 0 and 10, which appear to be learning strong features negatively correlated with survival.
 
-# In[37]:
+# In[19]:
 
 
 plt.hist(cond_vals[:,0], 100);
@@ -294,31 +305,31 @@ plt.title("Neuron 10 Distribution");
 
 # To use Neuron Conductance, we create a NeuronConductance object, analogously to Conductance, passing in the model as well as the module (layer) whose output we would like to understand, in this case, net.sigmoid1, as before.
 
-# In[39]:
+# In[20]:
 
 
 neuron_cond = NeuronConductance(net, net.sigmoid1)
 
 # We can now obtain the neuron conductance values for all the test examples by calling attribute on the NeuronConductance object. Neuron Conductance requires the neuron index in the target layer for which attributions are requested as well as the target index for networks with mutliple outputs, similar to layer conductance. As before, we provide target=1, corresponding to survival, and compute neuron conductance for neurons 0 and 10, the significant neurons identified above. The neuron index can be provided either as a tuple or as just an integer if the layer output is 1-dimensional.
 
-# In[41]:
+# In[21]:
 
 
 neuron_cond_vals_10 = neuron_cond.attribute(test_input_tensor, neuron_selector=10, target=1)
 
-# In[43]:
+# In[22]:
 
 
 neuron_cond_vals_0 = neuron_cond.attribute(test_input_tensor, neuron_selector=0, target=1)
 
-# In[44]:
+# In[23]:
 
 
 visualize_importances(feature_names, neuron_cond_vals_0.mean(dim=0).detach().numpy(), title="Average Feature Importances for Neuron 0")
 
 # From the data above, it appears that the primary input feature used by neuron 0 is age, with limited importance for all other features.
 
-# In[47]:
+# In[24]:
 
 
 visualize_importances(feature_names, neuron_cond_vals_10.mean(dim=0).detach().numpy(), title="Average Feature Importances for Neuron 10")
