@@ -892,15 +892,6 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">for</span> <span class="n">target_token</span> <span class="ow">in</span> <span class="n">target_tokens</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">use_cached_outputs</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1"># Lazily import to avoid importing transformers package</span>
-                    <span class="c1"># if it isn't needed</span>
-                    <span class="kn">from</span> <span class="nn">captum._utils.transformers_typing</span> <span class="kn">import</span> <span class="p">(</span>
-                        <span class="n">convert_legacy_cache_if_needed</span><span class="p">,</span>
-                    <span class="p">)</span>
-
-                    <span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span> <span class="o">=</span> <span class="n">convert_legacy_cache_if_needed</span><span class="p">(</span>
-                        <span class="n">outputs</span><span class="o">.</span><span class="n">past_key_values</span>
-                    <span class="p">)</span>
                     <span class="c1"># nn.Module typing suggests non-base attributes are modules or</span>
                     <span class="c1"># tensors</span>
                     <span class="n">_update_model_kwargs_for_generation</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
