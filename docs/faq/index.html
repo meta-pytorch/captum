@@ -79,6 +79,7 @@
 <li><a href="#do-jit-models-dataparallel-models-or-distributeddataparallel-models-work-with-captum">Do JIT models, DataParallel models, or DistributedDataParallel models work with Captum?</a></li>
 <li><a href="#i-am-working-on-a-new-interpretability-or-attribution-method-and-would-like-to-add-it-to-captum-how-do-i-proceed">I am working on a new interpretability or attribution method and would like to add it to Captum. How do I proceed?</a></li>
 <li><a href="#how-can-I-resolve-cudnn-RNN-backward-error-for-RNN-or-LSTM-network">I am using a gradient-based attribution algorithm such as integrated gradients for a RNN or LSTM network and I see 'cudnn RNN backward can only be called in training mode'. How can I resolve this issue ?</a></li>
+<li><a href="#my-model-expects-multiple-tensors-as-input-how-do-i-use-captum-with-such-models">My model expects multiple tensors as input. How do I use Captum with such models?</a></li>
 </ul>
 <h3><a class="anchor" aria-hidden="true" id="how-do-i-set-the-target-parameter-to-an-attribution-method"></a><a href="#how-do-i-set-the-target-parameter-to-an-attribution-method" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a><strong>How do I set the target parameter to an attribution method?</strong></h3>
 <p>The purpose of target is to select a single (scalar) value for each example in the output of your model to compute attributions based on the given target parameter. Each attribution method answers the question of how important each input value is towards a particular output scalar value.</p>
@@ -114,6 +115,47 @@
 <p>If your model is set in eval mode you might run into errors, such as <code>cudnn RNN backward can only be called in training mode</code>, when you try to perform backward pass on a RNN / LSTM model in a GPU environment.
 CuDNN with RNN / LSTM doesn't support gradient computation in eval mode that's why we need to disable cudnn for RNN in eval mode.
 To resolve the issue you can set<code>torch.backends.cudnn.enabled</code> flag to False - <code>torch.backends.cudnn.enabled=False</code></p>
+<h3><a class="anchor" aria-hidden="true" id="my-model-expects-multiple-tensors-as-input-how-do-i-use-captum-with-such-models"></a><a href="#my-model-expects-multiple-tensors-as-input-how-do-i-use-captum-with-such-models" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a><strong>My model expects multiple tensors as input. How do I use Captum with such models?</strong></h3>
+<p>When using gradient-based attribution methods like Integrated Gradients with models that expect multiple tensor inputs, you need to ensure that Captum can properly scale all inputs along the integration path from baseline to input.</p>
+<p>A common scenario is when your model's forward function requires additional tensors beyond the primary input. For example, graph neural networks like GraphWaveNet may need node embeddings passed explicitly to generate adaptive adjacency matrices. If these tensors aren't provided to Captum, you may encounter dimension mismatch errors:</p>
+<pre><code class="hljs">RuntimeError: expected <span class="hljs-keyword">input</span> <span class="hljs-keyword">to</span> have <span class="hljs-number">10</span> channels, but got <span class="hljs-number">12</span> channels <span class="hljs-keyword">instead</span>
+</code></pre>
+<p><strong>Solution: Wrapper with Tuple Inputs</strong></p>
+<p>Create a wrapper that accepts a tuple of inputs. This allows you to pass baselines for all inputs and get attributions with respect to each:</p>
+<pre><code class="hljs css language-python"><span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">from</span> captum.attr <span class="hljs-keyword">import</span> IntegratedGradients
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ModelWrapper</span><span class="hljs-params">(torch.nn.Module)</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, model)</span>:</span>
+        super().__init__()
+        self.model = model
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">forward</span><span class="hljs-params">(self, inputs)</span>:</span>
+        <span class="hljs-comment"># Unpack the tuple of inputs</span>
+        x, embeddings = inputs
+        <span class="hljs-comment"># Pass both to your model's forward function</span>
+        <span class="hljs-keyword">return</span> self.model.forward_with_embeddings(x, embeddings)
+
+<span class="hljs-comment"># Usage:</span>
+wrapper = ModelWrapper(original_model)
+ig = IntegratedGradients(wrapper)
+
+<span class="hljs-comment"># Get embeddings from your model</span>
+node_emb = original_model.get_node_embeddings()
+
+<span class="hljs-comment"># Create baselines for both inputs</span>
+input_baseline = torch.zeros_like(input_tensor)
+emb_baseline = torch.zeros_like(node_emb)
+
+<span class="hljs-comment"># Pass tuple of inputs and tuple of baselines</span>
+attributions = ig.attribute(
+    (input_tensor, node_emb),
+    baselines=(input_baseline, emb_baseline),
+    target=target
+)
+<span class="hljs-comment"># attributions is now a tuple: (input_attributions, embedding_attributions)</span>
+</code></pre>
+<p>This approach ensures that both inputs are properly scaled along the integration path, and you receive attributions for each input tensor.</p>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/algorithms_comparison_matrix"><span class="arrow-prev">← </span><span>Algorithm Comparison Matrix</span></a><a class="docs-next button" href="/docs/contribution_guidelines"><span>The Captum Contribution Process</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><h5>Docs</h5><a href="/docs/introduction">Introduction</a><a href="/docs/getting_started">Getting Started</a><a href="/tutorials/">Tutorials</a><a href="/api/">API Reference</a></div><div class="footerSection"><h5>Legal</h5><a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></div><div class="footerSection"><h5>Social</h5><div class="social"><a class="github-button" href="https://github.com/pytorch/captum" data-count-href="https://github.com/pytorch/captum/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star Captum on GitHub">captum</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright"> Copyright © 2026 Facebook Inc.</section><script>
             (function() {
               var BAD_BASE = '/captum/';
