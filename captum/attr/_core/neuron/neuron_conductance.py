@@ -254,6 +254,9 @@ class NeuronConductance(NeuronAttribution, GradientAttribution):
                         attribute to the input or output, is a single tensor.
                         Support for multiple tensors will be added later.
                         Default: False
+            grad_kwargs (dict[str, Any], optional): Additional keyword
+                        arguments for torch.autograd.grad.
+                        Default: None
 
         Returns:
             *Tensor* or *tuple[Tensor, ...]* of **attributions**:
