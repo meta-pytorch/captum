@@ -130,6 +130,12 @@ these flattened tensors to return the pairwise similarity matrix.
 For example, <cite>similarity_metric(av_test, av_src)</cite> should return a
 tensor of shape (3, 16).</p>
 </p></li>
+<li><p><strong>similarity_direction</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Specifies the direction for selecting
+top-k similar examples. If set to “max”, the examples with
+highest similarity scores are selected (most similar). If
+set to “min”, the examples with lowest similarity scores
+are selected (least similar / most distant).
+Default: “max”</p></li>
 <li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Batch size for iterating through <cite>influence_src_dataset</cite>.</p></li>
 <li><p><strong>**kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – Additional key-value arguments that are necessary for specific
 implementation of <cite>DataInfluence</cite> abstract class.</p></li>
@@ -313,6 +319,11 @@ Default: None</p></li>
 <li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
 or opponents (<cite>proponents=False</cite>), if running in k-most influential
 mode.
+Default: True</p></li>
+<li><p><strong>unpack_inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True and <cite>inputs</cite> is a tuple or list,
+the elements are unpacked as separate positional arguments to the
+model. If False, <cite>inputs</cite> is wrapped in a tuple and passed as a
+single argument.
 Default: True</p></li>
 <li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
 requires “training dataset computations”: computations for each

@@ -94,6 +94,13 @@ If <cite>layer_attr_method</cite> is None, we default it to gradients
 for the layers using <cite>LayerGradientXActivation</cite> layer
 attribution algorithm.</p>
 </p></li>
+<li><p><strong>attribute_to_layer_input</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Indicates whether to
+compute the attributions with respect to the layer input
+or output. If <cite>attribute_to_layer_input</cite> is set to True
+then the attributions will be computed with respect to
+layer inputs, otherwise it will be computed with respect
+to layer outputs.
+Default: False</p></li>
 <li><p><strong>save_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The path for storing CAVs and
 Activation Vectors (AVs).</p></li>
 <li><p><strong>classifier_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>optional</em>) – Additional arguments such as

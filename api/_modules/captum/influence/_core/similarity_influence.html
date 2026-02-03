@@ -157,6 +157,12 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                    For example, `similarity_metric(av_test, av_src)` should return a</span>
 <span class="sd">                    tensor of shape (3, 16).</span>
 
+<span class="sd">            similarity_direction (str): Specifies the direction for selecting</span>
+<span class="sd">                    top-k similar examples. If set to "max", the examples with</span>
+<span class="sd">                    highest similarity scores are selected (most similar). If</span>
+<span class="sd">                    set to "min", the examples with lowest similarity scores</span>
+<span class="sd">                    are selected (least similar / most distant).</span>
+<span class="sd">                    Default: "max"</span>
 <span class="sd">            batch_size (int): Batch size for iterating through `influence_src_dataset`.</span>
 <span class="sd">            **kwargs: Additional key-value arguments that are necessary for specific</span>
 <span class="sd">                    implementation of `DataInfluence` abstract class.</span>
