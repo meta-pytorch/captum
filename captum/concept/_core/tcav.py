@@ -289,6 +289,13 @@ class TCAV(ConceptInterpreter):
                     If `layer_attr_method` is None, we default it to gradients
                     for the layers using `LayerGradientXActivation` layer
                     attribution algorithm.
+            attribute_to_layer_input (bool, optional): Indicates whether to
+                    compute the attributions with respect to the layer input
+                    or output. If `attribute_to_layer_input` is set to True
+                    then the attributions will be computed with respect to
+                    layer inputs, otherwise it will be computed with respect
+                    to layer outputs.
+                    Default: False
             save_path (str, optional): The path for storing CAVs and
                     Activation Vectors (AVs).
             classifier_kwargs (Any, optional): Additional arguments such as

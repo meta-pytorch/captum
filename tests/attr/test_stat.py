@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 import random
-from typing import Callable, List
+from typing import Callable, Generator, List, Union
 
 import torch
 from captum.attr import Max, Mean, Min, MSE, StdDev, Sum, Summarizer, Var
@@ -10,12 +10,17 @@ from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
 
 
-def get_values(n: int = 100, lo=None, hi=None, integers: bool = False):
+def get_values(
+    n: int = 100,
+    lo: Union[int, float] = 0.0,
+    hi: Union[int, float] = 1.0,
+    integers: bool = False,
+) -> Generator[Union[int, float], None, None]:
     for _ in range(n):
         if integers:
-            yield random.randint(lo, hi)
+            yield random.randint(int(lo), int(hi))
         else:
-            yield random.random() * (hi - lo) + lo
+            yield random.random() * (float(hi) - float(lo)) + float(lo)
 
 
 class Test(BaseTest):
@@ -144,7 +149,7 @@ class Test(BaseTest):
             "sum",
             "mse",
         ]
-        gt_fns: List[Callable] = [
+        gt_fns: List[Callable[[torch.Tensor], torch.Tensor]] = [
             torch.mean,
             lambda x: torch.var(x, unbiased=False),
             lambda x: torch.var(x, unbiased=True),

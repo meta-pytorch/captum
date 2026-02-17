@@ -9,7 +9,6 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 from captum.insights import AttributionVisualizer, Batch
-
 from captum.insights.attr_vis.features import ImageFeature
 
 

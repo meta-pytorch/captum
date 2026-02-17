@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 import unittest
 from typing import Any, List, Tuple, Union
 
 import torch
-from captum._utils.typing import TensorLikeList, TensorOrTupleOfTensorsGeneric
+from captum._utils.typing import (
+    SliceIntType,
+    TensorLikeList,
+    TensorOrTupleOfTensorsGeneric,
+)
 from captum.attr._core.guided_backprop_deconvnet import GuidedBackprop
 from captum.attr._core.neuron.neuron_guided_backprop_deconvnet import (
     NeuronGuidedBackprop,
@@ -127,7 +131,7 @@ class Test(BaseTest):
         self,
         model: Module,
         layer: Module,
-        neuron_selector: Union[int, Tuple[Union[int, slice], ...]],
+        neuron_selector: Union[int, Tuple[Union[int, SliceIntType], ...]],
         test_input: TensorOrTupleOfTensorsGeneric,
         expected: Tuple[List[List[List[List[float]]]], ...],
         additional_input: Any = None,

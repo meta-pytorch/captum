@@ -5,7 +5,18 @@
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import torch
-from captum.attr._utils.stat import Count, Max, Mean, Min, MSE, Stat, StdDev, Sum, Var
+from captum.attr._utils.stat import (
+    Count,
+    Max,
+    Mean,
+    Min,
+    MSE,
+    Stat,
+    StatValue,
+    StdDev,
+    Sum,
+    Var,
+)
 from captum.log import log_usage
 from torch import Tensor
 
@@ -89,7 +100,7 @@ class Summarizer:
     def summary(
         self,
     ) -> Optional[
-        Union[Dict[str, Optional[Tensor]], List[Dict[str, Optional[Tensor]]]]
+        Union[Dict[str, Optional[StatValue]], List[Dict[str, Optional[StatValue]]]]
     ]:
         r"""
         Effectively calls `get` on each `Stat` object within this object for each input
@@ -233,7 +244,7 @@ class SummarizerSingleTensor:
         return self._stat_to_stat[stat]
 
     @property
-    def summary(self) -> Dict[str, Optional[Tensor]]:
+    def summary(self) -> Dict[str, Optional[StatValue]]:
         """
         Returns:
             Optional[Dict[str, Optional[Tensor]]]

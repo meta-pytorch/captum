@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 from typing import cast, Optional, Tuple, Union
 
 import torch
 from captum._utils.typing import TensorOrTupleOfTensorsGeneric
 from captum.attr._core.noise_tunnel import NoiseTunnel
 from captum.attr._core.saliency import Saliency
-
 from captum.testing.attr.helpers.get_config_util import (
     get_basic_config,
     get_multiargs_basic_config,
@@ -122,7 +121,7 @@ class Test(BaseTest):
         expected: TensorOrTupleOfTensorsGeneric,
         additional_forward_args: Optional[object] = None,
         nt_type: str = "vanilla",
-        n_samples_batch_size=None,
+        n_samples_batch_size: Optional[int] = None,
     ) -> Union[Tensor, Tuple[Tensor, ...]]:
         saliency = Saliency(model)
 

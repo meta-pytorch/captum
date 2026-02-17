@@ -5,7 +5,6 @@ import typing
 from typing import cast, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 
 import torch
-
 from captum._utils.common import (
     _format_tensor_into_tuples,
     _reduce_list,

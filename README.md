@@ -51,24 +51,7 @@ Captum can also be used by application engineers who are using trained models in
 
 ##### Installing the latest release
 
-The latest release of Captum is easily installed either via
-[Anaconda](https://www.anaconda.com/distribution/#download-section) (recommended) or via `pip`.
-
-**with `conda`**
-
-You can install captum from any of the following supported conda channels:
-
-- channel: `pytorch`
-
-  ```sh
-  conda install captum -c pytorch
-  ```
-
-- channel: `conda-forge`
-
-  ```sh
-  conda install captum -c conda-forge
-  ```
+Install released Captum via `pip`.
 
 **With `pip`**
 
@@ -89,8 +72,6 @@ pip install -e .
 
 To customize the installation, you can also run the following variants of the
 above:
-* `pip install -e .[insights]`: Also installs all packages necessary for running Captum Insights.
-**NOTE**: Captum Insights is being deprecated. See further details [below](#captum-insights).
 * `pip install -e .[dev]`: Also installs all tools necessary for development
   (testing, linting, docs building; see [Contributing](#contributing) below).
 * `pip install -e .[tutorials]`: Also installs all packages necessary for running the tutorial notebooks.
@@ -384,52 +365,6 @@ approximation for given inputs and baselines is.
 More details on the list of supported algorithms and how to apply
 Captum on different types of models can be found in our tutorials.
 
-
-## Captum Insights
-
-**NOTE**: *Support for Captum Insights is being deprecated in an upcoming release.
-While the code will still be available, there will no longer be active
-development or support for it.*
-
-Captum provides a web interface called Insights for easy visualization and
-access to a number of our interpretability algorithms.
-
-To analyze a sample model on CIFAR10 via Captum Insights run
-
-```
-python -m captum.insights.attr_vis.example
-```
-
-and navigate to the URL specified in the output.
-
-![Captum Insights Screenshot](./website/static/img/captum_insights_screenshot.png)
-
-To build Insights you will need [Node](https://nodejs.org/en/) >= 8.x
-and [Yarn](https://yarnpkg.com/en/) >= 1.5.
-
-To build and launch from a checkout in a conda environment run
-
-```
-conda install -c conda-forge yarn
-BUILD_INSIGHTS=1 python setup.py develop
-python captum/insights/example.py
-```
-
-### Captum Insights Jupyter Widget
-Captum Insights also has a Jupyter widget providing the same user interface as the web app.
-To install and enable the widget, run
-
-```
-jupyter nbextension install --py --symlink --sys-prefix captum.insights.attr_vis.widget
-jupyter nbextension enable captum.insights.attr_vis.widget --py --sys-prefix
-```
-
-To build the widget from a checkout in a conda environment run
-
-```
-conda install -c conda-forge yarn
-BUILD_INSIGHTS=1 python setup.py develop
-```
 
 ## FAQ
 If you have questions about using Captum methods, please check this [FAQ](docs/faq.md), which addresses many common issues.

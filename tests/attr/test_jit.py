@@ -86,8 +86,7 @@ class JITMeta(type):
         metacls,
         name: str,
         bases: Tuple[Type[Any], ...],
-        # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-        attrs: Dict[str, Callable],
+        attrs: Dict[str, Callable[..., None]],
     ) -> JITMeta:
         for test_config in config:
             (
@@ -135,8 +134,7 @@ class JITMeta(type):
         noise_tunnel: bool,
         baseline_distr: bool,
         mode: JITCompareMode,
-        # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    ) -> Callable:
+    ) -> Callable[[BaseTest], None]:
         """
         This method creates a single JIT test for the given algorithm and parameters.
         """
@@ -177,14 +175,17 @@ class JITMeta(type):
                 mode is JITCompareMode.cpu_jit_trace
                 or JITCompareMode.data_parallel_jit_trace
             ):
-                # pyre-fixme[58]: `+` is not supported for operand types `None` and
-                #  `Optional[Tuple[]]`.
-                all_inps = _format_tensor_into_tuples(args["inputs"]) + (
+                formatted_inputs = _format_tensor_into_tuples(args["inputs"])
+                additional_args: Tuple[Any, ...] = (
                     _format_additional_forward_args(args["additional_forward_args"])
                     if "additional_forward_args" in args
                     and args["additional_forward_args"] is not None
                     else ()
                 )
+                if formatted_inputs is not None:
+                    all_inps = formatted_inputs + additional_args
+                else:
+                    all_inps = additional_args
                 model_2 = torch.jit.trace(model_1, all_inps)  # type: ignore
             else:
                 raise AssertionError("JIT compare mode type is not valid.")

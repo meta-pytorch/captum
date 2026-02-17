@@ -5,15 +5,12 @@ import functools
 from typing import Callable, List, Optional, Tuple, Union
 
 import torch
-
 from captum._utils.gradient import _extract_parameters_from_layers
-
 from captum.influence._core.influence_function import (
     _get_dataset_embeddings_intermediate_quantities_influence_function,
     InfluenceFunctionBase,
     IntermediateQuantitiesInfluenceFunction,
 )
-
 from captum.influence._utils.common import (
     _compute_batch_loss_influence_function_base,
     _compute_jacobian_sample_wise_grads_per_batch,
@@ -37,7 +34,6 @@ from captum.influence._utils.common import (
     KMostInfluentialResults,
 )
 from captum.log import log_usage
-
 from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader, Dataset

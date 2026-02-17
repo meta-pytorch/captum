@@ -193,7 +193,7 @@ class DefaultClassifier(Classifier):
 
         predict = self.lm(x_test)
 
-        predict = self.lm.classes()[torch.argmax(predict, dim=1)]  # type: ignore
+        predict = self.lm.classes()[torch.argmax(predict, dim=1).cpu()]  # type: ignore
         score = predict.long() == y_test.long().cpu()
 
         accs = score.float().mean()

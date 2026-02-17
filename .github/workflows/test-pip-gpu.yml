@@ -16,6 +16,7 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
+      timeout: 60
       runner: linux.4xlarge.nvidia.gpu
       repository: pytorch/captum
       gpu-arch-type: cuda

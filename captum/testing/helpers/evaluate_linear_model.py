@@ -6,7 +6,6 @@
 from typing import cast, Dict
 
 import torch
-
 from captum._utils.models.linear_model.model import LinearModel
 from torch import Tensor
 from torch.utils.data import DataLoader

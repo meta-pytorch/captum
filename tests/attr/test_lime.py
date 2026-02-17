@@ -6,7 +6,7 @@ import io
 import unittest
 import unittest.mock
 from functools import partial
-from typing import Any, Callable, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Generator, List, Optional, Tuple, Union
 
 import torch
 from captum._utils.models.linear_model import SGDLasso, SkLearnLasso
@@ -46,22 +46,21 @@ def alt_perturb_func(
     probs = torch.ones(1, kwargs["num_interp_features"]) * 0.5
     curr_sample = torch.bernoulli(probs).to(device=device)
 
-    binary_mask: TensorOrTupleOfTensorsGeneric
     if isinstance(original_inp, Tensor):
         binary_mask = curr_sample[0][feature_mask]
         return binary_mask * original_inp + (1 - binary_mask) * kwargs["baselines"]
     else:
-        # pyre-fixme[9]: binary_mask has type `TensorOrTupleOfTensorsGeneric`; used
-        #  as `Tuple[Tensor, ...]`.
-        binary_mask = tuple(
+        binary_mask_tuple = tuple(
             curr_sample[0][feature_mask[j]] for j in range(len(feature_mask))
         )
 
-        # pyre-fixme[7]: incompatible return type
-        return tuple(
-            binary_mask[j] * original_inp[j]
-            + (1 - binary_mask[j]) * kwargs["baselines"][j]
-            for j in range(len(feature_mask))
+        return cast(
+            TensorOrTupleOfTensorsGeneric,
+            tuple(
+                binary_mask_tuple[j] * original_inp[j]
+                + (1 - binary_mask_tuple[j]) * kwargs["baselines"][j]
+                for j in range(len(feature_mask))
+            ),
         )
 
 
@@ -92,12 +91,15 @@ def alt_to_interp_rep(
             ):
                 curr_total = 0
         else:
-            sum_diff = sum(
-                torch.sum(torch.abs((mask == i).float() * (sample - inp)))
-                for inp, sample, mask in zip(original_input, curr_sample, feature_mask)
+            sum_diff = cast(
+                Tensor,
+                sum(
+                    torch.sum(torch.abs((mask == i).float() * (sample - inp)))
+                    for inp, sample, mask in zip(
+                        original_input, curr_sample, feature_mask
+                    )
+                ),
             )
-            # pyre-fixme[58]: `>` is not supported for operand types `Union[int,
-            #  torch._tensor.Tensor]` and `float`.
             if sum_diff > 0.001:
                 curr_total = 0
         binary_vector[0][i] = curr_total
@@ -436,8 +438,9 @@ class Test(BaseTest):
             lambda inp: int(torch.sum(net(inp)).item())
         )
 
-    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    def _single_input_scalar_lime_assert(self, func: Callable) -> None:
+    def _single_input_scalar_lime_assert(
+        self, func: Callable[[Tensor], Union[Tensor, float, int]]
+    ) -> None:
         inp = torch.tensor([[2.0, 10.0, 3.0]], requires_grad=True)
         mask = torch.tensor([[0, 0, 1]])
 
@@ -485,8 +488,9 @@ class Test(BaseTest):
             attributions = lime.attribute_future()  # type: ignore
         self.assertEqual(attributions, None)
 
-    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    def _multi_input_scalar_lime_assert(self, func: Callable) -> None:
+    def _multi_input_scalar_lime_assert(
+        self, func: Callable[..., Union[Tensor, float, int]]
+    ) -> None:
         inp1 = torch.tensor([[23.0, 100.0, 0.0], [20.0, 50.0, 30.0]])
         inp2 = torch.tensor([[20.0, 50.0, 30.0], [0.0, 100.0, 0.0]])
         inp3 = torch.tensor([[0.0, 100.0, 10.0], [20.0, 10.0, 13.0]])
@@ -516,8 +520,7 @@ class Test(BaseTest):
 
     def _lime_test_assert(
         self,
-        # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-        model: Callable,
+        model: Callable[..., Union[int, float, Tensor]],
         test_input: TensorOrTupleOfTensorsGeneric,
         expected_attr: Any,
         expected_coefs_only: Union[None, List[List[Union[int, float]]], Tensor] = None,

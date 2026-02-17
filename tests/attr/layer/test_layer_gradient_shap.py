@@ -6,7 +6,6 @@ import unittest
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
-
 from captum._utils.typing import TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.gradient_shap import GradientShap
 from captum.attr._core.layer.layer_gradient_shap import (

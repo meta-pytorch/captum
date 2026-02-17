@@ -12,9 +12,31 @@ jobs:
   tests:
     strategy:
       matrix:
-        pytorch_args: ["-v 2.3.0", "-v 2.4.0", "-v 2.5.0", "-v 2.6.0", "-v 2.7.0"]
-        transformers_args: ["-t 4.38.0", "-t 4.39.0", "-t 4.41.0", "-t 4.43.0", "-t 4.45.2"]
-        docker_img: ["cimg/python:3.10", "cimg/python:3.11", "cimg/python:3.12"]
+        include:
+          # Test latest PyTorch with all Python versions
+          - pytorch_args: "-v 2.9.0"
+            transformers_args: "-t 4.57.1"
+            docker_img: "cimg/python:3.10"
+          - pytorch_args: "-v 2.9.0"
+            transformers_args: "-t 4.57.1"
+            docker_img: "cimg/python:3.11"
+          - pytorch_args: "-v 2.9.0"
+            transformers_args: "-t 4.57.1"
+            docker_img: "cimg/python:3.12"
+          - pytorch_args: "-v 2.9.0"
+            transformers_args: "-t 4.57.1"
+            docker_img: "cimg/python:3.13"
+          # Test intermediate PyTorch versions
+          - pytorch_args: "-v 2.7.0"
+            transformers_args: "-t 4.53.0"
+            docker_img: "cimg/python:3.11"
+          - pytorch_args: "-v 2.5.0"
+            transformers_args: "-t 4.45.2"
+            docker_img: "cimg/python:3.10"
+          # Test oldest supported PyTorch for backward compatibility
+          - pytorch_args: "-v 2.3.0"
+            transformers_args: "-t 4.43.0"
+            docker_img: "cimg/python:3.10"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:

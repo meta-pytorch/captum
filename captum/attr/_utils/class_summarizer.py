@@ -6,7 +6,7 @@ from typing import Any, cast, Dict, Generic, List, Optional, TypeVar, Union
 
 from captum._utils.common import _format_tensor_into_tuples
 from captum._utils.typing import TargetType, TensorOrTupleOfTensorsGeneric
-from captum.attr._utils.stat import Stat
+from captum.attr._utils.stat import Stat, StatValue
 from captum.attr._utils.summarizer import Summarizer
 from captum.log import log_usage
 from torch import Tensor
@@ -92,7 +92,9 @@ class ClassSummarizer(Summarizer, Generic[KeyType]):
         self,
     ) -> Dict[
         KeyType,
-        Union[None, Dict[str, Optional[Tensor]], List[Dict[str, Optional[Tensor]]]],
+        Union[
+            None, Dict[str, Optional[StatValue]], List[Dict[str, Optional[StatValue]]]
+        ],
     ]:
         r"""
         Returns:

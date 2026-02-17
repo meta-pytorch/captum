@@ -11,7 +11,6 @@ from captum.testing.helpers.influence.common import (
     DataInfluenceConstructor,
     get_random_model_and_data,
 )
-
 from parameterized import parameterized
 
 

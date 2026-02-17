@@ -102,7 +102,12 @@ class ShapleyValueSampling(PerturbationAttribution):
     https://pdfs.semanticscholar.org/7715/bb1070691455d1fcfc6346ff458dbca77b2c.pdf
     """
 
-    def __init__(self, forward_func: Callable[..., Union[int, float, Tensor]]) -> None:
+    def __init__(
+        self,
+        forward_func: Callable[
+            ..., Union[int, float, Tensor, Future[int], Future[float], Future[Tensor]]
+        ],
+    ) -> None:
         r"""
         Args:
 
@@ -473,9 +478,6 @@ class ShapleyValueSampling(PerturbationAttribution):
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
     ) -> Future[TensorOrTupleOfTensorsGeneric]:
-        r"""
-        This method is not implemented for ShapleyValueSampling.
-        """
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
         additional_forward_args = _format_additional_forward_args(
@@ -1017,7 +1019,12 @@ class ShapleyValues(ShapleyValueSampling):
     evaluations, and we plan to add this approach in the future.
     """
 
-    def __init__(self, forward_func: Callable[..., Union[int, float, Tensor]]) -> None:
+    def __init__(
+        self,
+        forward_func: Callable[
+            ..., Union[int, float, Tensor, Future[int], Future[float], Future[Tensor]]
+        ],
+    ) -> None:
         r"""
         Args:
 

@@ -68,7 +68,7 @@ class LimeBase(PerturbationAttribution):
 
     def __init__(
         self,
-        forward_func: Callable[..., Tensor],
+        forward_func: Callable[..., Union[int, float, Tensor]],
         interpretable_model: Model,
         similarity_func: Callable[
             ...,
@@ -765,7 +765,7 @@ class Lime(LimeBase):
 
     def __init__(
         self,
-        forward_func: Callable[..., Tensor],
+        forward_func: Callable[..., Union[int, float, Tensor]],
         interpretable_model: Optional[Model] = None,
         # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
         similarity_func: Optional[Callable] = None,

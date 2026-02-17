@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 import functools
 import inspect
-from typing import Callable, Dict, Tuple
+from typing import Any, Dict, List, Tuple, Type
 
 import torch
 from captum._utils.gradient import _forward_layer_eval
@@ -29,6 +29,7 @@ from captum.testing.helpers.basic_models import (
     BasicModel_MultiLayer_TrueMultiInput,
     MixedKwargsAndArgsModule,
 )
+from torch import Tensor
 from torch.nn import Module
 
 layer_methods_to_test_with_equiv = [
@@ -44,7 +45,9 @@ layer_methods_to_test_with_equiv = [
 
 
 class InputLayerMeta(type):
-    def __new__(metacls, name: str, bases: Tuple, attrs: Dict):
+    def __new__(
+        metacls, name: str, bases: Tuple[Type[Any], ...], attrs: Dict[str, Any]
+    ) -> "InputLayerMeta":
         for (
             layer_method,
             equiv_method,
@@ -76,8 +79,8 @@ class TestInputLayerWrapper(BaseTest, metaclass=InputLayerMeta):
 
     def layer_method_with_input_layer_patches(
         self,
-        layer_method_class: Callable,
-        equiv_method_class: Callable,
+        layer_method_class: Type[Any],
+        equiv_method_class: Type[Any],
         multi_layer: bool,
     ) -> None:
         model = BasicModel_MultiLayer_TrueMultiInput() if multi_layer else BasicModel()
@@ -124,7 +127,7 @@ class TestInputLayerWrapper(BaseTest, metaclass=InputLayerMeta):
         assertTensorTuplesAlmostEqual(self, a1, real_attributions)
 
     def forward_eval_layer_with_inputs_helper(
-        self, model: Module, inputs_to_test
+        self, model: Module, inputs_to_test: Dict[str, Tensor]
     ) -> None:
         # hard coding for simplicity
         # 0 if using args, 1 if using kwargs
@@ -142,7 +145,10 @@ class TestInputLayerWrapper(BaseTest, metaclass=InputLayerMeta):
 
         model = ModelInputWrapper(model)
 
-        def forward_func(*args, args_or_kwargs=None):
+        def forward_func(
+            *args: Tensor, args_or_kwargs: List[int] | None = None
+        ) -> Tensor:
+            assert args_or_kwargs is not None
             # convert to args or kwargs to test *args and **kwargs wrapping behavior
             new_args = []
             new_kwargs = {}

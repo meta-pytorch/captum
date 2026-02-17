@@ -9,10 +9,8 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-
 from captum._utils.gradient import _extract_parameters_from_layers
 from captum.influence._core.influence import DataInfluence
-
 from captum.influence._utils.common import (
     _check_loss_fn,
     _compute_batch_loss_influence_function_base,

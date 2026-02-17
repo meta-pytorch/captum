@@ -5,7 +5,6 @@
 # !/usr/bin/env python3
 
 import torch
-
 from captum.influence._utils.common import _jacobian_loss_wrt_inputs
 from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual

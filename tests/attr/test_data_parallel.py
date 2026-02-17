@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 import copy
 import os
 from enum import Enum
@@ -63,7 +63,9 @@ class DataParallelCompareMode(Enum):
 
 
 class DataParallelMeta(type):
-    def __new__(metacls, name: str, bases: Tuple, attrs: Dict):
+    def __new__(
+        metacls, name: str, bases: Tuple[Type[Any], ...], attrs: Dict[str, Any]
+    ) -> "DataParallelMeta":
         for test_config in config:
             (
                 algorithms,
@@ -120,13 +122,13 @@ class DataParallelMeta(type):
         noise_tunnel: bool,
         baseline_distr: bool,
         mode: DataParallelCompareMode,
-    ) -> Callable:
+    ) -> Callable[[BaseTest], None]:
         """
         This method creates a single Data Parallel / GPU test for the given
         algorithm and parameters.
         """
 
-        def data_parallel_test_assert(self) -> None:
+        def data_parallel_test_assert(self: BaseTest) -> None:
             # Construct cuda_args, moving all tensor inputs in args to CUDA device
             cuda_args = {}
             for key in args:
@@ -253,7 +255,7 @@ def _get_dp_attr_methods(
     attr_method_1: Attribution
     attr_method_2: Attribution
     if target_layer:
-        internal_algorithm = cast(Type[InternalAttribution], algorithm)
+        internal_algorithm = cast(Type[InternalAttribution[Module]], algorithm)
         attr_method_1 = internal_algorithm(
             model_1, get_target_layer(model_1, target_layer)
         )

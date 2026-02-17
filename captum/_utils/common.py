@@ -26,9 +26,7 @@ from captum._utils.typing import (
     TensorOrTupleOfTensorsGeneric,
     TupleOrTensorOrBoolGeneric,
 )
-
 from torch import device, Tensor
-
 from torch.futures import Future
 from torch.nn import Module
 

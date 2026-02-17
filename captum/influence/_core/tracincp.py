@@ -401,6 +401,11 @@ class TracInCPBase(DataInfluence):
                     or opponents (`proponents=False`), if running in k-most influential
                     mode.
                     Default: True
+            unpack_inputs (bool, optional): If True and `inputs` is a tuple or list,
+                    the elements are unpacked as separate positional arguments to the
+                    model. If False, `inputs` is wrapped in a tuple and passed as a
+                    single argument.
+                    Default: True
             show_progress (bool, optional): For all modes, computation of results
                     requires "training dataset computations": computations for each
                     batch in the training dataset `train_dataset`, which may

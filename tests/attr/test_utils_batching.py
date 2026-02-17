@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
+
+from typing import cast, List, Tuple
 
 import torch
 from captum.attr._utils.batching import (
@@ -10,6 +12,7 @@ from captum.attr._utils.batching import (
 )
 from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
+from torch import Tensor
 
 
 class Test(BaseTest):
@@ -34,10 +37,17 @@ class Test(BaseTest):
         self.assertEqual(spliced_tuple[1], "test")
 
     def test_batched_generator(self) -> None:
-        def sample_operator(inputs, additional_forward_args, target_ind, scale):
+        def sample_operator(
+            inputs: Tuple[Tensor, ...],
+            additional_forward_args: Tuple[Tensor, int],
+            target_ind: int,
+            scale: int,
+        ) -> Tuple[Tensor, Tensor, int]:
+            inputs_sum = cast(Tensor, sum(inputs))
+            add_args_sum = cast(Tensor, sum(additional_forward_args))
             return (
-                scale * (sum(inputs)),
-                scale * sum(additional_forward_args),
+                scale * inputs_sum,
+                scale * add_args_sum,
                 target_ind,
             )
 
@@ -64,10 +74,17 @@ class Test(BaseTest):
             _batched_operator(lambda x: x, inputs=inp1, internal_batch_size=0)
 
     def test_batched_operator(self) -> None:
-        def _sample_operator(inputs, additional_forward_args, target_ind, scale):
+        def _sample_operator(
+            inputs: Tuple[Tensor, ...],
+            additional_forward_args: Tuple[Tensor, ...],
+            target_ind: List[int],
+            scale: float,
+        ) -> Tuple[Tensor, Tensor]:
+            inputs_sum = cast(Tensor, sum(inputs))
+            add_args_sum = cast(Tensor, sum(additional_forward_args))
             return (
-                scale * (sum(inputs)),
-                scale * sum(additional_forward_args) + target_ind[0],
+                scale * inputs_sum,
+                scale * add_args_sum + target_ind[0],
             )
 
         inp1 = torch.tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])

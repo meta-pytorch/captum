@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 import unittest
-from typing import Any, List, Tuple, Union
+from typing import Any, Tuple, Union
 
 import torch
-from captum._utils.typing import TensorOrTupleOfTensorsGeneric
+from captum._utils.typing import TensorLikeList, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.guided_grad_cam import GuidedGradCam
 from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
@@ -110,7 +110,7 @@ class Test(BaseTest):
         model: Module,
         target_layer: Module,
         test_input: TensorOrTupleOfTensorsGeneric,
-        expected: Union[Tensor, List, Tuple],
+        expected: Union[Tensor, TensorLikeList, Tuple[TensorLikeList, ...]],
         additional_input: Any = None,
         interpolate_mode: str = "nearest",
         attribute_to_layer_input: bool = False,

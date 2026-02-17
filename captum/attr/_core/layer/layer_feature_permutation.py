@@ -11,7 +11,6 @@ from captum._utils.common import (
     _format_tensor_into_tuples,
     _run_forward,
 )
-
 from captum._utils.gradient import _forward_layer_eval
 from captum._utils.typing import TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.feature_permutation import FeaturePermutation

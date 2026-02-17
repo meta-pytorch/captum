@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 from inspect import signature
 from typing import Callable, List, Optional, Tuple, Union
@@ -23,6 +23,9 @@ from captum.testing.helpers.basic_models import (
 )
 from torch import Tensor
 from torch.nn import Module
+
+# A tuple of baselines, where each element is a Tensor, int, or float
+BaselineTuple = Tuple[Union[Tensor, int, float], ...]
 
 
 class Test(BaseTest):
@@ -235,7 +238,10 @@ class Test(BaseTest):
         self._deeplift_assert(model, dl_shap, inputs, gen_baselines_with_inputs)
         with self.assertRaises(AssertionError):
             self._deeplift_assert(
-                model, DeepLiftShap(model), inputs, gen_baselines_returns_array
+                model,
+                DeepLiftShap(model),
+                inputs,
+                gen_baselines_returns_array,  # type: ignore[arg-type]
             )
         with self.assertRaises(AssertionError):
             self._deeplift_assert(model, dl_shap, inputs, gen_baselines_scalar)
@@ -318,19 +324,23 @@ class Test(BaseTest):
         model: Module,
         attr_method: Union[DeepLift, DeepLiftShap],
         inputs: Tuple[Tensor, ...],
-        baselines,
+        baselines: Union[BaselineTuple, Callable[..., BaselineTuple]],
         custom_attr_func: Optional[Callable[..., Tuple[Tensor, ...]]] = None,
     ) -> None:
         input_bsz = len(inputs[0])
+        baselines_tuple: BaselineTuple
         if callable(baselines):
             baseline_parameters = signature(baselines).parameters
             if len(baseline_parameters) > 0:
-                baselines = baselines(inputs)
+                baselines_tuple = baselines(inputs)
             else:
-                baselines = baselines()
+                baselines_tuple = baselines()
+        else:
+            baselines_tuple = baselines
 
+        first_baseline = baselines_tuple[0]
         baseline_bsz = (
-            len(baselines[0]) if isinstance(baselines[0], torch.Tensor) else 1
+            len(first_baseline) if isinstance(first_baseline, torch.Tensor) else 1
         )
         # Run attribution multiple times to make sure that it is
         # working as expected
@@ -373,10 +383,13 @@ class Test(BaseTest):
             )
             for input, attribution in zip(inputs, attributions):
                 self.assertEqual(input.shape, attribution.shape)
-            if (
-                isinstance(baselines[0], (int, float))
-                or inputs[0].shape == baselines[0].shape
-            ):
+            first_baseline_item = baselines_tuple[0]
+            is_scalar_baseline = isinstance(first_baseline_item, (int, float))
+            has_matching_shape = (
+                isinstance(first_baseline_item, Tensor)
+                and inputs[0].shape == first_baseline_item.shape
+            )
+            if is_scalar_baseline or has_matching_shape:
                 # Compare with Integrated Gradients
                 ig = IntegratedGradients(model)
                 attributions_ig = ig.attribute(  # type: ignore[has-type]

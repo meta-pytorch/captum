@@ -16,7 +16,6 @@ from captum.testing.helpers.influence.common import (
     GPU_SETTING_LIST,
     is_gpu,
 )
-
 from parameterized import parameterized
 
 

@@ -13,10 +13,10 @@ from torch import Tensor
 
 
 class Test(BaseTest):
-    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    def construct_future_forward(self, original_forward: Callable) -> Callable:
+    def construct_future_forward(
+        self, original_forward: Callable[..., Tensor]
+    ) -> Callable[..., torch.futures.Future[Tensor]]:
         def future_forward(*args: Any, **kwargs: Any) -> torch.futures.Future[Tensor]:
-            # pyre-fixme[29]: `typing.Type[torch.futures.Future]` is not a function.
             fut: torch.futures.Future[Tensor] = torch.futures.Future()
             fut.set_result(original_forward(*args, **kwargs))
             return fut
@@ -201,9 +201,7 @@ class Test(BaseTest):
                 y += xx[:, :, 0] * xx[:, :, 1]
             y = y.sum(dim=-1)
 
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            return torch.mean((y - labels) ** 2)
+            return torch.mean(torch.pow((y - labels), 2))
 
         feature_importance = FeaturePermutation(forward_func=forward_func)
 
@@ -252,9 +250,7 @@ class Test(BaseTest):
                 y += xx[:, :, 0] * xx[:, :, 1]
             y = y.sum(dim=-1)
 
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            return torch.mean((y - labels) ** 2)
+            return torch.mean(torch.pow((y - labels), 2))
 
         feature_importance = FeaturePermutation(forward_func=forward_func)
 
@@ -295,9 +291,7 @@ class Test(BaseTest):
                 y += xx[:, :, 0] * xx[:, :, 1]
             y = y.sum(dim=-1)
 
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `int`.
-            return torch.mean((y - labels) ** 2)
+            return torch.mean(torch.pow((y - labels), 2))
 
         feature_importance = FeaturePermutation(
             forward_func=self.construct_future_forward(forward_func)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 from typing import cast, Tuple
 
@@ -124,7 +124,7 @@ class Test(BaseTest):
         )
 
     def test_classification_baselines_as_function(self) -> None:
-        num_in = 40
+        num_in: int = 40
         inputs = torch.arange(0.0, num_in * 2.0).reshape(2, num_in)
 
         def generate_baselines() -> Tensor:

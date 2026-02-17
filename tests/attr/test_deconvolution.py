@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import print_function
 
@@ -8,7 +8,7 @@ import unittest
 from typing import Any, Tuple, Union
 
 import torch
-from captum._utils.typing import TensorOrTupleOfTensorsGeneric
+from captum._utils.typing import SliceIntType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.guided_backprop_deconvnet import Deconvolution
 from captum.attr._core.neuron.neuron_guided_backprop_deconvnet import (
     NeuronDeconvolution,
@@ -107,7 +107,7 @@ class Test(BaseTest):
         self,
         model: Module,
         layer: Module,
-        neuron_selector: Union[int, Tuple[Union[int, slice], ...]],
+        neuron_selector: Union[int, Tuple[Union[int, SliceIntType], ...]],
         test_input: TensorOrTupleOfTensorsGeneric,
         expected: Tuple[torch.Tensor, ...],
         additional_input: Any = None,

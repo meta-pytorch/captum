@@ -1,12 +1,11 @@
 # pyre-strict
 
 import warnings
-
 from abc import ABC
+from collections.abc import Mapping
 from copy import copy
 from dataclasses import dataclass
 from textwrap import dedent, shorten
-
 from typing import (
     Any,
     Callable,
@@ -21,10 +20,8 @@ from typing import (
 )
 
 import matplotlib.colors as mcolors
-
 import numpy as np
 import numpy.typing as npt
-
 import torch
 from captum._utils.typing import TokenizerLike
 from captum.attr._core.feature_ablation import FeatureAblation
@@ -41,10 +38,12 @@ from captum.attr._utils.attribution import (
     PerturbationAttribution,
 )
 from captum.attr._utils.interpretable_input import (
+    ImageMaskInput,
     InterpretableInput,
     TextTemplateInput,
     TextTokenInput,
 )
+from captum.attr._utils.visualization import draw_mask_border, draw_mask_legend
 
 if TYPE_CHECKING:
     from matplotlib.pyplot import Axes, Figure
@@ -72,6 +71,7 @@ class LLMAttributionResult:
     _seq_attr: Tensor
     _token_attr: Optional[Tensor] = None
     _output_probs: Optional[Tensor] = None
+    inp: Optional[InterpretableInput] = None
 
     def __init__(
         self,
@@ -81,12 +81,19 @@ class LLMAttributionResult:
         seq_attr: npt.ArrayLike,
         token_attr: Optional[npt.ArrayLike] = None,
         output_probs: Optional[npt.ArrayLike] = None,
+        inp: Optional[InterpretableInput] = None,
     ) -> None:
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
         self.seq_attr = seq_attr
         self.token_attr = token_attr
         self.output_probs = output_probs
+
+        # optionally link to the InterpretableInput
+        # to support input type specific utils
+        # For future scaling, a better design may be inheritence,
+        # customized Result class for specifc Input, e.g., ImageMaskLLMAttributionResult
+        self.inp = inp
 
     @property
     def seq_attr(self) -> Tensor:
@@ -167,6 +174,12 @@ class LLMAttributionResult:
         Args:
             show (bool): whether to show the plot directly or return the figure and axis
                 Default: False
+
+
+        Returns:
+            None or tuple[Figure, Axes]: If show is True, displays the plot and returns
+                None. If show is False, returns a tuple of (figure, axes) for further
+                customization.
         """
 
         if self.token_attr is None:
@@ -194,25 +207,12 @@ class LLMAttributionResult:
         fig.set_size_inches(
             max(data.shape[1] * 1.3, 6.4), max(data.shape[0] / 2.5, 4.8)
         )
-        colors = [
-            "#93003a",
-            "#d0365b",
-            "#f57789",
-            "#ffbdc3",
-            "#ffffff",
-            "#a4d6e1",
-            "#73a3ca",
-            "#4772b3",
-            "#00429d",
-        ]
 
         im = ax.imshow(
             data,
             vmax=max_abs_attr_val,
             vmin=-max_abs_attr_val,
-            cmap=mcolors.LinearSegmentedColormap.from_list(
-                name="colors", colors=colors
-            ),
+            cmap=self._get_plot_color_map(),
             aspect="auto",
         )
         fig.set_facecolor("white")
@@ -267,6 +267,12 @@ class LLMAttributionResult:
         Args:
             show (bool): whether to show the plot directly or return the figure and axis
                 Default: False
+
+
+        Returns:
+            None or tuple[Figure, Axes]: If show is True, displays the plot and returns
+                None. If show is False, returns a tuple of (figure, axes) for further
+                customization.
         """
 
         import matplotlib.pyplot as plt
@@ -316,6 +322,124 @@ class LLMAttributionResult:
             return None  # mypy wants this
         else:
             return fig, ax
+
+    def plot_image_heatmap(
+        self,
+        show: bool = False,
+        target_token_pos: Union[int, tuple[int, int], None] = None,
+        border_width: int = 2,
+        show_legends: bool = True,
+    ) -> Union[None, Tuple["Figure", "Axes"]]:
+        """
+        Plot the image in the input with the overlay of salience based on
+        the attribution. Only available for certain multi-modality input types.
+
+        Args:
+            show (bool): whether to show the plot directly or return the figure and axis
+                Default: False
+            target_token_pos (int or tuple[int, int] or None): target token positions.
+                Compute salience w.r.t the target tokens of the specified positions.
+                If None, use the sequence attribuition. If int, use the attribution of
+                the token at the given index. If tuple[int, int], like (m, n), use the
+                summed token attribution of tokens from m to n (noninclusive)
+                Default: None
+            border_width (int): Width of the border around each mask segment in pixels.
+                Set to 0 to disable borders. Only used when input has mask_list.
+                Default: 2
+            show_legends (bool): If True, display the mask id for each segment at its
+                centroid. Only used when input has mask_list.
+                Default: True
+
+
+        Returns:
+            None or tuple[Figure, Axes]: If show is True, displays the plot and returns
+                None. If show is False, returns a tuple of (figure, axes) for further
+                customization.
+        """
+
+        inp = self.inp
+        if not isinstance(inp, ImageMaskInput):
+            raise ValueError("plot_image_heatmap is only available for ImageMaskInput")
+
+        import matplotlib.pyplot as plt
+
+        if target_token_pos is None:
+            attr = self.seq_attr
+        else:
+            if self.token_attr is None:
+                raise ValueError(
+                    "token_attr is None (no token-level attribution was performed), "
+                    "please use target_token_pos=None for sequence-level attribution"
+                )
+
+            if isinstance(target_token_pos, int):
+                attr = self.token_attr[target_token_pos]
+            else:
+                from_pos, to_pos = target_token_pos
+                attr = self.token_attr[from_pos:to_pos].sum(dim=0)
+
+        fig, ax = plt.subplots()
+        ax.imshow(np.array(inp.image).mean(axis=2), cmap="gray")
+
+        # Get pixel-level attribution using format_pixel_attr
+        pixel_attr = inp.format_pixel_attr(attr.unsqueeze(0))
+        pixel_attr = pixel_attr.squeeze(0).cpu().numpy()
+
+        max_abs_attr_val = np.abs(pixel_attr).max()
+        alpha = 0.8
+        heatmap = ax.imshow(
+            pixel_attr,
+            vmax=max_abs_attr_val,
+            vmin=-max_abs_attr_val,
+            cmap=self._get_plot_color_map(),
+            alpha=alpha,
+        )
+
+        cbar = fig.colorbar(heatmap, ax=ax)
+        cbar.ax.set_ylabel("Attribution", rotation=-90, va="bottom")
+
+        # Draw borders and legends on top if mask_list is available
+        if hasattr(inp, "get_mask_list"):
+            mask_list = [m.numpy().astype(bool) for m in inp.get_mask_list()]
+            mask_ids = list(inp.mask_id_to_idx.keys())
+            cmap = self._get_plot_color_map()
+
+            # Get attribution values for border color calculation
+            attr_np = attr.cpu().numpy()
+
+            for i, mask in enumerate(mask_list):
+                if not mask.any():
+                    continue
+
+                if border_width > 0:
+                    # Calculate border color as a darker version of the salience color
+                    norm_val = (
+                        (attr_np[i] / max_abs_attr_val + 1) / 2
+                        if max_abs_attr_val > 0
+                        else 0.5
+                    )
+                    rgba = np.array(cmap(norm_val))
+                    # Create darker version by multiplying RGB by 0.6
+                    border_color = np.array([*(rgba[:3] * 0.7), alpha])
+                    draw_mask_border(ax, mask, border_width, border_color=border_color)
+                if show_legends:
+                    draw_mask_legend(ax, mask, label=str(mask_ids[i]))
+
+        fig.set_facecolor("white")
+        ax.axis("off")
+
+        if show:
+            plt.show()
+            return None
+        else:
+            return fig, ax
+
+    def _get_plot_color_map(self) -> mcolors.LinearSegmentedColormap:
+        # stays unified with the color convention used in Captum
+        # https://github.com/meta-pytorch/captum/blob/master/captum/attr/_utils/visualization.py
+        return mcolors.LinearSegmentedColormap.from_list(
+            "RdWhGn", ["red", "white", "green"]
+        )
 
 
 def _clean_up_pretty_token(token: str) -> str:
@@ -483,7 +607,6 @@ class BaseLLMAttribution(Attribution, ABC):
         self,
         inp: InterpretableInput,
         target: Union[str, torch.Tensor, None] = None,
-        skip_tokens: Union[List[int], List[str], None] = None,
         gen_args: Optional[Dict[str, Any]] = None,
     ) -> Tensor:
         assert isinstance(
@@ -502,28 +625,23 @@ class BaseLLMAttribution(Attribution, ABC):
                 gen_args = DEFAULT_GEN_ARGS
 
             model_inp = self._format_model_input(inp.to_model_input())
-            output_tokens = generate_func(model_inp, **gen_args)
-            target_tokens = output_tokens[0][model_inp.size(1) :]
+            input_token_len = model_inp["input_ids"].size(1)
+            output_tokens = generate_func(**model_inp, **gen_args)
+            target_tokens = output_tokens[0][input_token_len:]
         else:
             assert gen_args is None, "gen_args must be None when target is given"
-            # Encode skip tokens
-            if skip_tokens:
-                if isinstance(skip_tokens[0], str):
-                    skip_tokens = cast(List[str], skip_tokens)
-                    skip_tokens = self.tokenizer.convert_tokens_to_ids(skip_tokens)
-            else:
-                skip_tokens = []
-            skip_tokens = cast(List[int], skip_tokens)
 
             if isinstance(target, str):
-                encoded = self.tokenizer.encode(target)
-                target_tokens = torch.tensor(
-                    [token for token in encoded if token not in skip_tokens]
-                )
+                # skip the leading special token bos
+                # but add_special_tokens may also skip tailing tokens like eos
+                # will it be a problem to the reliability of attr scores?
+                # in Llama4, <|eot|> is appended even with add_special_tokens=False
+                # this api also limits us to hf
+                # https://huggingface.co/docs/transformers/en/main_classes/tokenizer#transformers.PythonBackend.encode.add_special_tokens
+                encoded = self.tokenizer.encode(target, add_special_tokens=False)
+                target_tokens = torch.tensor(encoded)
             elif isinstance(target, torch.Tensor):
-                target_tokens = target[
-                    ~torch.isin(target, torch.tensor(skip_tokens, device=target.device))
-                ]
+                target_tokens = target
             else:
                 raise TypeError(
                     "target must either be str or Tensor, but the type of target is "
@@ -531,18 +649,30 @@ class BaseLLMAttribution(Attribution, ABC):
                 )
         return target_tokens
 
-    def _format_model_input(self, model_input: Union[str, Tensor]) -> Tensor:
+    def _format_model_input(
+        self, model_input: Union[str, Tensor, Mapping]
+    ) -> dict[str, Any]:
         """
-        Convert str to tokenized tensor
-        to make LLMAttribution work with model inputs of both
-        raw text and text token tensors
+        Modern LLMs usually expect a series of inputs, primarily including input_ids
+        This fun ensures the model input from InterpretableInput to be a dict-like
+        - convert str to tokenized tensor input_ids
+        - for tensor, assume it is input_ids. Wrap in a dict
+        - for other dict-like, assume they are processed correctly by any processor.
+          E.g., BatchFeature returned by transformers processor. Convert to dict
         """
         # return tensor(1, n_tokens)
         if isinstance(model_input, str):
-            return self.tokenizer.encode(model_input, return_tensors="pt").to(
-                self.device
-            )
-        return model_input.to(self.device)
+            model_input = self.tokenizer.encode(model_input, return_tensors="pt")
+
+        if isinstance(model_input, Tensor):
+            input_ids = model_input.to(self.device)
+            return {"input_ids": input_ids}
+
+        assert isinstance(
+            model_input, Mapping
+        ), f"Invalid model input. {type(model_input)}"
+
+        return {**model_input}
 
 
 class LLMAttribution(BaseLLMAttribution):
@@ -568,7 +698,7 @@ class LLMAttribution(BaseLLMAttribution):
         ShapleyValueSampling,
         ShapleyValues,
     )
-    SUPPORTED_INPUTS = (TextTemplateInput, TextTokenInput)
+    SUPPORTED_INPUTS = (TextTemplateInput, TextTokenInput, ImageMaskInput)
 
     def __init__(
         self,
@@ -607,7 +737,70 @@ class LLMAttribution(BaseLLMAttribution):
         ), "attr_target should be either 'log_prob' or 'prob'"
         self.attr_target = attr_target
 
-    def _forward_func(
+    def _forward_func_by_seq(
+        self,
+        perturbed_tensor: Union[None, Tensor],
+        inp: InterpretableInput,
+        target_tokens: Tensor,
+    ) -> Tensor:
+        """
+        LLM wrapper's forward function that process the concatenated input and target
+        in one run. The result logits are often not the same as ones from
+        the actual auto-regression generation process which produces the target string
+        token by token, due to modern LLMs' internal mechanisms like cache.
+        But it's a reasonable approximation for efficiency since it only
+        calls the underlying model forward once regardless of the sequence length.
+        In contrast, use _forward_func_by_tokens to simulate more authentic
+        generation process.
+        """
+        perturbed_input = self._format_model_input(inp.to_model_input(perturbed_tensor))
+
+        input_ids = perturbed_input["input_ids"]
+        target_token_tensor = target_tokens.unsqueeze(0).to(input_ids.device)
+        combined_ids = torch.cat([input_ids, target_token_tensor], dim=1)
+
+        model_inp = {
+            **perturbed_input,
+            "input_ids": combined_ids,
+            "attention_mask": torch.ones(
+                [1, combined_ids.shape[1]], dtype=torch.long, device=combined_ids.device
+            ),
+        }
+
+        outputs = self.model.forward(**model_inp)
+        logits = outputs.logits
+
+        # Llama4 returns a 4D tensor (1, 1, seq_len, vocab_size), though the doc says 3D
+        # the 2nd dim may be n_returns for Speculative Decoding / Medusa-style heads
+        # assume the 2nd dim must be 1
+        if logits.dim() == 4:
+            logits = logits[:, 0]
+
+        input_len = input_ids.shape[1]
+        target_len = target_tokens.shape[0]
+
+        # Extract logits for the positions where we predict target tokens
+        # Get logits for all target positions at once: shape (1, target_len, vocab_size)
+        # logits[i] predicts token[i+1], so need input_len-1 to input_len+target_len-2
+        target_logits = logits[:, input_len - 1 : input_len - 1 + target_len]
+        log_probs = torch.nn.functional.log_softmax(target_logits, dim=2)
+
+        # Gather log probs for the actual target tokens: shape (target_len,)
+        token_log_probs = log_probs[0, torch.arange(target_len), target_tokens].detach()
+        total_log_prob = token_log_probs.sum()
+        # 1st element is the total prob, rest are the target tokens
+        # add a leading dim for batch even we only support single instance for now
+        if self.include_per_token_attr:
+            target_log_probs = torch.cat(
+                [total_log_prob.unsqueeze(0), token_log_probs], dim=0
+            ).unsqueeze(0)
+        else:
+            target_log_probs = total_log_prob
+        target_probs = torch.exp(target_log_probs)
+
+        return target_probs if self.attr_target != "log_prob" else target_log_probs
+
+    def _forward_func_by_tokens(
         self,
         perturbed_tensor: Union[None, Tensor],
         inp: InterpretableInput,
@@ -615,79 +808,90 @@ class LLMAttribution(BaseLLMAttribution):
         use_cached_outputs: bool = False,
         _inspect_forward: Optional[Callable[[str, str, List[float]], None]] = None,
     ) -> Tensor:
-        # Lazily import transformers_typing to avoid importing transformers package if
-        # it isn't needed
-        from captum._utils.transformers_typing import (
-            Cache,
-            DynamicCache,
-            supports_caching,
-            update_model_kwargs,
-        )
-
+        """
+        LLM wrapper's forward function that decode token one by one.
+        This method best authentically replicate the actual generation process of
+        how a model will produce the target string in practice.
+        But it's slow to re-generate target tokens one by one, since each token means
+        calling the underneath model forward once, while _forward_func_by_seq is
+        a more efficient approximation that concatenate all target token and forward
+        in one shot
+        """
         perturbed_input = self._format_model_input(inp.to_model_input(perturbed_tensor))
         init_model_inp = perturbed_input
 
-        model_inp = init_model_inp
-        attention_mask = torch.ones(
-            [1, model_inp.shape[1]], dtype=torch.long, device=model_inp.device
-        )
-        model_kwargs = {"attention_mask": attention_mask}
-        # If applicable, update model kwargs for transformers models
-        update_model_kwargs(
-            model_kwargs=model_kwargs,
-            model=self.model,
-            input_ids=model_inp,
-            caching=use_cached_outputs,
-        )
+        model_inp = {**init_model_inp}
+
+        # model's forward function kwargs modifications
+        # we assume the model should extends GenerationMixin
+        # need trace its generate fn to understand how to set args for model forward
+        # https://github.com/huggingface/transformers/blob/main/src/transformers/generation/utils.py#L2252
+
+        input_ids = model_inp["input_ids"]
+        if "attention_mask" not in model_inp:
+            model_inp["attention_mask"] = torch.ones(
+                [1, input_ids.shape[1]], dtype=torch.long, device=input_ids.device
+            )
+
+        if use_cached_outputs:
+            model_inp["cache_position"] = torch.arange(
+                input_ids.shape[1], dtype=torch.int64, device=input_ids.device
+            )
+            model_inp["use_cache"] = True
+        else:
+            model_inp["use_cache"] = False
 
         log_prob_list: List[Tensor] = []
         outputs = None
         for target_token in target_tokens:
             if use_cached_outputs:
                 if outputs is not None:
-                    # If applicable, convert past_key_values to DynamicCache for
-                    # transformers models
-                    if (
-                        Cache is not None
-                        and DynamicCache is not None
-                        and supports_caching(self.model)
-                        and not isinstance(outputs.past_key_values, Cache)
-                    ):
-                        outputs.past_key_values = DynamicCache.from_legacy_cache(
-                            outputs.past_key_values
-                        )
                     # nn.Module typing suggests non-base attributes are modules or
                     # tensors
                     _update_model_kwargs_for_generation = cast(
                         Callable[..., Dict[str, object]],
                         self.model._update_model_kwargs_for_generation,
                     )
-                    model_kwargs = _update_model_kwargs_for_generation(  # type: ignore
-                        outputs, model_kwargs
+                    model_inp = _update_model_kwargs_for_generation(  # type: ignore
+                        outputs, model_inp
                     )
                 # nn.Module typing suggests non-base attributes are modules or tensors
                 prep_inputs_for_generation = cast(
                     Callable[..., Dict[str, object]],
                     self.model.prepare_inputs_for_generation,
                 )
-                model_inputs = prep_inputs_for_generation(  # type: ignore
-                    model_inp, **model_kwargs
-                )
+                model_inputs = prep_inputs_for_generation(**model_inp)  # type: ignore
                 outputs = self.model.forward(**model_inputs)
             else:
                 # Update attention mask to adapt to input size change
+                input_ids = model_inp["input_ids"]
                 attention_mask = torch.ones(
-                    [1, model_inp.shape[1]], dtype=torch.long, device=model_inp.device
+                    [1, model_inp["input_ids"].shape[1]],
+                    dtype=torch.long,
+                    device=input_ids.device,
                 )
-                model_kwargs["attention_mask"] = attention_mask
-                outputs = self.model.forward(model_inp, **model_kwargs)
-            new_token_logits = outputs.logits[:, -1]
-            log_probs = torch.nn.functional.log_softmax(new_token_logits, dim=1)
+                model_inp["attention_mask"] = attention_mask
+                outputs = self.model.forward(**model_inp)
 
+            logits = outputs.logits
+
+            # Llama4 returns a 4D tensor (1, 1, 744, 202048), though the doc says 3D
+            # https://huggingface.co/docs/transformers/v4.57.3/en/model_doc/llama4#transformers.Llama4ForConditionalGeneration.forward
+            # the 2nd dim may be n_returns for Speculative Decoding / Medusa-style heads
+            # assume the 2nd dim must be 1
+            if logits.dim() == 4:
+                logits = logits[:, 0]
+
+            new_token_logits = logits[:, -1]
+            log_probs = torch.nn.functional.log_softmax(new_token_logits, dim=1)
             log_prob_list.append(log_probs[0][target_token].detach())
 
-            model_inp = torch.cat(
-                (model_inp, torch.tensor([[target_token]]).to(self.device)), dim=1
+            model_inp["input_ids"] = torch.cat(
+                (
+                    model_inp["input_ids"],
+                    torch.tensor([[target_token]]).to(self.device),
+                ),
+                dim=1,
             )
 
         total_log_prob = torch.sum(torch.stack(log_prob_list), dim=0)
@@ -702,7 +906,7 @@ class LLMAttribution(BaseLLMAttribution):
         target_probs = torch.exp(target_log_probs)
 
         if _inspect_forward:
-            prompt = self.tokenizer.decode(init_model_inp[0])
+            prompt = self.tokenizer.decode(init_model_inp["input_ids"][0])
             response = self.tokenizer.decode(target_tokens)
 
             # callback for externals to inspect (prompt, response, seq_prob)
@@ -710,16 +914,40 @@ class LLMAttribution(BaseLLMAttribution):
 
         return target_probs if self.attr_target != "log_prob" else target_log_probs
 
+    def _forward_func(
+        self,
+        perturbed_tensor: Union[None, Tensor],
+        inp: InterpretableInput,
+        target_tokens: Tensor,
+        use_cached_outputs: bool = False,
+        _inspect_forward: Optional[Callable[[str, str, List[float]], None]] = None,
+        forward_in_tokens: bool = True,
+    ) -> Tensor:
+        if forward_in_tokens:
+            return self._forward_func_by_tokens(
+                perturbed_tensor,
+                inp,
+                target_tokens,
+                use_cached_outputs,
+                _inspect_forward,
+            )
+
+        return self._forward_func_by_seq(
+            perturbed_tensor,
+            inp,
+            target_tokens,
+        )
+
     def attribute(
         self,
         inp: InterpretableInput,
         target: Union[str, torch.Tensor, None] = None,
-        skip_tokens: Union[List[int], List[str], None] = None,
         num_trials: int = 1,
         gen_args: Optional[Dict[str, Any]] = None,
         use_cached_outputs: bool = True,
         # internal callback hook can be used for logging
         _inspect_forward: Optional[Callable[[str, str, List[float]], None]] = None,
+        forward_in_tokens: bool = True,
         **kwargs: Any,
     ) -> LLMAttributionResult:
         """
@@ -729,12 +957,6 @@ class LLMAttribution(BaseLLMAttribution):
                     which attributions are computed. If None, it uses the model
                     to generate the target based on the input and gen_args.
                     Default: None
-            skip_tokens (List[int] or List[str], optional): the tokens to skip in the
-                    the output's interpretable representation. Use this argument to
-                    define uninterested tokens, commonly like special tokens, e.g.,
-                    sos, and unk. It can be a list of strings of the tokens or a list
-                    of integers of the token ids.
-                    Default: None
             num_trials (int, optional): number of trials to run. Return is the average
                     attributions over all the trials.
                     Defaults: 1.
@@ -743,6 +965,18 @@ class LLMAttribution(BaseLLMAttribution):
                     {"max_new_tokens": 25, "do_sample": False,
                     "temperature": None, "top_p": None}
                     Defaults: None
+            use_cached_outputs (bool, optional): whether to use cached outputs when
+                    generating tokens in sequence. Only support huggingface
+                    GenerationMixin, since this functionality has to depend on the
+                    actual APIs of the model
+                    Defaults: True.
+            forward_in_tokens (bool, optional): whether to use token-by-token forward
+                    or sequence-level forward. When True, it decodes tokens one by one
+                    to replicate the actual generation process authentically. When
+                    False, it concatenates the input and target tokens and forwards
+                    them in one pass, which is more efficient but may produce slightly
+                    different logits due to modern LLMs' internal mechanisms like cache.
+                    Defaults: True.
             **kwargs (Any): any extra keyword arguments passed to the call of the
                     underlying attribute function of the given attribution instance
 
@@ -754,7 +988,6 @@ class LLMAttribution(BaseLLMAttribution):
         target_tokens = self._get_target_tokens(
             inp,
             target,
-            skip_tokens=skip_tokens,
             gen_args=gen_args,
         )
 
@@ -777,6 +1010,7 @@ class LLMAttribution(BaseLLMAttribution):
                     target_tokens,
                     use_cached_outputs,
                     _inspect_forward,
+                    forward_in_tokens,
                 ),
                 **kwargs,
             )
@@ -799,6 +1033,7 @@ class LLMAttribution(BaseLLMAttribution):
             ),  # shape(n_output_token, n_input_features)
             input_tokens=inp.values,
             output_tokens=_convert_ids_to_pretty_tokens(target_tokens, self.tokenizer),
+            inp=inp,
         )
 
     def attribute_future(self) -> Callable[[], LLMAttributionResult]:
@@ -852,7 +1087,6 @@ class LLMGradientAttribution(BaseLLMAttribution):
         self,
         inp: InterpretableInput,
         target: Union[str, torch.Tensor, None] = None,
-        skip_tokens: Union[List[int], List[str], None] = None,
         gen_args: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> LLMAttributionResult:
@@ -862,12 +1096,6 @@ class LLMGradientAttribution(BaseLLMAttribution):
             target (str or Tensor, optional): target response with respect to
                     which attributions are computed. If None, it uses the model
                     to generate the target based on the input and gen_args.
-                    Default: None
-            skip_tokens (List[int] or List[str], optional): the tokens to skip in the
-                    the output's interpretable representation. Use this argument to
-                    define uninterested tokens, commonly like special tokens, e.g.,
-                    sos, and unk. It can be a list of strings of the tokens or a list
-                    of integers of the token ids.
                     Default: None
             gen_args (dict, optional): arguments for generating the target. Only used if
                     target is not given. When None, the default arguments are used,
@@ -884,7 +1112,6 @@ class LLMGradientAttribution(BaseLLMAttribution):
         target_tokens = self._get_target_tokens(
             inp,
             target,
-            skip_tokens=skip_tokens,
             gen_args=gen_args,
         )
 
@@ -965,9 +1192,10 @@ class GradientForwardFunc(nn.Module):
         target_tokens: Tensor,  # 1D tensor of target token ids
         cur_target_idx: int,  # current target index
     ) -> Tensor:
+        # TODO: support model that needs more than just input_ids
         perturbed_input = self.attr._format_model_input(
             inp.to_model_input(perturbed_tensor)
-        )
+        )["input_ids"]
 
         if cur_target_idx:
             # the input batch size can be expanded by attr method
@@ -1045,7 +1273,6 @@ class RemoteLLMAttribution(LLMAttribution):
         self,
         inp: InterpretableInput,
         target: Union[str, torch.Tensor, None] = None,
-        skip_tokens: Union[List[int], List[str], None] = None,
         gen_args: Optional[Dict[str, Any]] = None,
     ) -> Tensor:
         """
@@ -1074,9 +1301,7 @@ class RemoteLLMAttribution(LLMAttribution):
             )[0]
 
         else:
-            target_tokens = super()._get_target_tokens(
-                inp, target, skip_tokens, gen_args
-            )
+            target_tokens = super()._get_target_tokens(inp, target, gen_args)
 
         return target_tokens
 
@@ -1099,6 +1324,12 @@ class RemoteLLMAttribution(LLMAttribution):
         target_tokens: Tensor,
         use_cached_outputs: bool = False,
         _inspect_forward: Optional[Callable[[str, str, List[float]], None]] = None,
+        # forward_in_tokens here is for compatibility only
+        # for remote, depend on the underlying LLM API
+        # may not be able to support generate the exact
+        # target tokens one by one (forced decoding)
+        # VLLMProvider for now only support concat sequence forward
+        forward_in_tokens: bool = False,
     ) -> Tensor:
         """
         Forward function for the remote LLM provider.

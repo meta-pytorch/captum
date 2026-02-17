@@ -17,7 +17,6 @@ from typing import (
 )
 
 import matplotlib
-
 import numpy as np
 import numpy.typing as npt
 from matplotlib import cm, colors, pyplot as plt
@@ -36,6 +35,113 @@ try:
     HAS_IPYTHON = True
 except ImportError:
     HAS_IPYTHON = False
+
+
+def draw_mask_border(
+    ax: Axes,
+    mask: npt.NDArray[np.bool_],
+    border_width: int = 1,
+    border_color: Union[str, npt.NDArray[np.floating[Any]]] = "black",
+) -> None:
+    """
+    Draw a border inside a mask region using binary erosion.
+
+    This function generates a border by eroding the mask and taking the difference
+    between the original mask and the eroded version, then displays it on the axes.
+
+    Args:
+        ax: Matplotlib axes object to draw on.
+        mask: 2D boolean numpy array representing the mask region.
+              Shape should be (height, width).
+        border_width: Width of the border in pixels.
+                      Default: 1
+        border_color: Color for the border. Can be a string color name (e.g.,
+                      "black", "red") or an RGBA array of shape (4,) with values
+                      typically in [0, 1].
+                      Default: "black"
+
+    Example::
+        >>> mask = np.array([[True, True, True],
+        ...                  [True, True, True],
+        ...                  [True, True, True]])
+        >>> fig, ax = plt.subplots()
+        >>> draw_mask_border(ax, mask)  # Uses default black border
+        >>> draw_mask_border(ax, mask, border_width=2, border_color="red")
+    """
+    if not mask.any():
+        return
+
+    from scipy.ndimage import binary_erosion
+
+    # Convert string color to RGBA array
+    if isinstance(border_color, str):
+        rgba = colors.to_rgba(border_color)
+        border_color_array = np.array(rgba)
+    else:
+        border_color_array = border_color
+
+    eroded = binary_erosion(mask, iterations=border_width)
+    border = mask & ~eroded
+    h, w = mask.shape
+    border_image = border.reshape(h, w, 1) * border_color_array.reshape(1, 1, -1)
+    ax.imshow(border_image)
+
+
+def draw_mask_legend(
+    ax: Axes,
+    mask: npt.NDArray[np.bool_],
+    label: str,
+    fontsize: int = 10,
+    text_color: str = "white",
+    bbox_facecolor: str = "black",
+    bbox_alpha: float = 0.6,
+) -> None:
+    """
+    Draw a label at the centroid of a mask region.
+
+    This function calculates the centroid (center of mass) of a boolean mask
+    and places a text label at that position.
+
+    Args:
+        ax: Matplotlib axes object to draw on.
+        mask: 2D boolean numpy array representing the mask region.
+              Shape should be (height, width).
+        label: Text string to display at the centroid.
+        fontsize: Font size for the label text.
+                  Default: 10
+        text_color: Color of the label text.
+                    Default: "white"
+        bbox_facecolor: Background color of the text bounding box.
+                        Default: "black"
+        bbox_alpha: Transparency of the text bounding box.
+                    Default: 0.6
+
+    Example::
+        >>> mask = np.array([[False, True, True],
+        ...                  [False, True, True],
+        ...                  [False, False, False]])
+        >>> fig, ax = plt.subplots()
+        >>> draw_mask_legend(ax, mask, label="1")
+    """
+    if not mask.any():
+        return
+
+    rows, cols = np.where(mask)
+    centroid_y, centroid_x = rows.mean(), cols.mean()
+    ax.text(
+        centroid_x,
+        centroid_y,
+        label,
+        color=text_color,
+        fontsize=fontsize,
+        ha="center",
+        va="center",
+        bbox={
+            "boxstyle": "round,pad=0.2",
+            "facecolor": bbox_facecolor,
+            "alpha": bbox_alpha,
+        },
+    )
 
 
 class ImageVisualizationMethod(Enum):
@@ -90,34 +196,32 @@ def _cumulative_sum_threshold(
 
 
 def _normalize_attr(
-    attr: npt.NDArray,
+    attr: npt.NDArray,  # 2D (H, W)
     sign: str,
     outlier_perc: Union[int, float] = 2,
-    reduction_axis: Optional[int] = None,
 ) -> npt.NDArray:
-    attr_combined = attr
-    if reduction_axis is not None:
-        attr_combined = np.sum(attr, axis=reduction_axis)
+    sign_type = VisualizeSign[sign]
 
-    # Choose appropriate signed values and rescale, removing given outlier percentage.
-    if VisualizeSign[sign].value == VisualizeSign.all.value:
-        threshold = _cumulative_sum_threshold(
-            np.abs(attr_combined), 100.0 - outlier_perc
-        )
-    elif VisualizeSign[sign].value == VisualizeSign.positive.value:
-        attr_combined = (attr_combined > 0) * attr_combined
-        threshold = _cumulative_sum_threshold(attr_combined, 100.0 - outlier_perc)
-    elif VisualizeSign[sign].value == VisualizeSign.negative.value:
-        attr_combined = (attr_combined < 0) * attr_combined
-        threshold = -1 * _cumulative_sum_threshold(
-            np.abs(attr_combined), 100.0 - outlier_perc
-        )
-    elif VisualizeSign[sign].value == VisualizeSign.absolute_value.value:
-        attr_combined = np.abs(attr_combined)
-        threshold = _cumulative_sum_threshold(attr_combined, 100.0 - outlier_perc)
+    # Apply sign-specific transformation to filter/transform attribution values
+    if sign_type == VisualizeSign.all:
+        pass  # Keep all values as-is
+    elif sign_type == VisualizeSign.positive:
+        attr = np.maximum(attr, 0)
+    elif sign_type == VisualizeSign.negative:
+        attr = np.minimum(attr, 0)
+    elif sign_type == VisualizeSign.absolute_value:
+        attr = np.abs(attr)
     else:
         raise AssertionError("Visualize Sign type is not valid.")
-    return _normalize_scale(attr_combined, threshold)
+
+    # Compute threshold from absolute values, removing given outlier percentage
+    threshold = _cumulative_sum_threshold(np.abs(attr), 100.0 - outlier_perc)
+
+    # For negative sign, threshold should be negative to match the sign of values
+    if sign_type == VisualizeSign.negative:
+        threshold = -threshold
+
+    return _normalize_scale(attr, threshold)
 
 
 def _create_default_plot(
@@ -264,9 +368,8 @@ def visualize_image_attr(
     Args:
 
         attr (numpy.ndarray): Numpy array corresponding to attributions to be
-                    visualized. Shape must be in the form (H, W, C), with
-                    channels as last dimension. Shape must also match that of
-                    the original image if provided.
+                    visualized. Shape must be in the form (H, W, C) or (H, W).
+                    Shape must also match that of the original image if provided.
         original_image (numpy.ndarray, optional): Numpy array corresponding to
                     original image. Shape must be in the form (H, W, C), with
                     channels as the last dimension. Image can be provided either
@@ -403,8 +506,12 @@ def visualize_image_attr(
         "alpha_scaling": _visualize_alpha_scaling,
         "original_image": _visualize_original_image,
     }
+
+    # if the attr contains channel, aggregate them by sum
+    if len(attr.shape) == 3:
+        attr = np.sum(attr, axis=2)
     # Choose appropriate signed attributions and normalize.
-    norm_attr = _normalize_attr(attr, sign, outlier_perc, reduction_axis=2)
+    norm_attr = _normalize_attr(attr, sign, outlier_perc)
 
     # Set default colormap and bounds based on sign.
     default_cmap, vmin, vmax = _initialize_cmap_and_vmin_vmax(sign)
@@ -864,7 +971,7 @@ def visualize_timeseries_attr(
     else:
         plt_axis_list = plt_axis
 
-    norm_attr = _normalize_attr(attr, sign, outlier_perc, reduction_axis=None)
+    norm_attr = _normalize_attr(attr, sign, outlier_perc)
 
     # Set default colormap and bounds based on sign.
     default_cmap, vmin, vmax = _initialize_cmap_and_vmin_vmax(sign)

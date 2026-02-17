@@ -13,6 +13,7 @@ title: FAQ
 * [Do JIT models, DataParallel models, or DistributedDataParallel models work with Captum?](#do-jit-models-dataparallel-models-or-distributeddataparallel-models-work-with-captum)
 * [I am working on a new interpretability or attribution method and would like to add it to Captum. How do I proceed?](#i-am-working-on-a-new-interpretability-or-attribution-method-and-would-like-to-add-it-to-captum-how-do-i-proceed)
 * [I am using a gradient-based attribution algorithm such as integrated gradients for a RNN or LSTM network and I see 'cudnn RNN backward can only be called in training mode'. How can I resolve this issue ?](#how-can-I-resolve-cudnn-RNN-backward-error-for-RNN-or-LSTM-network)
+* [My model expects multiple tensors as input. How do I use Captum with such models?](#my-model-expects-multiple-tensors-as-input-how-do-i-use-captum-with-such-models)
 
 ### **How do I set the target parameter to an attribution method?**
 
@@ -74,3 +75,54 @@ We are still working out the logistics of setting these up and will update this 
 If your model is set in eval mode you might run into errors, such as `cudnn RNN backward can only be called in training mode`, when you try to perform backward pass on a RNN / LSTM model in a GPU environment.
 CuDNN with RNN / LSTM doesn't support gradient computation in eval mode that's why we need to disable cudnn for RNN in eval mode.
 To resolve the issue you can set`torch.backends.cudnn.enabled` flag to False - `torch.backends.cudnn.enabled=False`
+
+### **My model expects multiple tensors as input. How do I use Captum with such models?**
+
+When using gradient-based attribution methods like Integrated Gradients with models that expect multiple tensor inputs, you need to ensure that Captum can properly scale all inputs along the integration path from baseline to input.
+
+A common scenario is when your model's forward function requires additional tensors beyond the primary input. For example, graph neural networks like GraphWaveNet may need node embeddings passed explicitly to generate adaptive adjacency matrices. If these tensors aren't provided to Captum, you may encounter dimension mismatch errors:
+
+```
+RuntimeError: expected input to have 10 channels, but got 12 channels instead
+```
+
+**Solution: Wrapper with Tuple Inputs**
+
+Create a wrapper that accepts a tuple of inputs. This allows you to pass baselines for all inputs and get attributions with respect to each:
+
+```python
+import torch
+from captum.attr import IntegratedGradients
+
+class ModelWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    
+    def forward(self, inputs):
+        # Unpack the tuple of inputs
+        x, embeddings = inputs
+        # Pass both to your model's forward function
+        return self.model.forward_with_embeddings(x, embeddings)
+
+# Usage:
+wrapper = ModelWrapper(original_model)
+ig = IntegratedGradients(wrapper)
+
+# Get embeddings from your model
+node_emb = original_model.get_node_embeddings()
+
+# Create baselines for both inputs
+input_baseline = torch.zeros_like(input_tensor)
+emb_baseline = torch.zeros_like(node_emb)
+
+# Pass tuple of inputs and tuple of baselines
+attributions = ig.attribute(
+    (input_tensor, node_emb),
+    baselines=(input_baseline, emb_baseline),
+    target=target
+)
+# attributions is now a tuple: (input_attributions, embedding_attributions)
+```
+
+This approach ensures that both inputs are properly scaled along the integration path, and you receive attributions for each input tensor.

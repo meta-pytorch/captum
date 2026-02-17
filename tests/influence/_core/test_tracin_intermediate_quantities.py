@@ -3,7 +3,6 @@ import tempfile
 from typing import Callable
 
 import torch
-
 import torch.nn as nn
 from captum.influence._core.arnoldi_influence_function import ArnoldiInfluenceFunction
 from captum.influence._core.influence_function import NaiveInfluenceFunction

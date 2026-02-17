@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import warnings
-from typing import cast, Dict, Optional, Type
+from typing import Any, cast, Dict, Optional, Type
 
 import torch
 from captum.attr._core.feature_ablation import FeatureAblation
@@ -34,27 +34,19 @@ except ImportError:
     ),
 )
 class TestLLMAttrHFCompatibility(BaseTest):
-    # pyre-fixme[13]: Attribute `device` is never initialized.
-    device: str
-    # pyre-fixme[13]: Attribute `use_cached_outputs` is never initialized.
-    use_cached_outputs: bool
+    device: str = "cpu"
+    use_cached_outputs: bool = False
 
     def setUp(self) -> None:
         if not HAS_HF:
             self.skipTest("transformers package not found, skipping tests")
         super().setUp()
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `comprehension
     @parameterized.expand(
         [
-            (
-                AttrClass,
-                n_samples,
-            )
-            for AttrClass, n_samples in zip(
-                (FeatureAblation, ShapleyValueSampling, ShapleyValues),  # AttrClass
-                (None, 1000, None),  # n_samples
-            )
+            (FeatureAblation, None),
+            (ShapleyValueSampling, 1000),
+            (ShapleyValues, None),
         ]
     )
     def test_llm_attr_hf_compatibility(
@@ -62,7 +54,7 @@ class TestLLMAttrHFCompatibility(BaseTest):
         AttrClass: Type[PerturbationAttribution],
         n_samples: Optional[int],
     ) -> None:
-        attr_kws: Dict[str, int] = {}
+        attr_kws: Dict[str, Any] = {}
         if n_samples is not None:
             attr_kws["n_samples"] = n_samples
 
@@ -82,10 +74,7 @@ class TestLLMAttrHFCompatibility(BaseTest):
             inp,
             "m n o p q",
             use_cached_outputs=self.use_cached_outputs,
-            # pyre-fixme[6]: In call `LLMAttribution.attribute`,
-            # for 4th positional argument, expected
-            # `Optional[typing.Callable[..., typing.Any]]` but got `int`.
-            **attr_kws,  # type: ignore
+            **attr_kws,
         )
         self.assertEqual(res.seq_attr.shape, (4,))
         self.assertEqual(res.input_tokens, ["a", "c", "d", "f"])

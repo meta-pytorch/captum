@@ -3,7 +3,6 @@ import tempfile
 from typing import Callable, List, Optional, Tuple
 
 import torch
-
 import torch.nn as nn
 from captum.influence._core.influence_function import NaiveInfluenceFunction
 from captum.influence._utils.common import (
@@ -30,7 +29,7 @@ from captum.testing.helpers.influence.common import (
 from parameterized import parameterized
 from torch.utils.data import DataLoader
 
-# TODO: for some unknow reason, this test does not work
+# TODO: for some unknown reason, this test does not work
 # on `cuda_data_parallel` setting. We need to investigate why.
 # Use a local version of setting list for these two tests for now
 # since we have changed the default setting list to includes all options.

@@ -6,7 +6,6 @@ import tempfile
 from typing import Callable
 
 import torch
-
 import torch.nn as nn
 from captum.influence._core.tracincp import TracInCP
 from captum.testing.helpers.basic import assertTensorAlmostEqual, BaseTest

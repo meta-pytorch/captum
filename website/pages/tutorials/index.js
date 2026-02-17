@@ -118,7 +118,7 @@ class TutorialHome extends React.Component {
                 allowing attributions to be computed in a distributed manner across processors, machines or GPUs.
                 Find the tutorial <a href="Distributed_Attribution">here</a>.
 
-                <h4>Intepreting DLRM models with Captum:</h4>
+                <h4>Interpreting DLRM models with Captum:</h4>
                 This tutorial demonstrates how we use Captum for Deep Learning Recommender Models using
                  <a href="https://github.com/facebookresearch/dlrm">dlrm</a> model published from facebook research and integrated gradients algorithm.
                 It showcases feature importance differences for sparse and dense features in predicting clicked and non-clicked Ads. It also analyzes

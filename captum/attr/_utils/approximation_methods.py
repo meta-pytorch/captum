@@ -126,6 +126,7 @@ def gauss_legendre_builders() -> (
     def step_sizes(n: int) -> List[float]:
         assert n > 0, "The number of steps has to be larger than zero"
         # Scaling from 2 to 1
+        # pyre-ignore[22]: Cast needed for internal Pyre
         return cast(
             NDArray[np.float64], 0.5 * np.polynomial.legendre.leggauss(n)[1]
         ).tolist()
@@ -133,6 +134,7 @@ def gauss_legendre_builders() -> (
     def alphas(n: int) -> List[float]:
         assert n > 0, "The number of steps has to be larger than zero"
         # Scaling from [-1, 1] to [0, 1]
+        # pyre-ignore[22]: Cast needed for internal Pyre
         return cast(
             NDArray[np.float64], 0.5 * (1 + np.polynomial.legendre.leggauss(n)[0])
         ).tolist()

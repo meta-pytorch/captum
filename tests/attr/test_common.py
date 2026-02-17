@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pyre-unsafe
+# pyre-strict
 
 import torch
 from captum.attr._core.noise_tunnel import SUPPORTED_NOISE_TUNNEL_TYPES

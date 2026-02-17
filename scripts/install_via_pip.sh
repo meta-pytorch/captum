@@ -26,7 +26,7 @@ while getopts 'ndfv:t:' flag; do
 # install nodejs and yarn for insights build
 sudo apt-get update
 sudo apt install apt-transport-https ca-certificates
-curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update
@@ -43,9 +43,13 @@ pip cache purge
 pip install --upgrade pip --progress-bar off
 
 # install captum with dev deps
+echo "[install_via_pip] pip install captum dev"
 pip install -e .[dev] --progress-bar off
-BUILD_INSIGHTS=1 python setup.py develop
 
+# echo "[install_via_pip] captum setup"
+# BUILD_INSIGHTS=1 python setup.py develop
+
+echo "[install_via_pip] pip install torch"
 # install pytorch nightly if asked for
 if [[ $PYTORCH_NIGHTLY == true ]]; then
   pip install --upgrade --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html --progress-bar off
@@ -58,15 +62,17 @@ else
   fi
 fi
 
-# install deployment bits if asked for
-if [[ $DEPLOY == true ]]; then
-  pip install beautifulsoup4 ipython nbconvert==5.6.1 --progress-bar off
-fi
-
+echo "[install_via_pip] pip install transformers"
 # install appropriate transformers version
 # If no version is specified, upgrade to the latest release.
 if [[ $CHOSEN_TRANSFORMERS_VERSION == -1 ]]; then
   pip install --upgrade transformers --progress-bar off
 else
   pip install transformers=="$CHOSEN_TRANSFORMERS_VERSION" --progress-bar off
+fi
+
+echo "[install_via_pip] pip install deploy deps"
+# install deployment bits if asked for
+if [[ $DEPLOY == true ]]; then
+  pip install beautifulsoup4 ipython nbconvert==5.6.1 --progress-bar off
 fi

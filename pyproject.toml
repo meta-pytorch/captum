@@ -1,5 +1,90 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "captum"
+dynamic = ["version"]
+description = "Model Interpretability for PyTorch"
+readme = "README.md"
+license = "BSD-3-Clause"
+requires-python = ">=3.10"
+authors = [{ name = "PyTorch Team" }]
+keywords = [
+    "Model Interpretability",
+    "Model Understanding",
+    "Feature Importance",
+    "Neuron Importance",
+    "Data Attribution",
+    "Explainable AI",
+    "PyTorch",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "packaging",
+    "torch>=2.3",
+    "tqdm",
+]
+
+[project.urls]
+Homepage = "https://captum.ai"
+Documentation = "https://captum.ai"
+Source = "https://github.com/pytorch/captum"
+conda = "https://anaconda.org/pytorch/captum"
+
+[project.optional-dependencies]
+tutorials = ["torchtext", "torchvision"]
+test = [
+    "pytest",
+    "pytest-cov",
+    "parameterized",
+    "black==25.11.0",
+    "flake8",
+    "pyre-check-nightly==0.0.101750936314",
+    "usort==1.1.0",
+    "ufmt",
+]
+# Optional dependencies
+# captum may have some functionality that requires these packages,
+# but they are not required for the core functionality.
+# These packages should be lazily imported.
+optional = [
+    "openai",
+    "scikit-learn",
+    "annoy",
+]
+dev = [
+    "captum[test,optional]",
+    # Documentation dependencies
+    "sphinx<8.2.0",
+    "sphinx-autodoc-typehints",
+    "sphinxcontrib-katex",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "tests.*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "captum.__version__" }
+
 [tool.usort]
 first_party_detection = false
 
 [tool.black]
 target-version = ['py310']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["tests/insights"]
+
+[tool.coverage.report]
+omit = ["test/*"]
