@@ -24,4 +24,6 @@ jobs:
         ./scripts/install_via_pip.sh ${{ matrix.pytorch_args }} -d
         # Fix the version of numpy to install to avoid pyre issues
         pip install --upgrade numpy==2.1.3
+        # See https://github.com/facebook/pyre-check/issues/988
+        pip install 'click<8.2.0'
         pyre check
