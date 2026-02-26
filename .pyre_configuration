@@ -7,8 +7,7 @@
     ".*/website/.*",
     ".*/fb/.*",
     ".*/tests/.*",
-    ".*/setup.py",
-    ".*/insights/.*"
+    ".*/setup.py"
   ],
   "site_package_search_strategy": "all",
   "source_directories": [

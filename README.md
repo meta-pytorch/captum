@@ -365,6 +365,10 @@ approximation for given inputs and baselines is.
 More details on the list of supported algorithms and how to apply
 Captum on different types of models can be found in our tutorials.
 
+## Captum Insights (Retired)
+
+Captum Insights was retired after v0.8.0 and is no longer supported. You can check out
+the repository at the v0.8.0 tag to view the defunct code.
 
 ## FAQ
 If you have questions about using Captum methods, please check this [FAQ](docs/faq.md), which addresses many common issues.

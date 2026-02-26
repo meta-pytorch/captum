@@ -19,20 +19,6 @@ while getopts 'ndfv:t:' flag; do
     esac
   done
 
-# NOTE: Only Debian variants are supported, since this script is only
-# used by our tests on GitHub Actions. In the future we might generalize,
-# but users should hopefully be using conda installs.
-
-# install nodejs and yarn for insights build
-sudo apt-get update
-sudo apt install apt-transport-https ca-certificates
-curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt update
-sudo apt install nodejs
-sudo apt install yarn
-
 # yarn needs terminal info
 export TERM=xterm
 
@@ -45,9 +31,6 @@ pip install --upgrade pip --progress-bar off
 # install captum with dev deps
 echo "[install_via_pip] pip install captum dev"
 pip install -e .[dev] --progress-bar off
-
-# echo "[install_via_pip] captum setup"
-# BUILD_INSIGHTS=1 python setup.py develop
 
 echo "[install_via_pip] pip install torch"
 # install pytorch nightly if asked for

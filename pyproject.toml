@@ -84,7 +84,6 @@ target-version = ['py310']
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = ["tests/insights"]
 
 [tool.coverage.report]
 omit = ["test/*"]
