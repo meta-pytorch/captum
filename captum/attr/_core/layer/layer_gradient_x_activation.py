@@ -28,6 +28,7 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
         layer: ModuleOrModuleList,
         device_ids: Union[None, List[int]] = None,
         multiply_by_inputs: bool = True,
+        memory_efficient: bool = False,
     ) -> None:
         r"""
         Args:
@@ -62,10 +63,15 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
                         is set to True, final sensitivity scores are being multiplied by
                         layer activations for inputs.
 
+            memory_efficient (bool, optional): If True, offloads intermediate
+                        activations and gradients to CPU during computation.
+                        Default: False
+
         """
         LayerAttribution.__init__(self, forward_func, layer, device_ids)
         GradientAttribution.__init__(self, forward_func)
         self._multiply_by_inputs = multiply_by_inputs
+        self._memory_efficient = memory_efficient
 
     @property
     def multiplies_by_inputs(self) -> bool:
@@ -181,6 +187,7 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
             device_ids=self.device_ids,
             attribute_to_layer_input=attribute_to_layer_input,
             grad_kwargs=grad_kwargs,
+            offload_to_cpu=self._memory_efficient,
         )
         if isinstance(self.layer, Module):
             return _format_output(
@@ -191,13 +198,17 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
                 ),
             )
         else:
-            return [
-                _format_output(
-                    len(layer_evals[i]) > 1,
-                    self.multiply_gradient_acts(layer_gradients[i], layer_evals[i]),
+            results = []
+            for i in range(len(self.layer)):
+                grads_i = layer_gradients[i]
+                evals_i = layer_evals[i]
+                results.append(
+                    _format_output(
+                        len(evals_i) > 1,
+                        self.multiply_gradient_acts(grads_i, evals_i),
+                    )
                 )
-                for i in range(len(self.layer))
-            ]
+            return results
 
     def multiply_gradient_acts(
         self, gradients: Tuple[Tensor, ...], evals: Tuple[Tensor, ...]
