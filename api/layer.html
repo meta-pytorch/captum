@@ -548,7 +548,7 @@ otherwise a single tensor is returned.</p>
 <h2>Layer Gradient X Activation<a class="headerlink" href="#layer-gradient-x-activation" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="captum.attr.LayerGradientXActivation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">captum.attr.</span></span><span class="sig-name descname"><span class="pre">LayerGradientXActivation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_by_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/captum/attr/_core/layer/layer_gradient_x_activation.html#LayerGradientXActivation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#captum.attr.LayerGradientXActivation" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">captum.attr.</span></span><span class="sig-name descname"><span class="pre">LayerGradientXActivation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_by_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_efficient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/captum/attr/_core/layer/layer_gradient_x_activation.html#LayerGradientXActivation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#captum.attr.LayerGradientXActivation" title="Link to this definition">¶</a></dt>
 <dd><p>Computes element-wise product of gradient and activation for selected
 layer on given inputs.</p>
 <dl class="field-list simple">
@@ -583,6 +583,9 @@ More detailed can be found here:
 is set to True, final sensitivity scores are being multiplied by
 layer activations for inputs.</p>
 </p></li>
+<li><p><strong>memory_efficient</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, offloads intermediate
+activations and gradients to CPU during computation.
+Default: False</p></li>
 </ul>
 </dd>
 </dl>

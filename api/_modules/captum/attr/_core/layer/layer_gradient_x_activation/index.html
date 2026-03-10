@@ -62,6 +62,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">layer</span><span class="p">:</span> <span class="n">ModuleOrModuleList</span><span class="p">,</span>
         <span class="n">device_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">multiply_by_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">memory_efficient</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
@@ -96,10 +97,15 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                        is set to True, final sensitivity scores are being multiplied by</span>
 <span class="sd">                        layer activations for inputs.</span>
 
+<span class="sd">            memory_efficient (bool, optional): If True, offloads intermediate</span>
+<span class="sd">                        activations and gradients to CPU during computation.</span>
+<span class="sd">                        Default: False</span>
+
 <span class="sd">        """</span>
         <span class="n">LayerAttribution</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">device_ids</span><span class="p">)</span>
         <span class="n">GradientAttribution</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_multiply_by_inputs</span> <span class="o">=</span> <span class="n">multiply_by_inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_memory_efficient</span> <span class="o">=</span> <span class="n">memory_efficient</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -217,6 +223,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">device_ids</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device_ids</span><span class="p">,</span>
             <span class="n">attribute_to_layer_input</span><span class="o">=</span><span class="n">attribute_to_layer_input</span><span class="p">,</span>
             <span class="n">grad_kwargs</span><span class="o">=</span><span class="n">grad_kwargs</span><span class="p">,</span>
+            <span class="n">offload_to_cpu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_memory_efficient</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span> <span class="n">Module</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">_format_output</span><span class="p">(</span>
@@ -227,13 +234,17 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="p">),</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[</span>
-                <span class="n">_format_output</span><span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="n">layer_evals</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">multiply_gradient_acts</span><span class="p">(</span><span class="n">layer_gradients</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">layer_evals</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)):</span>
+                <span class="n">grads_i</span> <span class="o">=</span> <span class="n">layer_gradients</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">evals_i</span> <span class="o">=</span> <span class="n">layer_evals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">_format_output</span><span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">evals_i</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">multiply_gradient_acts</span><span class="p">(</span><span class="n">grads_i</span><span class="p">,</span> <span class="n">evals_i</span><span class="p">),</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">))</span>
-            <span class="p">]</span></div>
+            <span class="k">return</span> <span class="n">results</span></div>
 
 
     <span class="k">def</span> <span class="nf">multiply_gradient_acts</span><span class="p">(</span>
