@@ -748,6 +748,13 @@ def compute_layer_gradients_and_eval(
             **grad_kwargs or {},
         )
 
+        # Replace None gradients (from allow_unused=True) with zero tensors
+        # matching the corresponding input shapes.
+        saved_grads = tuple(
+            g if g is not None else torch.zeros_like(inp)
+            for g, inp in zip(saved_grads, grad_inputs)
+        )
+
         offset = 0
         all_grads: List[Tuple[Tensor, ...]] = []
         for single_layer in all_layers:
