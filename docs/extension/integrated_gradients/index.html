@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Integrated Gradients · Captum</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="## Integrated Gradients"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Integrated Gradients · Captum"/><meta property="og:type" content="website"/><meta property="og:url" content="https://captum.ai/"/><meta property="og:description" content="## Integrated Gradients"/><meta property="og:image" content="https://captum.ai/img/captum-icon.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://captum.ai/img/captum.png"/><link rel="shortcut icon" href="/img/captum.ico"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Integrated Gradients · Captum</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="## Integrated Gradients"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Integrated Gradients · Captum"/><meta property="og:type" content="website"/><meta property="og:url" content="https://captum.ai/"/><meta property="og:description" content="## Integrated Gradients"/><meta property="og:image" content="https://captum.ai/img/captum-icon.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://captum.ai/img/captum.png"/><link rel="shortcut icon" href="/img/captum.ico"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
               (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
               m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -68,7 +68,7 @@
                 };
               }
             });
-        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><a class="edit-page-link button" href="https://github.com/pytorch/captum/edit/master/docs/extension/integrated_gradients.md" target="_blank" rel="noreferrer noopener">Edit</a><h1 class="postHeaderTitle">Integrated Gradients</h1></header><article><div><span><h2><a class="anchor" aria-hidden="true" id="integrated-gradients"></a><a href="#integrated-gradients" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Integrated Gradients</h2>
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><a class="edit-page-link button" href="https://github.com/pytorch/captum/edit/master/docs/extension/integrated_gradients.md" target="_blank" rel="noreferrer noopener">Edit</a><h1 id="__docusaurus" class="postHeaderTitle">Integrated Gradients</h1></header><article><div><span><h2><a class="anchor" aria-hidden="true" id="integrated-gradients"></a><a href="#integrated-gradients" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Integrated Gradients</h2>
 <p>This section of the documentation shows how to apply integrated gradients on
 models with different types of parameters and inputs using Captum.</p>
 <h3><a class="anchor" aria-hidden="true" id="description"></a><a href="#description" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Description</h3>
@@ -170,38 +170,38 @@ target class (target_class_index: 5) which we use to attribute our predictions t
 Similar to the previous example, the output of attribution is a tensor with the same
 dimensionality as the inputs and an approximation error computed based on the
 completeness property of integrated gradients.</p>
-<pre><code class="hljs"><span class="hljs-keyword">from</span> captum.attr import IntegratedGradients
-num_in = 40
-input = torch.arange(0.0, num_in * 1.0, <span class="hljs-attribute">requires_grad</span>=<span class="hljs-literal">True</span>).unsqueeze(0)
+<pre><code class="hljs"><span class="hljs-string">from</span> <span class="hljs-string">captum.attr</span> <span class="hljs-string">import</span> <span class="hljs-string">IntegratedGradients</span>
+<span class="hljs-string">num_in</span> <span class="hljs-string">=</span> <span class="hljs-number">40</span>
+<span class="hljs-string">input</span> <span class="hljs-string">=</span> <span class="hljs-string">torch.arange(0.0,</span> <span class="hljs-string">num_in</span> <span class="hljs-string">*</span> <span class="hljs-number">1.0</span><span class="hljs-string">,</span> <span class="hljs-string">requires_grad=True).unsqueeze(0)</span>
 
 <span class="hljs-comment"># 10-class classification model</span>
-model = ToySoftmaxModel(num_in, 20, 10)
+<span class="hljs-string">model</span> <span class="hljs-string">=</span> <span class="hljs-string">ToySoftmaxModel(num_in,</span> <span class="hljs-number">20</span><span class="hljs-string">,</span> <span class="hljs-number">10</span><span class="hljs-string">)</span>
 
 <span class="hljs-comment"># attribution score will be computed with respect to target class</span>
-target_class_index = 5
+<span class="hljs-string">target_class_index</span> <span class="hljs-string">=</span> <span class="hljs-number">5</span>
 
 <span class="hljs-comment"># applying integrated gradients on the SoftmaxModel and input data point</span>
-ig = IntegratedGradients(model)
-attributions, approximation_error = ig.attribute(input, <span class="hljs-attribute">target</span>=target_class_index,
-                                    <span class="hljs-attribute">return_convergence_delta</span>=<span class="hljs-literal">True</span>)
+<span class="hljs-string">ig</span> <span class="hljs-string">=</span> <span class="hljs-string">IntegratedGradients(model)</span>
+<span class="hljs-string">attributions,</span> <span class="hljs-string">approximation_error</span> <span class="hljs-string">=</span> <span class="hljs-string">ig.attribute(input,</span> <span class="hljs-string">target=target_class_index,</span>
+                                    <span class="hljs-string">return_convergence_delta=True)</span>
 
 <span class="hljs-comment"># The input and returned corresponding attribution have the</span>
 <span class="hljs-comment"># same shape and dimensionality.</span>
 
-output
+<span class="hljs-string">output</span>
 
-<span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span><span class="hljs-built_in">..</span>.
+<span class="hljs-string">...................</span>
 
-attributions: (tensor([[ 0.0000,  0.0014,  0.0012,  0.0019,  0.0034,  0.0020, -0.0041,  
-          0.0085, -0.0016,  0.0111, -0.0114, -0.0053, -0.0054, -0.0095,  0.0097, -0.0170,
-          0.0067,  0.0036, -0.0296,  0.0244,  0.0091, -0.0287,  0.0270,  0.0073,
-         -0.0287,  0.0008, -0.0150, -0.0188, -0.0328, -0.0080, -0.0337,  0.0422,
-          0.0450,  0.0423, -0.0238,  0.0216, -0.0601,  0.0114,  0.0418, -0.0522]],
-       <span class="hljs-attribute">grad_fn</span>=&lt;MulBackward0&gt;),)
+<span class="hljs-attr">attributions:</span> <span class="hljs-string">(tensor([[</span> <span class="hljs-number">0.0000</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0014</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0012</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0019</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0034</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0020</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0041</span><span class="hljs-string">,</span>  
+          <span class="hljs-number">0.0085</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0016</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0111</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0114</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0053</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0054</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0095</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0097</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0170</span><span class="hljs-string">,</span>
+          <span class="hljs-number">0.0067</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0036</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0296</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0244</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0091</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0287</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0270</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0073</span><span class="hljs-string">,</span>
+         <span class="hljs-number">-0.0287</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0008</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0150</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0188</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0328</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0080</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0337</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0422</span><span class="hljs-string">,</span>
+          <span class="hljs-number">0.0450</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0423</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0238</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0216</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0601</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0114</span><span class="hljs-string">,</span>  <span class="hljs-number">0.0418</span><span class="hljs-string">,</span> <span class="hljs-number">-0.0522</span><span class="hljs-string">]],</span>
+       <span class="hljs-string">grad_fn=&lt;MulBackward0&gt;),)</span>
 
-approximation_error (aka delta): 0.00013834238052368164
+<span class="hljs-string">approximation_error</span> <span class="hljs-string">(aka</span> <span class="hljs-string">delta):</span> <span class="hljs-number">0.00013834238052368164</span>
 
-assert attributions.shape == input.shape
+<span class="hljs-string">assert</span> <span class="hljs-string">attributions.shape</span> <span class="hljs-string">==</span> <span class="hljs-string">input.shape</span>
 </code></pre>
 <p>Now, let's look at a model that besides input tensors takes input arguments of
 other types. In practice this can be used to pass the sequence length or the
