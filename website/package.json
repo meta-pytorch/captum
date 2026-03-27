@@ -18,6 +18,7 @@
     "immer": ">=9.0.6",
     "loader-utils": ">=2.0.3",
     "fast-xml-parser": ">=5.5.7",
-    "form-data": ">=2.5.4"
+    "form-data": ">=2.5.4",
+    "got": "11.8.5"
   }
 }
