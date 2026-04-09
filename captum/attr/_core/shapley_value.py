@@ -73,7 +73,7 @@ def _shape_feature_mask(
         if mask.dim() < inp.dim():
             mask = mask.reshape((1,) * (inp.dim() - mask.dim()) + tuple(mask.shape))
 
-        mask_list.append(mask)
+        mask_list.append(mask.to(inp.device))
 
     return tuple(mask_list)
 
