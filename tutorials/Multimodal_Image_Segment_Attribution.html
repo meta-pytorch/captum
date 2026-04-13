@@ -1,0 +1,747 @@
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Captum · Model Interpretability for PyTorch</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="Model Interpretability for PyTorch"/><meta property="og:title" content="Captum · Model Interpretability for PyTorch"/><meta property="og:type" content="website"/><meta property="og:url" content="https://captum.ai/"/><meta property="og:description" content="Model Interpretability for PyTorch"/><meta property="og:image" content="https://captum.ai/img/captum-icon.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://captum.ai/img/captum.png"/><link rel="shortcut icon" href="/img/captum.ico"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-44373548-48', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script type="text/javascript" src="/js/code_block_buttons.js"></script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script><script src="https://unpkg.com/vanilla-back-to-top@7.1.14/dist/vanilla-back-to-top.min.js"></script><script>
+        document.addEventListener('DOMContentLoaded', function() {
+          addBackToTop(
+            {"zIndex":100}
+          )
+        });
+        </script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/captum_logo.svg" alt="Captum"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/introduction" target="_self">Docs</a></li><li class=""><a href="/tutorials/" target="_self">Tutorials</a></li><li class=""><a href="/api/" target="_self">API Reference</a></li><li class=""><a href="https://github.com/pytorch/captum" target="_self">GitHub</a></li><li class="navSearchWrapper reactNavSearchWrapper"><input type="text" id="search_input_react" placeholder="Search" title="Search"/></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span></span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Captum Tutorials</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/">Overview</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Introduction to Captum</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/Titanic_Basic_Interpret">Getting started with Captum</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Attribution</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/IMDB_TorchText_Interpret">Interpreting text models</a></li><li class="navListItem"><a class="navItem" href="/tutorials/CIFAR_TorchVision_Interpret">Intepreting vision with CIFAR</a></li><li class="navListItem"><a class="navItem" href="/tutorials/TorchVision_Interpret">Interpreting vision with Pretrained Models</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Resnet_TorchVision_Ablation">Feature ablation on images with ResNet</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Multimodal_VQA_Interpret">Interpreting multimodal models</a></li><li class="navListItem"><a class="navItem" href="/tutorials/House_Prices_Regression_Interpret">Interpreting a regression model of California house prices</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Segmentation_Interpret">Interpreting semantic segmentation models</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Distributed_Attribution">Using Captum with torch.distributed</a></li><li class="navListItem"><a class="navItem" href="/tutorials/DLRM_Tutorial">Interpreting Deep Learning Recommender Models</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Image_and_Text_Classification_LIME">Interpreting vision and text models with LIME</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Llama2_LLM_Attribution">Understanding Llama2 with Captum LLM Attribution</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/tutorials/Multimodal_Image_Segment_Attribution">Image Segment Attribution for Multi-Modal LLMs</a></li><div class="navGroup subNavGroup"><h4 class="navGroupSubcategoryTitle">Interpreting BERT</h4><ul><li class="navListItem"><a class="navItem" href="/tutorials/Bert_SQUAD_Interpret">Interpreting question answering with BERT Part 1</a></li><li class="navListItem"><a class="navItem" href="/tutorials/Bert_SQUAD_Interpret2">Interpreting question answering with BERT Part 2</a></li></ul></div></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Robustness</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/CIFAR_Captum_Robustness">Applying robustness attacks and metrics to CIFAR model and dataset</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concept</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/TCAV_Image">TCAV for image classification for googlenet model</a></li><li class="navListItem"><a class="navItem" href="/tutorials/TCAV_NLP">TCAV for NLP sentiment analysis model</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Influential Examples</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/TracInCP_Tutorial">Identifying influential examples and mis-labelled examples with TracInCP</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="tutorialBody">
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js">
+</script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js">
+</script>
+<div class="notebook">
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Image-Segment-Attribution-for-Multi-Modal-LLMs-with-Captum">Image Segment Attribution for Multi-Modal LLMs with Captum<a class="anchor-link" href="#Image-Segment-Attribution-for-Multi-Modal-LLMs-with-Captum">¶</a></h1><p>In this tutorial, we demonstrate how to use Captum's <code>ImageMaskInput</code> to perform <strong>image segment saliency analysis</strong> on Multi-Modal Large Language Models (MM-LLMs). This allows us to understand which regions of an input image contribute most to the model's generated text response.</p>
+<h2 id="What-You'll-Learn">What You'll Learn<a class="anchor-link" href="#What-You'll-Learn">¶</a></h2><ul>
+<li>How to use <code>ImageMaskInput</code> to define interpretable image segments</li>
+<li>Two segmentation approaches:<ul>
+<li><strong>Grid-based segmentation</strong>: Simple, uniform division of the image</li>
+<li><strong>SAM-2 segmentation</strong>: Semantically meaningful segments using Segment Anything Model 2</li>
+</ul>
+</li>
+<li>How to apply <code>FeatureAblation</code> with <code>LLMAttribution</code> for MM-LLMs</li>
+<li>How to visualize attribution results as heatmaps</li>
+</ul>
+<h2 id="Key-Concepts">Key Concepts<a class="anchor-link" href="#Key-Concepts">¶</a></h2><p><strong>Feature Ablation</strong> works by systematically "masking out" (ablating) different image segments and measuring how the model's output changes. Segments that cause large changes when removed are considered more important for the model's prediction.</p>
+<p><strong>ImageMaskInput</strong> is Captum's adapter that:</p>
+<ol>
+<li>Takes an image and segmentation mask</li>
+<li>Converts it to an interpretable representation (presence/absence of each segment)</li>
+<li>Handles the perturbation during attribution (replacing masked regions with a baseline color)</li>
+</ol>
+<p>In this tutorial, we use <strong>Google Gemma-4</strong> as our multi-modal LLM, but the approach works with any vision-language model that follows the standard processor pattern.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-1:-Setup-and-Imports">Step 1: Setup and Imports<a class="anchor-link" href="#Step-1:-Setup-and-Imports">¶</a></h1><p>First, let's import the necessary packages. We need:</p>
+<ul>
+<li><strong>PyTorch and Transformers</strong>: For loading and running the MM-LLM model</li>
+<li><strong>Captum</strong>: For attribution algorithms (<code>FeatureAblation</code>, <code>LLMAttribution</code>, <code>ImageMaskInput</code>)</li>
+<li><strong>PIL and Matplotlib</strong>: For image handling and visualization</li>
+<li><strong>SAM-2</strong>: For semantic image segmentation (Segment Anything Model 2)</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">transformers</span>
+
+
+<span class="c1"># Captum imports for attribution</span>
+<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">FeatureAblation</span>
+<span class="kn">from</span> <span class="nn">captum.attr._core.llm_attr</span> <span class="kn">import</span> <span class="n">LLMAttribution</span>
+<span class="kn">from</span> <span class="nn">captum.attr._utils.interpretable_input</span> <span class="kn">import</span> <span class="n">ImageMaskInput</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">AutoProcessor</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PyTorch version: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CUDA available: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Transformers version: </span><span class="si">{</span><span class="n">transformers</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-2:-Load-the-Multi-Modal-LLM">Step 2: Load the Multi-Modal LLM<a class="anchor-link" href="#Step-2:-Load-the-Multi-Modal-LLM">¶</a></h1><p>We use <strong>Google Gemma-4-31B-it</strong>, a powerful multi-modal instruction-tuned model. To fit the model in GPU memory, we use <strong>4-bit quantization</strong> via <code>BitsAndBytesConfig</code>.</p>
+<p>The model can process both text and images, making it ideal for demonstrating image attribution in multi-modal contexts.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Model configuration</span>
+<span class="n">model_id</span> <span class="o">=</span> <span class="s2">"google/gemma-4-31B-it"</span>
+
+<span class="c1"># Load the model and processor</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Loading processor..."</span><span class="p">)</span>
+<span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Loading model with 4-bit quantization..."</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+    <span class="n">model_id</span><span class="p">,</span>
+    <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">,</span>
+    <span class="n">device_map</span><span class="o">=</span><span class="s2">"auto"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Model loaded successfully!"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Model device: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-3:-Load-a-Sample-Image">Step 3: Load a Sample Image<a class="anchor-link" href="#Step-3:-Load-a-Sample-Image">¶</a></h1><p>Let's load a sample image that we'll use to demonstrate image attribution. We'll use a classic image of a Volkswagen Beetle car.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">load_image_from_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Load an image from a URL."""</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">"RGB"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">image</span>
+
+
+<span class="c1"># Load a sample image from HuggingFace</span>
+<span class="n">image_url</span> <span class="o">=</span> <span class="s2">"https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/transformers/tasks/car.jpg"</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">load_image_from_url</span><span class="p">(</span><span class="n">image_url</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Image loaded successfully!"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Image size: </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> (width x height)"</span><span class="p">)</span>
+
+<span class="c1"># Display the image</span>
+<span class="n">image</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-4:-Generate-a-Baseline-Response">Step 4: Generate a Baseline Response<a class="anchor-link" href="#Step-4:-Generate-a-Baseline-Response">¶</a></h1><p>Before performing attribution, let's first see how the model responds to a simple image description prompt. This will help us understand what output we're trying to explain.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define the conversation with image and text</span>
+<span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+        <span class="s2">"content"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"image"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Briefly describe the image in one sentence."</span><span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+
+<span class="c1"># Apply the chat template to format the prompt</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Process the inputs (image + text) for the model</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="p">(</span>
+    <span class="n">text</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+    <span class="n">images</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+    <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Input prepared successfully!"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input token shape: </span><span class="si">{</span><span class="n">inputs</span><span class="p">[</span><span class="s1">'input_ids'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Generate the model's response</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Generating response..."</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+        <span class="o">**</span><span class="n">inputs</span><span class="p">,</span>
+        <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+        <span class="n">do_sample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Greedy decoding for reproducibility</span>
+    <span class="p">)</span>
+
+<span class="c1"># Decode only the generated tokens (exclude the input)</span>
+<span class="n">input_token_len</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">input_token_len</span><span class="p">:],</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Model Response:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-5:-Image-Segmentation-Methods">Step 5: Image Segmentation Methods<a class="anchor-link" href="#Step-5:-Image-Segmentation-Methods">¶</a></h1><p>To use <code>ImageMaskInput</code> for attribution, we need to define how to segment the image into interpretable features. We'll demonstrate two approaches:</p>
+<ol>
+<li><strong>Grid-based segmentation</strong>: Simple, uniform division of the image into a grid</li>
+<li><strong>SAM-2 segmentation</strong>: Semantically meaningful segments using the Segment Anything Model 2</li>
+</ol>
+<h2 id="Part-A:-Grid-Based-Segmentation">Part A: Grid-Based Segmentation<a class="anchor-link" href="#Part-A:-Grid-Based-Segmentation">¶</a></h2><p>The simplest approach is to divide the image into a uniform m×n grid. This is fast and requires no external models, but segments may not align with semantic boundaries.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">create_grid_mask</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Create a grid mask that divides the image into rows x cols segments.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        image: PIL Image</span>
+<span class="sd">        rows: Number of rows in the grid</span>
+<span class="sd">        cols: Number of columns in the grid</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor of shape (height, width) with integer segment IDs</span>
+<span class="sd">    """</span>
+    <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    
+    <span class="n">h_step</span> <span class="o">=</span> <span class="n">height</span> <span class="o">//</span> <span class="n">rows</span>
+    <span class="n">w_step</span> <span class="o">=</span> <span class="n">width</span> <span class="o">//</span> <span class="n">cols</span>
+    
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
+            <span class="c1"># Calculate segment boundaries</span>
+            <span class="n">y_start</span> <span class="o">=</span> <span class="n">row</span> <span class="o">*</span> <span class="n">h_step</span>
+            <span class="n">y_end</span> <span class="o">=</span> <span class="n">height</span> <span class="k">if</span> <span class="n">row</span> <span class="o">==</span> <span class="n">rows</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="n">row</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">h_step</span>
+            <span class="n">x_start</span> <span class="o">=</span> <span class="n">col</span> <span class="o">*</span> <span class="n">w_step</span>
+            <span class="n">x_end</span> <span class="o">=</span> <span class="n">width</span> <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="n">cols</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="n">col</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">w_step</span>
+            
+            <span class="c1"># Assign unique segment ID</span>
+            <span class="n">segment_id</span> <span class="o">=</span> <span class="n">row</span> <span class="o">*</span> <span class="n">cols</span> <span class="o">+</span> <span class="n">col</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">y_start</span><span class="p">:</span><span class="n">y_end</span><span class="p">,</span> <span class="n">x_start</span><span class="p">:</span><span class="n">x_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">segment_id</span>
+    
+    <span class="k">return</span> <span class="n">mask</span>
+
+
+<span class="c1"># Create a 4x5 grid mask (20 segments)</span>
+<span class="n">grid_mask</span> <span class="o">=</span> <span class="n">create_grid_mask</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Grid mask shape: </span><span class="si">{</span><span class="n">grid_mask</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of segments: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">grid_mask</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Visualizing-the-Segmentation">Visualizing the Segmentation<a class="anchor-link" href="#Visualizing-the-Segmentation">¶</a></h3><p><code>ImageMaskInput</code> provides a convenient <code>plot_mask_overlay()</code> method to visualize segmentations. Here we create an <code>ImageMaskInput</code> object with a dummy processor function just to leverage this visualization utility - the actual attribution will use a proper processor function defined later.</p>
+<blockquote><p><strong>Note:</strong> The <code>processor_fn</code> parameter is required by <code>ImageMaskInput</code>, but for visualization purposes only, we can use a simple identity function (<code>lambda x: x</code>).</p>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create ImageMaskInput with grid mask for VISUALIZATION ONLY</span>
+<span class="c1"># We use a dummy processor (identity function) since we just want to preview the segmentation</span>
+<span class="c1"># The actual ImageMaskInput for attribution will be created later with a proper processor_fn</span>
+<span class="n">grid_input_preview</span> <span class="o">=</span> <span class="n">ImageMaskInput</span><span class="p">(</span>
+    <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+    <span class="n">mask</span><span class="o">=</span><span class="n">grid_mask</span><span class="p">,</span>
+    <span class="n">processor_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>  <span class="c1"># Dummy processor - just for visualization</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Grid segmentation (4 rows × 5 columns = 20 segments):"</span><span class="p">)</span>
+<span class="n">grid_input_preview</span><span class="o">.</span><span class="n">plot_mask_overlay</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Part-B:-SAM-2-Semantic-Segmentation">Part B: SAM-2 Semantic Segmentation<a class="anchor-link" href="#Part-B:-SAM-2-Semantic-Segmentation">¶</a></h2><p>For more semantically meaningful segments, we can use <strong>SAM-2 (Segment Anything Model 2)</strong> to automatically detect objects and regions in the image. SAM-2 produces masks that follow object boundaries, making the attribution results more interpretable.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">pipeline</span>
+
+<span class="c1"># Load SAM-2 for automatic mask generation</span>
+<span class="n">sam_generator</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span>
+    <span class="s2">"mask-generation"</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">"facebook/sam2-hiera-large"</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="mi">0</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"SAM-2 model loaded successfully!"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Generate semantic masks using SAM-2</span>
+<span class="c1"># points_per_batch controls memory usage during mask generation</span>
+<span class="n">sam_outputs</span> <span class="o">=</span> <span class="n">sam_generator</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">points_per_batch</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+
+<span class="c1"># Extract the list of binary masks</span>
+<span class="n">sam_masks</span> <span class="o">=</span> <span class="n">sam_outputs</span><span class="p">[</span><span class="s2">"masks"</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SAM-2 generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sam_masks</span><span class="p">)</span><span class="si">}</span><span class="s2"> semantic segments"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Each mask shape: </span><span class="si">{</span><span class="n">sam_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Similarly, create ImageMaskInput with SAM-2 masks for VISUALIZATION ONLY</span>
+<span class="c1"># Notice how SAM-2 segments follow semantic boundaries (car body, windows, wheels, etc.)</span>
+<span class="n">sam_input_preview</span> <span class="o">=</span> <span class="n">ImageMaskInput</span><span class="p">(</span>
+    <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+    <span class="n">mask_list</span><span class="o">=</span><span class="n">sam_masks</span><span class="p">,</span>
+    <span class="n">processor_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>  <span class="c1"># Dummy processor - just for visualization</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SAM-2 segmentation (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sam_masks</span><span class="p">)</span><span class="si">}</span><span class="s2"> semantic segments):"</span><span class="p">)</span>
+<span class="n">sam_input_preview</span><span class="o">.</span><span class="n">plot_mask_overlay</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-6:-Setup-Captum-Attribution">Step 6: Setup Captum Attribution<a class="anchor-link" href="#Step-6:-Setup-Captum-Attribution">¶</a></h1><p>Now we'll set up Captum's attribution tools:</p>
+<ul>
+<li><strong>FeatureAblation</strong>: The underlying perturbation-based attribution algorithm</li>
+<li><strong>LLMAttribution</strong>: A wrapper that handles the complexities of LLM attribution (sequential token generation, probability aggregation, etc.)</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize FeatureAblation with the model</span>
+<span class="n">fa</span> <span class="o">=</span> <span class="n">FeatureAblation</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<span class="c1"># Wrap it with LLMAttribution for handling LLM-specific complexities</span>
+<span class="n">llm_attr</span> <span class="o">=</span> <span class="n">LLMAttribution</span><span class="p">(</span><span class="n">fa</span><span class="p">,</span> <span class="n">processor</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Attribution tools initialized!"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-7:-Create-ImageMaskInput-for-Attribution">Step 7: Create ImageMaskInput for Attribution<a class="anchor-link" href="#Step-7:-Create-ImageMaskInput-for-Attribution">¶</a></h1><p>The key component is the <code>processor_fn</code> - a function that converts an image into the model's expected input format. This function is called during attribution for each perturbed version of the image.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">processor_fn</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Convert an image to model inputs.</span>
+<span class="sd">    </span>
+<span class="sd">    This function is called by ImageMaskInput for each perturbed image</span>
+<span class="sd">    during the attribution process.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        img: PIL Image (potentially with masked regions)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Model inputs (tokenized text + processed image)</span>
+<span class="sd">    """</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+            <span class="s2">"content"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"image"</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Briefly describe the image in one sentence."</span><span class="p">},</span>
+            <span class="p">],</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+    
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">processor</span><span class="p">(</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+        <span class="n">images</span><span class="o">=</span><span class="n">img</span><span class="p">,</span>
+        <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Processor function defined!"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-8:-Run-Attribution-with-SAM-2-Segmentation">Step 8: Run Attribution with SAM-2 Segmentation<a class="anchor-link" href="#Step-8:-Run-Attribution-with-SAM-2-Segmentation">¶</a></h1><p>Now we create an <code>ImageMaskInput</code> using the SAM-2 generated masks and run attribution. The <code>mask_list</code> parameter accepts a list of binary masks, which is exactly what SAM-2 provides.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create ImageMaskInput with SAM-2 masks</span>
+<span class="n">sam_input</span> <span class="o">=</span> <span class="n">ImageMaskInput</span><span class="p">(</span>
+    <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+    <span class="n">mask_list</span><span class="o">=</span><span class="n">sam_masks</span><span class="p">,</span>  <span class="c1"># List of binary masks from SAM-2</span>
+    <span class="n">processor_fn</span><span class="o">=</span><span class="n">processor_fn</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Created ImageMaskInput with </span><span class="si">{</span><span class="n">sam_input</span><span class="o">.</span><span class="n">n_itp_features</span><span class="si">}</span><span class="s2"> interpretable features (segments)"</span><span class="p">)</span>
+
+<span class="c1"># Run attribution - this will ablate each segment and measure impact on output</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Running attribution (this may take a few minutes)..."</span><span class="p">)</span>
+<span class="n">sam_attr_result</span> <span class="o">=</span> <span class="n">llm_attr</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">sam_input</span><span class="p">,</span> <span class="n">forward_in_tokens</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Attribution complete!"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-9:-Visualize-Attribution-Results">Step 9: Visualize Attribution Results<a class="anchor-link" href="#Step-9:-Visualize-Attribution-Results">¶</a></h1><p>Now that attribution is complete, let's visualize the results to understand which image regions contributed to the model's response.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Token-Level-Attribution">Token-Level Attribution<a class="anchor-link" href="#Token-Level-Attribution">¶</a></h2><p>The <code>plot_token_attr</code> method shows the attribution for each generated token. This helps us understand which image segments contributed to each word in the model's response:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot token-level attribution</span>
+<span class="c1"># This shows which segments are important for each generated token</span>
+<span class="n">sam_attr_result</span><span class="o">.</span><span class="n">plot_token_attr</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Image-Heatmap-Visualization">Image Heatmap Visualization<a class="anchor-link" href="#Image-Heatmap-Visualization">¶</a></h2><p>The most intuitive visualization is the image heatmap, which shows the attribution overlaid directly on the image. Brighter/warmer colors indicate regions that are more important for the model's response:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot overall image attribution heatmap</span>
+<span class="c1"># This aggregates attribution across all generated tokens</span>
+<span class="n">sam_attr_result</span><span class="o">.</span><span class="n">plot_image_heatmap</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Token-Specific-Heatmaps">Token-Specific Heatmaps<a class="anchor-link" href="#Token-Specific-Heatmaps">¶</a></h2><p>We can also visualize which image regions contributed to specific tokens in the response. Use <code>target_token_pos</code> to specify which token(s) to focus on.</p>
+<p>This is useful for understanding <em>why</em> the model mentioned specific concepts in its description.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># First, let's see which tokens were generated</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Generated tokens:"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sam_attr_result</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Position </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: '</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Example: Attribution heatmap for specific tokens</span>
+<span class="c1"># Adjust the token positions based on the output above</span>
+
+<span class="c1"># Heatmap for "Volkswagen Beetle" tokens</span>
+<span class="n">target_token_pos</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">'Showing heatmap for tokens at positions </span><span class="si">{</span><span class="n">target_token_pos</span><span class="si">}</span><span class="s1"> ["Volkswagen Beetle"]'</span>
+<span class="p">)</span>
+<span class="n">sam_attr_result</span><span class="o">.</span><span class="n">plot_image_heatmap</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">target_token_pos</span><span class="o">=</span><span class="n">target_token_pos</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Heatmap for "two brown wooden doors" tokens (adjust positions as needed)</span>
+<span class="n">target_token_pos</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">19</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">'Showing heatmap for tokens at positions </span><span class="si">{</span><span class="n">target_token_pos</span><span class="si">}</span><span class="s1"> ["two brown wooden doors"]'</span>
+<span class="p">)</span>
+<span class="n">sam_attr_result</span><span class="o">.</span><span class="n">plot_image_heatmap</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">target_token_pos</span><span class="o">=</span><span class="n">target_token_pos</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Step-10:-Comparison---Grid-Based-Attribution">Step 10: Comparison - Grid-Based Attribution<a class="anchor-link" href="#Step-10:-Comparison---Grid-Based-Attribution">¶</a></h1><p>For comparison, let's also run attribution using the simple grid-based segmentation. This is faster but may produce less interpretable results since grid cells don't follow object boundaries.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create ImageMaskInput with grid mask for ATTRIBUTION (with proper processor_fn)</span>
+<span class="n">grid_input</span> <span class="o">=</span> <span class="n">ImageMaskInput</span><span class="p">(</span>
+    <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+    <span class="n">mask</span><span class="o">=</span><span class="n">grid_mask</span><span class="p">,</span>
+    <span class="n">processor_fn</span><span class="o">=</span><span class="n">processor_fn</span><span class="p">,</span>  <span class="c1"># Now using the real processor function</span>
+<span class="p">)</span>
+
+<span class="c1"># Run attribution with grid-based segmentation</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running grid-based attribution with </span><span class="si">{</span><span class="n">grid_input</span><span class="o">.</span><span class="n">n_itp_features</span><span class="si">}</span><span class="s2"> segments..."</span><span class="p">)</span>
+<span class="n">grid_attr_result</span> <span class="o">=</span> <span class="n">llm_attr</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">grid_input</span><span class="p">,</span> <span class="n">forward_in_tokens</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Grid attribution complete!"</span><span class="p">)</span>
+
+<span class="c1"># Compare: visualize grid-based heatmap</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Grid-based attribution heatmap:"</span><span class="p">)</span>
+<span class="n">grid_attr_result</span><span class="o">.</span><span class="n">plot_image_heatmap</span><span class="p">(</span><span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Conclusion">Conclusion<a class="anchor-link" href="#Conclusion">¶</a></h1><p>In this tutorial, we demonstrated how to use Captum's <code>ImageMaskInput</code> for image segment saliency analysis on multi-modal LLMs.</p>
+<h2 id="Key-Takeaways">Key Takeaways<a class="anchor-link" href="#Key-Takeaways">¶</a></h2><ol>
+<li><p><strong><code>ImageMaskInput</code></strong> provides a bridge between image segmentation and Captum's attribution algorithms, allowing you to understand which parts of an image influence a model's text output.</p>
+</li>
+<li><p><strong>Two segmentation approaches</strong>:</p>
+<ul>
+<li><strong>Grid-based</strong>: Fast and simple, but segments don't follow semantic boundaries</li>
+<li><strong>SAM-2</strong>: Produces semantically meaningful segments that follow object boundaries, leading to more interpretable results</li>
+</ul>
+</li>
+<li><p><strong>Visualization options</strong>:</p>
+<ul>
+<li><code>plot_mask_overlay()</code>: Visualize the segmentation</li>
+<li><code>plot_token_attr()</code>: See per-token attribution</li>
+<li><code>plot_image_heatmap()</code>: Overlay attribution on the image</li>
+<li><code>plot_image_heatmap(target_token_pos=...)</code>: Focus on specific tokens</li>
+</ul>
+</li>
+</ol>
+<h2 id="Next-Steps">Next Steps<a class="anchor-link" href="#Next-Steps">¶</a></h2><ul>
+<li>Try different segmentation granularities (more/fewer grid cells, different SAM settings)</li>
+<li>Experiment with different prompts to see how image regions influence different types of responses</li>
+<li>Apply this technique to your own multi-modal models and use cases</li>
+</ul>
+<h2 id="References">References<a class="anchor-link" href="#References">¶</a></h2><ul>
+<li><a href="https://captum.ai">Captum Documentation</a></li>
+<li><a href="https://arxiv.org/abs/2312.05491">LLM Attribution Paper</a></li>
+<li><a href="https://github.com/facebookresearch/segment-anything-2">Segment Anything Model 2</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/Multimodal_Image_Segment_Attribution.ipynb" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Jupyter Notebook</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/Multimodal_Image_Segment_Attribution.py" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Source Code</a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><h5>Docs</h5><a href="/docs/introduction">Introduction</a><a href="/docs/getting_started">Getting Started</a><a href="/tutorials/">Tutorials</a><a href="/api/">API Reference</a></div><div class="footerSection"><h5>Legal</h5><a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></div><div class="footerSection"><h5>Social</h5><div class="social"><a class="github-button" href="https://github.com/pytorch/captum" data-count-href="https://github.com/pytorch/captum/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star Captum on GitHub">captum</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright"> Copyright © 2026 Facebook Inc.</section><script>
+            (function() {
+              var BAD_BASE = '/captum/';
+              if (window.location.origin !== 'https://captum.ai') {
+                var pathname = window.location.pathname;
+                var newPathname = pathname.slice(pathname.indexOf(BAD_BASE) === 0 ? BAD_BASE.length : 1);
+                var newLocation = 'https://captum.ai/' + newPathname;
+                console.log('redirecting to ' + newLocation);
+                window.location.href = newLocation;
+              }
+            })();
+          </script></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
+                document.addEventListener('keyup', function(e) {
+                  if (e.target !== document.body) {
+                    return;
+                  }
+                  // keyCode for '/' (slash)
+                  if (e.keyCode === 191) {
+                    const search = document.getElementById('search_input_react');
+                    search && search.focus();
+                  }
+                });
+              </script><script>
+              var search = docsearch({
+                
+                apiKey: '207c27d819f967749142d8611de7cb19',
+                indexName: 'captum',
+                inputSelector: '#search_input_react'
+              });
+            </script></body></html>
