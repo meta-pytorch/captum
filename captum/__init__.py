@@ -9,6 +9,6 @@ import captum.metrics as metrics
 import captum.robust as robust
 
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 __all__ = ["attr", "concept", "influence", "log", "metrics", "robust"]

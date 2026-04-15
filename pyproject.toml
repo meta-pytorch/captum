@@ -74,6 +74,8 @@ dev = [
 exclude = ["tests", "tests.*"]
 
 [tool.setuptools.dynamic]
+# This imports captum to read __version__, so build with the same minimum
+# python version as requires-python to avoid syntax errors during import.
 version = { attr = "captum.__version__" }
 
 [tool.usort]
