@@ -748,6 +748,19 @@ def compute_layer_gradients_and_eval(
             **grad_kwargs or {},
         )
 
+        # When grad_kwargs sets ``allow_unused=True`` (e.g. layer attribution
+        # for multi-task models where some target layers are not connected to
+        # the selected output), ``torch.autograd.grad`` returns ``None`` for
+        # any input that did not contribute to the output. The mathematically
+        # correct gradient in that case is a zero tensor with the same shape
+        # as the layer output. Substitute zeros here so downstream consumers
+        # (e.g. ``_reduce_list``) keep their Tensor-only invariant intact.
+        if any(g is None for g in saved_grads):
+            saved_grads = tuple(
+                torch.zeros_like(layer_tensor) if grad is None else grad
+                for grad, layer_tensor in zip(saved_grads, grad_inputs)
+            )
+
         offset = 0
         all_grads: List[Tuple[Tensor, ...]] = []
         for single_layer in all_layers:
