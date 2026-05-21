@@ -994,6 +994,37 @@ class Test(BaseTest):
                     self.assertEqual(tcav_i["sign_count"].shape[0], 2)
                     self.assertEqual(tcav_i["magnitude"].shape[0], 2)
 
+    def test_TCAV_interpret_preserves_experimental_set_order(self) -> None:
+        class MultiConceptClassifier(CustomClassifier):
+            def weights(self) -> Tensor:
+                # pyre-fixme[16]: `MultiConceptClassifier` has no attribute
+                #  `num_features`.
+                return torch.ones(len(self.classes()), self.num_features)
+
+        concepts = [
+            ["striped", "random", "ceo"],
+            ["ceo", "random"],
+            ["striped", "dotted"],
+            ["random", "striped", "dotted"],
+        ]
+        classifier = MultiConceptClassifier()
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tcav, concept_dict = init_TCAV(tmpdirname, classifier, "conv2")
+            experimental_sets = self._create_experimental_sets(concepts, concept_dict)
+
+            scores = tcav.interpret(
+                inputs=100 * get_inputs_tensor(),
+                experimental_sets=experimental_sets,
+                target=0,
+                processes=1,
+            )
+
+            self.assertEqual(
+                list(scores.keys()),
+                [concepts_to_str(concepts) for concepts in experimental_sets],
+            )
+
     # Force Train
     def test_TCAV_1_1_a(self) -> None:
         self.compute_cavs_interpret(

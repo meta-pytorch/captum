@@ -701,7 +701,7 @@ class TCAV(ConceptInterpreter):
         exp_set_lens = np.array(
             [len(exp_set) for exp_set in experimental_sets], dtype=object
         )
-        exp_set_lens_arg_sort = np.argsort(exp_set_lens)
+        exp_set_lens_arg_sort = np.argsort(exp_set_lens, kind="stable")
 
         # compute offsets using sorted lengths using their indices
         exp_set_lens_sort = exp_set_lens[exp_set_lens_arg_sort]
@@ -783,7 +783,15 @@ class TCAV(ConceptInterpreter):
                 )
                 i += 1
 
-        return scores
+        # Preserve the caller-provided experimental set order in the returned
+        # mapping, even though computation batches sets by concept count.
+        ordered_scores: Dict[str, Dict[str, Dict[str, Tensor]]] = defaultdict(
+            lambda: defaultdict()
+        )
+        for concepts in experimental_sets:
+            concepts_key = concepts_to_str(concepts)
+            ordered_scores[concepts_key] = scores[concepts_key]
+        return ordered_scores
 
     def _tcav_sub_computation(
         self,
