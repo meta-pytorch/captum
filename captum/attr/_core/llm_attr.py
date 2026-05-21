@@ -621,10 +621,10 @@ class BaseLLMAttribution(Attribution, ABC):
             )
             generate_func = cast(Callable[..., Tensor], self.model.generate)
 
-            if not gen_args:
-                gen_args = DEFAULT_GEN_ARGS
+            gen_args = DEFAULT_GEN_ARGS.copy() if not gen_args else gen_args.copy()
 
             model_inp = self._format_model_input(inp.to_model_input())
+            self._update_model_input_for_generation(model_inp, gen_args)
             input_token_len = model_inp["input_ids"].size(1)
             output_tokens = generate_func(**model_inp, **gen_args)
             target_tokens = output_tokens[0][input_token_len:]
@@ -648,6 +648,20 @@ class BaseLLMAttribution(Attribution, ABC):
                     "{}".format(type(target))
                 )
         return target_tokens
+
+    def _update_model_input_for_generation(
+        self, model_inp: Dict[str, Any], gen_args: Dict[str, Any]
+    ) -> None:
+        input_ids = model_inp.get("input_ids")
+        if isinstance(input_ids, Tensor) and "attention_mask" not in model_inp:
+            model_inp["attention_mask"] = torch.ones_like(input_ids, dtype=torch.long)
+
+        if "pad_token_id" not in gen_args:
+            pad_token_id = getattr(self.tokenizer, "pad_token_id", None)
+            if pad_token_id is None:
+                pad_token_id = getattr(self.tokenizer, "eos_token_id", None)
+            if pad_token_id is not None:
+                gen_args["pad_token_id"] = pad_token_id
 
     def _format_model_input(
         self, model_input: Union[str, Tensor, Mapping]

@@ -46,6 +46,8 @@ from torch import nn, Tensor
 class DummyTokenizer:
     vocab_size: int = 256
     sos: int = 0
+    pad_token_id: int = sos
+    eos_token_id: int = sos
     unk: int = 1
     sos_str: str = "<sos>"
     special_tokens: Dict[int, str] = {sos: sos_str, unk: "<unk>"}
@@ -381,6 +383,44 @@ class TestLLMAttr(BaseTest):
         self.assertEqual(res.output_tokens, ["x", "y", "z"])
         self.assertEqual(res.seq_attr.device.type, self.device)
         self.assertEqual(cast(Tensor, res.token_attr).device.type, self.device)
+
+    def test_llm_attr_generation_uses_attention_mask(self) -> None:
+        class RecordingLLM(DummyLLM):
+            generate_kwargs: Dict[str, Any]
+
+            def generate(
+                self,
+                input_ids: Tensor,
+                *args: Any,
+                mock_response: Optional[str] = None,
+                **kwargs: Any,
+            ) -> Tensor:
+                self.generate_kwargs = kwargs
+                return super().generate(
+                    input_ids,
+                    *args,
+                    mock_response=mock_response,
+                    **kwargs,
+                )
+
+        llm = RecordingLLM()
+        llm.to(self.device)
+        tokenizer = DummyTokenizer()
+        fa = FeatureAblation(llm)
+        llm_fa = LLMAttribution(fa, tokenizer)
+
+        inp = TextTemplateInput("{} b {} {} e {}", ["a", "c", "d", "f"])
+        llm_fa.attribute(
+            inp,
+            gen_args={"mock_response": "x y z"},
+            use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
+        )
+
+        self.assertIn("attention_mask", llm.generate_kwargs)
+        attention_mask = llm.generate_kwargs["attention_mask"]
+        self.assertTrue(torch.equal(attention_mask, torch.ones_like(attention_mask)))
+        self.assertEqual(llm.generate_kwargs["pad_token_id"], tokenizer.pad_token_id)
 
     def test_llm_attr_fa_log_prob(self) -> None:
         llm = DummyLLM()
