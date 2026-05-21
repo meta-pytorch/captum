@@ -81,7 +81,7 @@ class AV:
         def __getitem__(self, idx: int) -> Union[Tensor, Tuple[Tensor, ...]]:
             assert idx < len(self.files), "Layer index is out of bounds!"
             fl = self.files[idx]
-            av = torch.load(fl)
+            av = torch.load(fl, weights_only=True)
             return av
 
         def __len__(self) -> int:

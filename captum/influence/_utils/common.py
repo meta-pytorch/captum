@@ -177,7 +177,7 @@ def _load_flexible_state_dict(model: Module, path: str) -> float:
     The module state_dict is modified in-place, and the learning rate is returned.
     """
 
-    checkpoint = torch.load(path)
+    checkpoint = torch.load(path, weights_only=True)
 
     learning_rate = checkpoint.get("learning_rate", 1.0)
     # can get learning rate from optimizer state_dict?
