@@ -1136,6 +1136,14 @@ def format_word_importances(
 def visualize_text(
     datarecords: Iterable[VisualizationDataRecord], legend: bool = True
 ) -> "HTML":  # In quotes because this type doesn't exist in standalone mode
+    r"""
+    Visualizes text attribution records and returns an IPython ``HTML`` object.
+
+    In notebooks this object is displayed inline. To persist the same rendering as
+    HTML, write ``html_obj.data`` from the returned object to an ``.html`` file.
+    Captum does not directly export this visualization as a raster image; use an
+    external HTML renderer or screenshot tool when an image file is required.
+    """
     assert HAS_IPYTHON, (
         "IPython must be available to visualize text. "
         "Please run 'pip install ipython'."
