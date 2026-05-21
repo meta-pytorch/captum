@@ -566,7 +566,7 @@ class TracInCP(TracInCPBase):
                     inefficient. We offer an implementation of batch-wise gradient
                     computations w.r.t. to model parameters which is computationally
                     more efficient. This implementation can be enabled by setting the
-                    `sample_wise_grad_per_batch` argument to `True`, and should be
+                    `sample_wise_grads_per_batch` argument to `True`, and should be
                     enabled if and only if the `loss_fn` argument is a "reduction" loss
                     function. For example, `nn.BCELoss(reduction="sum")` would be a
                     valid `loss_fn` if this implementation is enabled (see

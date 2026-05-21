@@ -942,7 +942,9 @@ def _compute_jacobian_wrt_params_with_sample_wise_trick(
     batch trick to fully vectorize the Jacobian calculation. Currently, only
     linear and conv2d layers are supported.
 
-    User must `add_hooks(model)` before calling this function.
+    Hooks required for sample-wise gradients are registered and removed internally.
+    Users do not need to call `SampleGradientWrapper.add_hooks()` before calling
+    this function.
 
     Args:
         model (torch.nn.Module): The trainable model providing the forward pass
