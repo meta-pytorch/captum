@@ -128,6 +128,34 @@ class Test(BaseTest):
         output_after = model(inputs)
         assertTensorAlmostEqual(self, output, output_after)
 
+    def test_lrp_preserves_custom_rules_for_repeated_attributions(self) -> None:
+        class UnsupportedLinear(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.weight = nn.Parameter(torch.ones(1, 2))
+
+            def forward(self, input: Tensor) -> Tensor:
+                return input.matmul(self.weight.t())
+
+        class Model(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.layer = UnsupportedLinear()
+                self.layer.rule = EpsilonRule()  # type: ignore
+
+            def forward(self, input: Tensor) -> Tensor:
+                return self.layer(input)
+
+        model = Model().eval()
+        inputs = torch.tensor([[1.0, 2.0]])
+        lrp = LRP(model)
+
+        relevance = lrp.attribute(inputs)  # type: ignore[has-type]
+        self.assertTrue(hasattr(model.layer, "rule"))
+        repeated_relevance = lrp.attribute(inputs)  # type: ignore[has-type]
+
+        assertTensorAlmostEqual(self, relevance, repeated_relevance)
+
     def test_lrp_simple_inplaceReLU(self) -> None:
         model_default, inputs = _get_simple_model()
         model_inplace, _ = _get_simple_model(inplace=True)
