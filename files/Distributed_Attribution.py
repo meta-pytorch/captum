@@ -190,13 +190,12 @@ class TitanicSimpleNNModel(nn.Module):
         self.linear2 = nn.Linear(12, 8)
         self.sigmoid2 = nn.Sigmoid()
         self.linear3 = nn.Linear(8, 2)
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         lin1_out = self.linear1(x)
         sigmoid_out1 = self.sigmoid1(lin1_out)
         sigmoid_out2 = self.sigmoid2(self.linear2(sigmoid_out1))
-        return self.softmax(self.linear3(sigmoid_out2))
+        return self.linear3(sigmoid_out2)
 
 # We now define a helper method to read the CSV and generate a TensorDataset object corresponding to the test set of the Titianic dataset. For more details on the pre-processing, refer to the Titanic_Basic_Interpret tutorial.
 

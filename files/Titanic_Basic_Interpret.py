@@ -105,7 +105,7 @@ train_labels = labels[train_indices]
 test_features = np.array(data[test_indices], dtype=float)
 test_labels = labels[test_indices]
 
-# We are now ready to define the neural network architecture we will use for the task. We have defined a simple architecture using 2 hidden layers, the first with 12 hidden units and the second with 8 hidden units, each with Sigmoid non-linearity. The final layer performs a softmax operation and has 2 units, corresponding to the outputs of either survived (1) or not survived (0).
+# We are now ready to define the neural network architecture we will use for the task. We have defined a simple architecture using 2 hidden layers, the first with 12 hidden units and the second with 8 hidden units, each with Sigmoid non-linearity. The final layer has 2 output units, corresponding to the logits for either survived (1) or not survived (0).
 
 # In[6]:
 
@@ -121,13 +121,12 @@ class TitanicSimpleNNModel(nn.Module):
         self.linear2 = nn.Linear(12, 8)
         self.sigmoid2 = nn.Sigmoid()
         self.linear3 = nn.Linear(8, 2)
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         lin1_out = self.linear1(x)
         sigmoid_out1 = self.sigmoid1(lin1_out)
         sigmoid_out2 = self.sigmoid2(self.linear2(sigmoid_out1))
-        return self.softmax(self.linear3(sigmoid_out2))
+        return self.linear3(sigmoid_out2)
 
 # We can either use a pretrained model or train the network using the training data for 200 epochs. Note that the results of later steps may not match if retraining. The pretrained model can be downloaded here: https://github.com/pytorch/captum/blob/master/tutorials/models/titanic_model.pt
 
@@ -165,16 +164,16 @@ else:
 # In[8]:
 
 
-out_probs = net(input_tensor).detach().numpy()
-out_classes = np.argmax(out_probs, axis=1)
+out_logits = net(input_tensor).detach().numpy()
+out_classes = np.argmax(out_logits, axis=1)
 print("Train Accuracy:", sum(out_classes == train_labels) / len(train_labels))
 
 # In[9]:
 
 
 test_input_tensor = torch.from_numpy(test_features).type(torch.FloatTensor)
-out_probs = net(test_input_tensor).detach().numpy()
-out_classes = np.argmax(out_probs, axis=1)
+out_logits = net(test_input_tensor).detach().numpy()
+out_classes = np.argmax(out_logits, axis=1)
 print("Test Accuracy:", sum(out_classes == test_labels) / len(test_labels))
 
 # Beyond just considering the accuracy of the classifier, there are many important questions to understand how the model is working and its decision, which is the purpose of Captum, to help make neural networks in PyTorch more interpretable.
