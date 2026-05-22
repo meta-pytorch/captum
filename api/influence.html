@@ -531,7 +531,7 @@ the batch if we want sample-wise gradients which is computationally
 inefficient. We offer an implementation of batch-wise gradient
 computations w.r.t. to model parameters which is computationally
 more efficient. This implementation can be enabled by setting the
-<cite>sample_wise_grad_per_batch</cite> argument to <cite>True</cite>, and should be
+<cite>sample_wise_grads_per_batch</cite> argument to <cite>True</cite>, and should be
 enabled if and only if the <cite>loss_fn</cite> argument is a “reduction” loss
 function. For example, <cite>nn.BCELoss(reduction=”sum”)</cite> would be a
 valid <cite>loss_fn</cite> if this implementation is enabled (see
