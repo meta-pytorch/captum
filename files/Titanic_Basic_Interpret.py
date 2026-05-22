@@ -19,6 +19,7 @@ import torch
 
 from captum.attr import IntegratedGradients
 from captum.attr import LayerConductance
+from captum.attr import Lime
 from captum.attr import NeuronConductance
 
 import matplotlib
@@ -335,6 +336,36 @@ visualize_importances(feature_names, neuron_cond_vals_0.mean(dim=0).detach().num
 visualize_importances(feature_names, neuron_cond_vals_10.mean(dim=0).detach().numpy(), title="Average Feature Importances for Neuron 10")
 
 # From the visualization above, it is evident that neuron 10 primarily relies on the gender and class features, substantially different from the focus of neuron 0.
+
+# ## Applying LIME to tabular features
+
+# LIME can also be used for tabular models by treating each column, or a group of related columns, as an interpretable feature. Here each Titanic feature receives its own feature id and missing features are replaced with the mean value from the training set.
+
+# In[ ]:
+
+
+lime = Lime(net)
+
+test_input = torch.from_numpy(test_features[:1]).type(torch.FloatTensor)
+tabular_baseline = torch.from_numpy(train_features.mean(axis=0, keepdims=True)).type(torch.FloatTensor)
+feature_mask = torch.arange(test_input.shape[1]).unsqueeze(0)
+
+lime_attr = lime.attribute(
+    test_input,
+    baselines=tabular_baseline,
+    target=1,
+    feature_mask=feature_mask,
+    n_samples=300,
+    perturbations_per_eval=64,
+    return_input_shape=True,
+)
+
+print("Predicted logits:", net(test_input).detach())
+visualize_importances(
+    feature_names,
+    lime_attr.squeeze(0).detach().numpy(),
+    title="LIME Feature Importances for a Titanic Passenger",
+)
 
 # ## Summary
 
