@@ -59,6 +59,11 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    More information regarding this method and proof of equivalence</span>
 <span class="sd">    can be found in the original paper here:</span>
 <span class="sd">    https://arxiv.org/abs/1705.07874</span>
+
+<span class="sd">    In Captum, missing features are represented by the values provided in</span>
+<span class="sd">    `baselines`. This means Captum's KernelShap explains the model output</span>
+<span class="sd">    relative to the chosen baseline values, rather than sampling missing</span>
+<span class="sd">    features from a background distribution.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -135,7 +140,10 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">            baselines (scalar, Tensor, tuple of scalar, or Tensor, optional):</span>
 <span class="sd">                        Baselines define the reference value which replaces each</span>
 <span class="sd">                        feature when the corresponding interpretable feature</span>
-<span class="sd">                        is set to 0.</span>
+<span class="sd">                        is set to 0. Since missing features are replaced by</span>
+<span class="sd">                        these values, the returned attributions explain the</span>
+<span class="sd">                        model relative to the provided baselines rather than a</span>
+<span class="sd">                        background data distribution.</span>
 <span class="sd">                        Baselines can be provided as:</span>
 
 <span class="sd">                        - a single tensor, if inputs is a single tensor, with</span>
