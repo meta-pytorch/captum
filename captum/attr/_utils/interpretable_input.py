@@ -406,6 +406,11 @@ class TextSegmentInput(TextTemplateInput):
                 when it is "absent". If None, the segment is removed (empty string).
                 If a string, it is used as the baseline for all segments.
                 Default: None
+        group_size (int, optional): group every ``group_size`` consecutive
+                segments into one interpretable feature. Segments in the same
+                group are perturbed together and share the same attribution.
+                The last group may contain fewer segments.
+                Default: 1 (each segment is its own feature)
 
     Examples::
 
@@ -424,16 +429,16 @@ class TextSegmentInput(TextTemplateInput):
         >>> # "Hello, . Welcome!"
 
         >>> seg_inp = TextSegmentInput(
-        >>>     "Hello world. How are you?",
-        >>>     level="sentence",
-        >>>     baselines="[MASK]",
+        >>>     "one two three four five six",
+        >>>     level="word",
+        >>>     group_size=2,
         >>> )
         >>>
-        >>> seg_inp.values
-        >>> # ["Hello world.", "How are you?"]
+        >>> seg_inp.n_itp_features
+        >>> # 3
         >>>
-        >>> seg_inp.to_model_input(torch.tensor([[0, 1]]))
-        >>> # "[MASK] How are you?"
+        >>> seg_inp.to_model_input(torch.tensor([[1, 0, 1]]))
+        >>> # "one two   five six"
 
     """
 
@@ -449,23 +454,31 @@ class TextSegmentInput(TextTemplateInput):
         text: str,
         level: str = "word",
         baselines: Optional[str] = None,
+        group_size: int = 1,
     ) -> None:
         segments, template = self._segment_text(text, level)
 
         assert len(segments) > 0, "text must contain at least one segment"
+        assert group_size > 0, "group_size must be a positive integer"
 
         baseline_list: Optional[List[str]] = None
         if baselines is not None:
             baseline_list = [baselines] * len(segments)
 
+        mask: Optional[List[int]] = None
+        if group_size > 1:
+            mask = [i // group_size for i in range(len(segments))]
+
         super().__init__(
             template=template,
             values=segments,
             baselines=baseline_list,
+            mask=mask,
         )
 
         self.text = text
         self.level = level
+        self.group_size = group_size
 
     @staticmethod
     def _segment_text(text: str, level: str) -> Tuple[List[str], str]:

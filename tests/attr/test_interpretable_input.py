@@ -337,6 +337,54 @@ class TestTextSegmentInput(BaseTest):
         seg_inp = TextSegmentInput("hello world")
         self.assertIsInstance(seg_inp, TextTemplateInput)
 
+    def test_group_size_even(self) -> None:
+        text = "one two three four five six"
+        seg_inp = TextSegmentInput(text, level="word", group_size=2)
+
+        self.assertEqual(seg_inp.values, ["one", "two", "three", "four", "five", "six"])
+        self.assertEqual(seg_inp.n_itp_features, 3)
+
+        expected_tensor = torch.tensor([[1.0] * 3])
+        assertTensorAlmostEqual(self, seg_inp.to_tensor(), expected_tensor)
+
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        # remove middle group (three, four)
+        perturbed = torch.tensor([[1.0, 0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "one two   five six")
+
+    def test_group_size_uneven(self) -> None:
+        text = "a b c d e f g"
+        seg_inp = TextSegmentInput(text, level="word", group_size=3)
+
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        # remove last group (only 1 segment: "g")
+        perturbed = torch.tensor([[1.0, 1.0, 0.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "a b c d e f ")
+
+    def test_group_size_default(self) -> None:
+        seg_inp = TextSegmentInput("a b c")
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.group_size, 1)
+
+    def test_group_size_format_attr(self) -> None:
+        text = "a b c d"
+        seg_inp = TextSegmentInput(text, level="word", group_size=2)
+
+        # 2 interpretable features → scatter back to 4 raw features
+        attr = torch.tensor([[0.5, 0.8]])
+        formatted = seg_inp.format_attr(attr)
+        assertTensorAlmostEqual(self, formatted, torch.tensor([[0.5, 0.5, 0.8, 0.8]]))
+
+    def test_group_size_with_baselines(self) -> None:
+        text = "a b c d"
+        seg_inp = TextSegmentInput(text, level="word", baselines="X", group_size=2)
+
+        perturbed = torch.tensor([[0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "X X c d")
+
 
 class TestTextTokenInput(BaseTest):
     def test_input(self) -> None:
