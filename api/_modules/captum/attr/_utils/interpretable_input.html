@@ -462,6 +462,11 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                when it is "absent". If None, the segment is removed (empty string).</span>
 <span class="sd">                If a string, it is used as the baseline for all segments.</span>
 <span class="sd">                Default: None</span>
+<span class="sd">        group_size (int, optional): group every ``group_size`` consecutive</span>
+<span class="sd">                segments into one interpretable feature. Segments in the same</span>
+<span class="sd">                group are perturbed together and share the same attribution.</span>
+<span class="sd">                The last group may contain fewer segments.</span>
+<span class="sd">                Default: 1 (each segment is its own feature)</span>
 
 <span class="sd">    Examples::</span>
 
@@ -480,16 +485,16 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">        &gt;&gt;&gt; # "Hello, . Welcome!"</span>
 
 <span class="sd">        &gt;&gt;&gt; seg_inp = TextSegmentInput(</span>
-<span class="sd">        &gt;&gt;&gt;     "Hello world. How are you?",</span>
-<span class="sd">        &gt;&gt;&gt;     level="sentence",</span>
-<span class="sd">        &gt;&gt;&gt;     baselines="[MASK]",</span>
+<span class="sd">        &gt;&gt;&gt;     "one two three four five six",</span>
+<span class="sd">        &gt;&gt;&gt;     level="word",</span>
+<span class="sd">        &gt;&gt;&gt;     group_size=2,</span>
 <span class="sd">        &gt;&gt;&gt; )</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; seg_inp.values</span>
-<span class="sd">        &gt;&gt;&gt; # ["Hello world.", "How are you?"]</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.n_itp_features</span>
+<span class="sd">        &gt;&gt;&gt; # 3</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; seg_inp.to_model_input(torch.tensor([[0, 1]]))</span>
-<span class="sd">        &gt;&gt;&gt; # "[MASK] How are you?"</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.to_model_input(torch.tensor([[1, 0, 1]]))</span>
+<span class="sd">        &gt;&gt;&gt; # "one two   five six"</span>
 
 <span class="sd">    """</span>
 
@@ -505,23 +510,31 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"word"</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">group_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">segments</span><span class="p">,</span> <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"text must contain at least one segment"</span>
+        <span class="k">assert</span> <span class="n">group_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"group_size must be a positive integer"</span>
 
         <span class="n">baseline_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">baselines</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">baseline_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">baselines</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span>
 
+        <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">group_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="n">group_size</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">))]</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
             <span class="n">values</span><span class="o">=</span><span class="n">segments</span><span class="p">,</span>
             <span class="n">baselines</span><span class="o">=</span><span class="n">baseline_list</span><span class="p">,</span>
+            <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_size</span> <span class="o">=</span> <span class="n">group_size</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_segment_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
