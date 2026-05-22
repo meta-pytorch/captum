@@ -31,6 +31,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="body" role="main">
 <h1>Source code for captum.attr._utils.interpretable_input</h1><div class="highlight"><pre>
 <span></span><span class="c1"># pyre-strict</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
@@ -434,6 +435,131 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">formatted_attr</span></div>
 </div>
 
+
+
+<span class="k">class</span> <span class="nc">TextSegmentInput</span><span class="p">(</span><span class="n">TextTemplateInput</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    TextSegmentInput is an implementation of InterpretableInput that automatically</span>
+<span class="sd">    segments a text string into interpretable features based on a segmentation level.</span>
+<span class="sd">    It builds on TextTemplateInput by auto-generating the template and values from</span>
+<span class="sd">    the raw text, so users don't need to manually define them.</span>
+
+<span class="sd">    Supported segmentation levels:</span>
+
+<span class="sd">    - ``"word"``: split on whitespace and common punctuation</span>
+<span class="sd">      (``. , ! ? ; : ' " - ( ) [ ] { }``). Punctuation stays in the template.</span>
+<span class="sd">    - ``"sentence"``: split after sentence-ending punctuation (``.``, ``!``, ``?``)</span>
+<span class="sd">      or on newlines</span>
+<span class="sd">    - ``"line"``: split on newlines</span>
+<span class="sd">    - ``"paragraph"``: split on blank lines (one or more empty lines)</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">        text (str): the raw text to segment</span>
+<span class="sd">        level (str, optional): the segmentation level.</span>
+<span class="sd">                Default: "word"</span>
+<span class="sd">        baselines (str or None, optional): the baseline value for each segment</span>
+<span class="sd">                when it is "absent". If None, the segment is removed (empty string).</span>
+<span class="sd">                If a string, it is used as the baseline for all segments.</span>
+<span class="sd">                Default: None</span>
+
+<span class="sd">    Examples::</span>
+
+<span class="sd">        &gt;&gt;&gt; seg_inp = TextSegmentInput(</span>
+<span class="sd">        &gt;&gt;&gt;     "Hello, world. Welcome!",</span>
+<span class="sd">        &gt;&gt;&gt;     level="word",</span>
+<span class="sd">        &gt;&gt;&gt; )</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.values</span>
+<span class="sd">        &gt;&gt;&gt; # ["Hello", "world", "Welcome"]</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.to_model_input()</span>
+<span class="sd">        &gt;&gt;&gt; # "Hello, world. Welcome!"</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.to_model_input(torch.tensor([[1, 0, 1]]))</span>
+<span class="sd">        &gt;&gt;&gt; # "Hello, . Welcome!"</span>
+
+<span class="sd">        &gt;&gt;&gt; seg_inp = TextSegmentInput(</span>
+<span class="sd">        &gt;&gt;&gt;     "Hello world. How are you?",</span>
+<span class="sd">        &gt;&gt;&gt;     level="sentence",</span>
+<span class="sd">        &gt;&gt;&gt;     baselines="[MASK]",</span>
+<span class="sd">        &gt;&gt;&gt; )</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.values</span>
+<span class="sd">        &gt;&gt;&gt; # ["Hello world.", "How are you?"]</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; seg_inp.to_model_input(torch.tensor([[0, 1]]))</span>
+<span class="sd">        &gt;&gt;&gt; # "[MASK] How are you?"</span>
+
+<span class="sd">    """</span>
+
+    <span class="n">SPLIT_PATTERNS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"word"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"([\s.,!?;:'</span><span class="se">\"</span><span class="s2">\-()\[\]</span><span class="si">{}</span><span class="s2">]+)"</span><span class="p">,</span>
+        <span class="s2">"sentence"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"((?&lt;=[.!?])\s+|\n+)"</span><span class="p">,</span>
+        <span class="s2">"line"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"(\n)"</span><span class="p">,</span>
+        <span class="s2">"paragraph"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"(\n\s*\n)"</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"word"</span><span class="p">,</span>
+        <span class="n">baselines</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">segments</span><span class="p">,</span> <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"text must contain at least one segment"</span>
+
+        <span class="n">baseline_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">baselines</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseline_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">baselines</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">segments</span><span class="p">,</span>
+            <span class="n">baselines</span><span class="o">=</span><span class="n">baseline_list</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_segment_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Segment text by the given level and return (segments, template).</span>
+
+<span class="sd">        Uses ``re.split`` with a capture group so delimiters are preserved.</span>
+<span class="sd">        Segments become values and delimiters become literal parts of the</span>
+<span class="sd">        template string with ``{}`` placeholders where segments were.</span>
+<span class="sd">        """</span>
+        <span class="k">assert</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">TextSegmentInput</span><span class="o">.</span><span class="n">SPLIT_PATTERNS</span><span class="p">,</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"unsupported segmentation level: </span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"must be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">TextSegmentInput</span><span class="o">.</span><span class="n">SPLIT_PATTERNS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">TextSegmentInput</span><span class="o">.</span><span class="n">SPLIT_PATTERNS</span><span class="p">[</span><span class="n">level</span><span class="p">]</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+        <span class="n">segments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">template_parts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">escape_braces</span> <span class="o">=</span> <span class="n">TextSegmentInput</span><span class="o">.</span><span class="n">_escape_braces</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># segment position</span>
+                <span class="k">if</span> <span class="n">part</span><span class="p">:</span>
+                    <span class="n">segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+                    <span class="n">template_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="c1"># empty segment: skip (no placeholder)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># delimiter position: always goes into the template</span>
+                <span class="n">template_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">escape_braces</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">segments</span><span class="p">,</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">template_parts</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_escape_braces</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"{"</span><span class="p">,</span> <span class="s2">"{{"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"}"</span><span class="p">,</span> <span class="s2">"}}"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="TextTokenInput">

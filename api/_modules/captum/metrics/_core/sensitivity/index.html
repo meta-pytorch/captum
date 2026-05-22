@@ -42,6 +42,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">_expand_and_update_additional_forward_args</span><span class="p">,</span>
     <span class="n">_expand_and_update_baselines</span><span class="p">,</span>
+    <span class="n">_expand_and_update_feature_mask</span><span class="p">,</span>
     <span class="n">_expand_and_update_target</span><span class="p">,</span>
     <span class="n">_format_baseline</span><span class="p">,</span>
     <span class="n">_format_tensor_into_tuples</span><span class="p">,</span>
@@ -212,7 +213,8 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                Any additional arguments that need be passed to the explanation</span>
 <span class="sd">                function should be included here.</span>
 <span class="sd">                For instance, such arguments include:</span>
-<span class="sd">                `additional_forward_args`, `baselines` and `target`.</span>
+<span class="sd">                `additional_forward_args`, `baselines`, `target`,</span>
+<span class="sd">                and `feature_mask`.</span>
 
 <span class="sd">    Returns:</span>
 
@@ -279,6 +281,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">current_n_perturb_samples</span><span class="p">,</span> <span class="n">kwargs_copy</span>
             <span class="p">)</span>
             <span class="n">_expand_and_update_target</span><span class="p">(</span><span class="n">current_n_perturb_samples</span><span class="p">,</span> <span class="n">kwargs_copy</span><span class="p">)</span>
+            <span class="n">_expand_and_update_feature_mask</span><span class="p">(</span><span class="n">current_n_perturb_samples</span><span class="p">,</span> <span class="n">kwargs_copy</span><span class="p">)</span>
             <span class="k">if</span> <span class="s2">"baselines"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                 <span class="n">baselines</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"baselines"</span><span class="p">]</span>
                 <span class="n">baselines</span> <span class="o">=</span> <span class="n">_format_baseline</span><span class="p">(</span>
