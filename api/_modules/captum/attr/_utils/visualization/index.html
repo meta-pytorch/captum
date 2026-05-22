@@ -1,0 +1,1316 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Captum · Model Interpretability for PyTorch</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="Model Interpretability for PyTorch"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Captum · Model Interpretability for PyTorch"/><meta property="og:type" content="website"/><meta property="og:url" content="https://captum.ai/"/><meta property="og:description" content="Model Interpretability for PyTorch"/><meta property="og:image" content="https://captum.ai/img/captum-icon.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://captum.ai/img/captum.png"/><link rel="shortcut icon" href="/img/captum.ico"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-44373548-48', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script type="text/javascript" src="/js/code_block_buttons.js"></script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script><script src="https://unpkg.com/vanilla-back-to-top@7.1.14/dist/vanilla-back-to-top.min.js"></script><script>
+        document.addEventListener('DOMContentLoaded', function() {
+          addBackToTop(
+            {"zIndex":100}
+          )
+        });
+        </script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/captum_logo.svg" alt="Captum"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/introduction" target="_self">Docs</a></li><li class=""><a href="/tutorials/" target="_self">Tutorials</a></li><li class=""><a href="/api/" target="_self">API Reference</a></li><li class=""><a href="https://github.com/pytorch/captum" target="_self">GitHub</a></li><li class="navSearchWrapper reactNavSearchWrapper"><input type="text" id="search_input_react" placeholder="Search" title="Search"/></li></ul></nav></div></header></div></div><div class="navPusher"><div>
+<script type="text/javascript" id="documentation_options" data-url_root="./"
+src="/_sphinx/documentation_options.js"></script>
+<script type="text/javascript" src="/_sphinx/jquery.js"></script>
+<script type="text/javascript" src="/_sphinx/underscore.js"></script>
+<script type="text/javascript" src="/_sphinx/doctools.js"></script>
+<script type="text/javascript" src="/_sphinx/language_data.js"></script>
+<script type="text/javascript" src="/_sphinx/searchtools.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"></script>
+<script src="/_sphinx/katex_autorenderer.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css" />
+<div class="sphinx wrapper"><div class="document">
+<div class="documentwrapper">
+<div class="bodywrapper">
+<div class="body" role="main">
+<h1>Source code for captum.attr._utils.visualization</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="c1"># pyre-strict</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">cm</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
+<span class="kn">from</span> <span class="nn">matplotlib.collections</span> <span class="kn">import</span> <span class="n">LineCollection</span>
+<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">Colormap</span><span class="p">,</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span> <span class="n">Normalize</span>
+<span class="kn">from</span> <span class="nn">matplotlib.figure</span> <span class="kn">import</span> <span class="n">Figure</span>
+<span class="kn">from</span> <span class="nn">matplotlib.image</span> <span class="kn">import</span> <span class="n">AxesImage</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1</span> <span class="kn">import</span> <span class="n">make_axes_locatable</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+
+    <span class="n">HAS_IPYTHON</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAS_IPYTHON</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">draw_mask_border</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">],</span>
+    <span class="n">border_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">border_color</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="s2">"black"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Draw a border inside a mask region using binary erosion.</span>
+
+<span class="sd">    This function generates a border by eroding the mask and taking the difference</span>
+<span class="sd">    between the original mask and the eroded version, then displays it on the axes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ax: Matplotlib axes object to draw on.</span>
+<span class="sd">        mask: 2D boolean numpy array representing the mask region.</span>
+<span class="sd">              Shape should be (height, width).</span>
+<span class="sd">        border_width: Width of the border in pixels.</span>
+<span class="sd">                      Default: 1</span>
+<span class="sd">        border_color: Color for the border. Can be a string color name (e.g.,</span>
+<span class="sd">                      "black", "red") or an RGBA array of shape (4,) with values</span>
+<span class="sd">                      typically in [0, 1].</span>
+<span class="sd">                      Default: "black"</span>
+
+<span class="sd">    Example::</span>
+<span class="sd">        &gt;&gt;&gt; mask = np.array([[True, True, True],</span>
+<span class="sd">        ...                  [True, True, True],</span>
+<span class="sd">        ...                  [True, True, True]])</span>
+<span class="sd">        &gt;&gt;&gt; fig, ax = plt.subplots()</span>
+<span class="sd">        &gt;&gt;&gt; draw_mask_border(ax, mask)  # Uses default black border</span>
+<span class="sd">        &gt;&gt;&gt; draw_mask_border(ax, mask, border_width=2, border_color="red")</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span>
+
+    <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">binary_erosion</span>
+
+    <span class="c1"># Convert string color to RGBA array</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">border_color</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">rgba</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">to_rgba</span><span class="p">(</span><span class="n">border_color</span><span class="p">)</span>
+        <span class="n">border_color_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rgba</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">border_color_array</span> <span class="o">=</span> <span class="n">border_color</span>
+
+    <span class="n">eroded</span> <span class="o">=</span> <span class="n">binary_erosion</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">border_width</span><span class="p">)</span>
+    <span class="n">border</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">eroded</span>
+    <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">border_image</span> <span class="o">=</span> <span class="n">border</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">border_color_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">border_image</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">draw_mask_legend</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">],</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">text_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"white"</span><span class="p">,</span>
+    <span class="n">bbox_facecolor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"black"</span><span class="p">,</span>
+    <span class="n">bbox_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Draw a label at the centroid of a mask region.</span>
+
+<span class="sd">    This function calculates the centroid (center of mass) of a boolean mask</span>
+<span class="sd">    and places a text label at that position.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ax: Matplotlib axes object to draw on.</span>
+<span class="sd">        mask: 2D boolean numpy array representing the mask region.</span>
+<span class="sd">              Shape should be (height, width).</span>
+<span class="sd">        label: Text string to display at the centroid.</span>
+<span class="sd">        fontsize: Font size for the label text.</span>
+<span class="sd">                  Default: 10</span>
+<span class="sd">        text_color: Color of the label text.</span>
+<span class="sd">                    Default: "white"</span>
+<span class="sd">        bbox_facecolor: Background color of the text bounding box.</span>
+<span class="sd">                        Default: "black"</span>
+<span class="sd">        bbox_alpha: Transparency of the text bounding box.</span>
+<span class="sd">                    Default: 0.6</span>
+
+<span class="sd">    Example::</span>
+<span class="sd">        &gt;&gt;&gt; mask = np.array([[False, True, True],</span>
+<span class="sd">        ...                  [False, True, True],</span>
+<span class="sd">        ...                  [False, False, False]])</span>
+<span class="sd">        &gt;&gt;&gt; fig, ax = plt.subplots()</span>
+<span class="sd">        &gt;&gt;&gt; draw_mask_legend(ax, mask, label="1")</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span>
+
+    <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">centroid_y</span><span class="p">,</span> <span class="n">centroid_x</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">cols</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+        <span class="n">centroid_x</span><span class="p">,</span>
+        <span class="n">centroid_y</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">text_color</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+        <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
+        <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
+        <span class="n">bbox</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"boxstyle"</span><span class="p">:</span> <span class="s2">"round,pad=0.2"</span><span class="p">,</span>
+            <span class="s2">"facecolor"</span><span class="p">:</span> <span class="n">bbox_facecolor</span><span class="p">,</span>
+            <span class="s2">"alpha"</span><span class="p">:</span> <span class="n">bbox_alpha</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ImageVisualizationMethod</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">heat_map</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">blended_heat_map</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">original_image</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">masked_image</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">alpha_scaling</span> <span class="o">=</span> <span class="mi">5</span>
+
+
+<span class="k">class</span> <span class="nc">TimeseriesVisualizationMethod</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">overlay_individual</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">overlay_combined</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">colored_graph</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">VisualizeSign</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">positive</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">absolute_value</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">negative</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="nb">all</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">def</span> <span class="nf">_prepare_image</span><span class="p">(</span><span class="n">attr_visual</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">attr_visual</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">scale_factor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"Cannot normalize by scale factor = 0"</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">scale_factor</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"Attempting to normalize by value approximately 0, visualized results"</span>
+            <span class="s2">"may be misleading. This likely means that attribution values are all"</span>
+            <span class="s2">"close to 0."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">attr_norm</span> <span class="o">=</span> <span class="n">attr</span> <span class="o">/</span> <span class="n">scale_factor</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">attr_norm</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_cumulative_sum_threshold</span><span class="p">(</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="c1"># given values should be non-negative</span>
+    <span class="k">assert</span> <span class="n">percentile</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">percentile</span> <span class="o">&lt;=</span> <span class="mi">100</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">"Percentile for thresholding must be "</span> <span class="s2">"between 0 and 100 inclusive."</span>
+    <span class="p">)</span>
+    <span class="n">sorted_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="n">cum_sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">sorted_vals</span><span class="p">)</span>
+    <span class="n">threshold_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cum_sums</span> <span class="o">&gt;=</span> <span class="n">cum_sums</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">percentile</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">sorted_vals</span><span class="p">[</span><span class="n">threshold_id</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_normalize_attr</span><span class="p">(</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>  <span class="c1"># 2D (H, W)</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">outlier_perc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+    <span class="n">sign_type</span> <span class="o">=</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span>
+
+    <span class="c1"># Apply sign-specific transformation to filter/transform attribution values</span>
+    <span class="k">if</span> <span class="n">sign_type</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">all</span><span class="p">:</span>
+        <span class="k">pass</span>  <span class="c1"># Keep all values as-is</span>
+    <span class="k">elif</span> <span class="n">sign_type</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">positive</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sign_type</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">negative</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sign_type</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">absolute_value</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Visualize Sign type is not valid."</span><span class="p">)</span>
+
+    <span class="c1"># Compute threshold from absolute values, removing given outlier percentage</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">_cumulative_sum_threshold</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">attr</span><span class="p">),</span> <span class="mf">100.0</span> <span class="o">-</span> <span class="n">outlier_perc</span><span class="p">)</span>
+
+    <span class="c1"># For negative sign, threshold should be negative to match the sign of values</span>
+    <span class="k">if</span> <span class="n">sign_type</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">negative</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="o">-</span><span class="n">threshold</span>
+
+    <span class="k">return</span> <span class="n">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_create_default_plot</span><span class="p">(</span>
+    <span class="n">plt_fig_axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]],</span>
+    <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]:</span>
+    <span class="c1"># Create plot if figure, axis not provided</span>
+    <span class="k">if</span> <span class="n">plt_fig_axis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">plt_fig_axis</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_pyplot</span><span class="p">:</span>
+            <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">fig_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt_fig</span> <span class="o">=</span> <span class="n">Figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">fig_size</span><span class="p">)</span>
+            <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">plt_fig</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span>
+    <span class="c1"># Figure.subplots returns Axes or array of Axes</span>
+
+
+<span class="k">def</span> <span class="nf">_initialize_cmap_and_vmin_vmax</span><span class="p">(</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">all</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+        <span class="n">default_cmap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">LinearSegmentedColormap</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="s2">"RdWhGn"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"red"</span><span class="p">,</span> <span class="s2">"white"</span><span class="p">,</span> <span class="s2">"green"</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">positive</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+        <span class="n">default_cmap</span> <span class="o">=</span> <span class="s2">"Greens"</span>
+        <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">negative</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+        <span class="n">default_cmap</span> <span class="o">=</span> <span class="s2">"Reds"</span>
+        <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">absolute_value</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+        <span class="n">default_cmap</span> <span class="o">=</span> <span class="s2">"Blues"</span>
+        <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Visualize Sign type is not valid."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">default_cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_original_image</span><span class="p">(</span>
+    <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">original_image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">),</span> <span class="s2">"Original image expected for original_image method."</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">original_image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">original_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">original_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">original_image</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_heat_map</span><span class="p">(</span>
+    <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">],</span>
+    <span class="n">vmin</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">vmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AxesImage</span><span class="p">:</span>
+    <span class="n">heat_map</span> <span class="o">=</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">heat_map</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_blended_heat_map</span><span class="p">(</span>
+    <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">],</span>
+    <span class="n">vmin</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">vmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AxesImage</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">original_image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">),</span> <span class="s2">"Original Image expected for blended_heat_map method."</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">original_image</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">)</span>
+    <span class="n">heat_map</span> <span class="o">=</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+        <span class="n">norm_attr</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_overlay</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">heat_map</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_masked_image</span><span class="p">(</span>
+    <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">all</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">"Cannot display masked image with both positive and negative "</span>
+        <span class="s2">"attributions, choose a different sign option."</span>
+    <span class="p">)</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_alpha_scaling</span><span class="p">(</span>
+    <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">all</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">"Cannot display alpha scaling with both positive and negative "</span>
+        <span class="s2">"attributions, choose a different sign option."</span>
+    <span class="p">)</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">original_image</span><span class="p">,</span>
+                <span class="n">_prepare_image</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="visualize_image_attr">
+<a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_image_attr">[docs]</a>
+<span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"heat_map"</span><span class="p">,</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"absolute_value"</span><span class="p">,</span>
+    <span class="n">plt_fig_axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">outlier_perc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">show_colorbar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Visualizes attribution for a given image by normalizing attribution values</span>
+<span class="sd">    of the desired sign (positive, negative, absolute value, or all) and displaying</span>
+<span class="sd">    them using the desired mode in a matplotlib figure.</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">        attr (numpy.ndarray): Numpy array corresponding to attributions to be</span>
+<span class="sd">                    visualized. Shape must be in the form (H, W, C) or (H, W).</span>
+<span class="sd">                    Shape must also match that of the original image if provided.</span>
+<span class="sd">        original_image (numpy.ndarray, optional): Numpy array corresponding to</span>
+<span class="sd">                    original image. Shape must be in the form (H, W, C), with</span>
+<span class="sd">                    channels as the last dimension. Image can be provided either</span>
+<span class="sd">                    with float values in range 0-1 or int values between 0-255.</span>
+<span class="sd">                    This is a necessary argument for any visualization method</span>
+<span class="sd">                    which utilizes the original image.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        method (str, optional): Chosen method for visualizing attribution.</span>
+<span class="sd">                    Supported options are:</span>
+
+<span class="sd">                    1. `heat_map` - Display heat map of chosen attributions</span>
+
+<span class="sd">                    2. `blended_heat_map` - Overlay heat map over greyscale</span>
+<span class="sd">                       version of original image. Parameter alpha_overlay</span>
+<span class="sd">                       corresponds to alpha of heat map.</span>
+
+<span class="sd">                    3. `original_image` - Only display original image.</span>
+
+<span class="sd">                    4. `masked_image` - Mask image (pixel-wise multiply)</span>
+<span class="sd">                       by normalized attribution values.</span>
+
+<span class="sd">                    5. `alpha_scaling` - Sets alpha channel of each pixel</span>
+<span class="sd">                       to be equal to normalized attribution value.</span>
+
+<span class="sd">                    Default: `heat_map`</span>
+<span class="sd">        sign (str, optional): Chosen sign of attributions to visualize. Supported</span>
+<span class="sd">                    options are:</span>
+
+<span class="sd">                    1. `positive` - Displays only positive pixel attributions.</span>
+
+<span class="sd">                    2. `absolute_value` - Displays absolute value of</span>
+<span class="sd">                       attributions.</span>
+
+<span class="sd">                    3. `negative` - Displays only negative pixel attributions.</span>
+
+<span class="sd">                    4. `all` - Displays both positive and negative attribution</span>
+<span class="sd">                       values. This is not supported for `masked_image` or</span>
+<span class="sd">                       `alpha_scaling` modes, since signed information cannot</span>
+<span class="sd">                       be represented in these modes.</span>
+
+<span class="sd">                    Default: `absolute_value`</span>
+<span class="sd">        plt_fig_axis (tuple, optional): Tuple of matplotlib.pyplot.figure and axis</span>
+<span class="sd">                    on which to visualize. If None is provided, then a new figure</span>
+<span class="sd">                    and axis are created.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        outlier_perc (float or int, optional): Top attribution values which</span>
+<span class="sd">                    correspond to a total of outlier_perc percentage of the</span>
+<span class="sd">                    total attribution are set to 1 and scaling is performed</span>
+<span class="sd">                    using the minimum of these values. For sign=`all`, outliers</span>
+<span class="sd">                    and scale value are computed using absolute value of</span>
+<span class="sd">                    attributions.</span>
+<span class="sd">                    Default: 2</span>
+<span class="sd">        cmap (str, optional): String corresponding to desired colormap for</span>
+<span class="sd">                    heatmap visualization. This defaults to "Reds" for negative</span>
+<span class="sd">                    sign, "Blues" for absolute value, "Greens" for positive sign,</span>
+<span class="sd">                    and a spectrum from red to green for all. Note that this</span>
+<span class="sd">                    argument is only used for visualizations displaying heatmaps.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        alpha_overlay (float, optional): Alpha to set for heatmap when using</span>
+<span class="sd">                    `blended_heat_map` visualization mode, which overlays the</span>
+<span class="sd">                    heat map over the greyscaled original image.</span>
+<span class="sd">                    Default: 0.5</span>
+<span class="sd">        show_colorbar (bool, optional): Displays colorbar for heatmap below</span>
+<span class="sd">                    the visualization. If given method does not use a heatmap,</span>
+<span class="sd">                    then a colormap axis is created and hidden. This is</span>
+<span class="sd">                    necessary for appropriate alignment when visualizing</span>
+<span class="sd">                    multiple plots, some with colorbars and some without.</span>
+<span class="sd">                    Default: False</span>
+<span class="sd">        title (str, optional): Title string for plot. If None, no title is</span>
+<span class="sd">                    set.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        fig_size (tuple, optional): Size of figure created.</span>
+<span class="sd">                    Default: (6,6)</span>
+<span class="sd">        use_pyplot (bool, optional): If true, uses pyplot to create and show</span>
+<span class="sd">                    figure and displays the figure after creating. If False,</span>
+<span class="sd">                    uses Matplotlib object oriented API and simply returns a</span>
+<span class="sd">                    figure object without showing.</span>
+<span class="sd">                    Default: True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        2-element tuple of **figure**, **axis**:</span>
+<span class="sd">        - **figure** (*matplotlib.pyplot.figure*):</span>
+<span class="sd">                    Figure object on which visualization</span>
+<span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
+<span class="sd">                    same figure provided.</span>
+<span class="sd">        - **axis** (*matplotlib.pyplot.axis*):</span>
+<span class="sd">                    Axis object on which visualization</span>
+<span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
+<span class="sd">                    same axis provided.</span>
+
+<span class="sd">    Examples::</span>
+
+<span class="sd">        &gt;&gt;&gt; # ImageClassifier takes a single input tensor of images Nx3x32x32,</span>
+<span class="sd">        &gt;&gt;&gt; # and returns an Nx10 tensor of class probabilities.</span>
+<span class="sd">        &gt;&gt;&gt; net = ImageClassifier()</span>
+<span class="sd">        &gt;&gt;&gt; ig = IntegratedGradients(net)</span>
+<span class="sd">        &gt;&gt;&gt; # Computes integrated gradients for class 3 for a given image .</span>
+<span class="sd">        &gt;&gt;&gt; attribution, delta = ig.attribute(orig_image, target=3)</span>
+<span class="sd">        &gt;&gt;&gt; # Displays blended heat map visualization of computed attributions.</span>
+<span class="sd">        &gt;&gt;&gt; _ = visualize_image_attr(attribution, orig_image, "blended_heat_map")</span>
+<span class="sd">    """</span>
+    <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">_create_default_plot</span><span class="p">(</span><span class="n">plt_fig_axis</span><span class="p">,</span> <span class="n">use_pyplot</span><span class="p">,</span> <span class="n">fig_size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plt_axis</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="c1"># To ensure plt_axis is always a single axis, not a list of axes.</span>
+        <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">plt_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">original_image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">original_image</span> <span class="o">=</span> <span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span>
+        <span class="n">ImageVisualizationMethod</span><span class="p">[</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="o">!=</span> <span class="n">ImageVisualizationMethod</span><span class="o">.</span><span class="n">heat_map</span><span class="o">.</span><span class="n">value</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Original Image must be provided for "</span>
+            <span class="s2">"any visualization other than heatmap."</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Remove ticks and tick labels from plot.</span>
+    <span class="k">if</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">xaxis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plt_axis</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s2">"none"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">yaxis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plt_axis</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s2">"none"</span><span class="p">)</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
+    <span class="n">plt_axis</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">heat_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AxesImage</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">visualization_methods</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">AxesImage</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"heat_map"</span><span class="p">:</span> <span class="n">_visualize_heat_map</span><span class="p">,</span>
+        <span class="s2">"blended_heat_map"</span><span class="p">:</span> <span class="n">_visualize_blended_heat_map</span><span class="p">,</span>
+        <span class="s2">"masked_image"</span><span class="p">:</span> <span class="n">_visualize_masked_image</span><span class="p">,</span>
+        <span class="s2">"alpha_scaling"</span><span class="p">:</span> <span class="n">_visualize_alpha_scaling</span><span class="p">,</span>
+        <span class="s2">"original_image"</span><span class="p">:</span> <span class="n">_visualize_original_image</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># if the attr contains channel, aggregate them by sum</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># Choose appropriate signed attributions and normalize.</span>
+    <span class="n">norm_attr</span> <span class="o">=</span> <span class="n">_normalize_attr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">outlier_perc</span><span class="p">)</span>
+
+    <span class="c1"># Set default colormap and bounds based on sign.</span>
+    <span class="n">default_cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">_initialize_cmap_and_vmin_vmax</span><span class="p">(</span><span class="n">sign</span><span class="p">)</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">cmap</span> <span class="k">if</span> <span class="n">cmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_cmap</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"plt_axis"</span><span class="p">:</span> <span class="n">plt_axis</span><span class="p">,</span>
+        <span class="s2">"original_image"</span><span class="p">:</span> <span class="n">original_image</span><span class="p">,</span>
+        <span class="s2">"sign"</span><span class="p">:</span> <span class="n">sign</span><span class="p">,</span>
+        <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cmap</span><span class="p">,</span>
+        <span class="s2">"alpha_overlay"</span><span class="p">:</span> <span class="n">alpha_overlay</span><span class="p">,</span>
+        <span class="s2">"vmin"</span><span class="p">:</span> <span class="n">vmin</span><span class="p">,</span>
+        <span class="s2">"vmax"</span><span class="p">:</span> <span class="n">vmax</span><span class="p">,</span>
+        <span class="s2">"norm_attr"</span><span class="p">:</span> <span class="n">norm_attr</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">visualization_methods</span><span class="p">:</span>
+        <span class="n">heat_map</span> <span class="o">=</span> <span class="n">visualization_methods</span><span class="p">[</span><span class="n">method</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Visualize Method type is not valid."</span><span class="p">)</span>
+
+    <span class="c1"># Add colorbar. If given method is not a heatmap and no colormap is relevant,</span>
+    <span class="c1"># then a colormap axis is created and hidden. This is necessary for appropriate</span>
+    <span class="c1"># alignment when visualizing multiple plots, some with heatmaps and some</span>
+    <span class="c1"># without.</span>
+    <span class="k">if</span> <span class="n">show_colorbar</span><span class="p">:</span>
+        <span class="n">axis_separator</span> <span class="o">=</span> <span class="n">make_axes_locatable</span><span class="p">(</span><span class="n">plt_axis</span><span class="p">)</span>
+        <span class="n">colorbar_axis</span> <span class="o">=</span> <span class="n">axis_separator</span><span class="o">.</span><span class="n">append_axes</span><span class="p">(</span><span class="s2">"bottom"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">"5%"</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">heat_map</span><span class="p">:</span>
+            <span class="n">plt_fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">heat_map</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">"horizontal"</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">colorbar_axis</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">colorbar_axis</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
+        <span class="n">plt_axis</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_pyplot</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span></div>
+
+
+
+<div class="viewcode-block" id="visualize_image_attr_multiple">
+<a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_image_attr_multiple">[docs]</a>
+<span class="k">def</span> <span class="nf">visualize_image_attr_multiple</span><span class="p">(</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
+    <span class="n">methods</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">signs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">titles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Visualizes attribution using multiple visualization methods displayed</span>
+<span class="sd">    in a 1 x k grid, where k is the number of desired visualizations.</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">        attr (numpy.ndarray): Numpy array corresponding to attributions to be</span>
+<span class="sd">                    visualized. Shape must be in the form (H, W, C), with</span>
+<span class="sd">                    channels as last dimension. Shape must also match that of</span>
+<span class="sd">                    the original image if provided.</span>
+<span class="sd">        original_image (numpy.ndarray, optional): Numpy array corresponding to</span>
+<span class="sd">                    original image. Shape must be in the form (H, W, C), with</span>
+<span class="sd">                    channels as the last dimension. Image can be provided either</span>
+<span class="sd">                    with values in range 0-1 or 0-255. This is a necessary</span>
+<span class="sd">                    argument for any visualization method which utilizes</span>
+<span class="sd">                    the original image.</span>
+<span class="sd">        methods (list[str]): List of strings of length k, defining method</span>
+<span class="sd">                        for each visualization. Each method must be a valid</span>
+<span class="sd">                        string argument for method to visualize_image_attr.</span>
+<span class="sd">        signs (list[str]): List of strings of length k, defining signs for</span>
+<span class="sd">                        each visualization. Each sign must be a valid</span>
+<span class="sd">                        string argument for sign to visualize_image_attr.</span>
+<span class="sd">        titles (list[str], optional): List of strings of length k, providing</span>
+<span class="sd">                    a title string for each plot. If None is provided, no titles</span>
+<span class="sd">                    are added to subplots.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        fig_size (tuple, optional): Size of figure created.</span>
+<span class="sd">                    Default: (8, 6)</span>
+<span class="sd">        use_pyplot (bool, optional): If true, uses pyplot to create and show</span>
+<span class="sd">                    figure and displays the figure after creating. If False,</span>
+<span class="sd">                    uses Matplotlib object oriented API and simply returns a</span>
+<span class="sd">                    figure object without showing.</span>
+<span class="sd">                    Default: True.</span>
+<span class="sd">        **kwargs (Any, optional): Any additional arguments which will be passed</span>
+<span class="sd">                    to every individual visualization. Such arguments include</span>
+<span class="sd">                    `show_colorbar`, `alpha_overlay`, `cmap`, etc.</span>
+
+
+<span class="sd">    Returns:</span>
+<span class="sd">        2-element tuple of **figure**, **axis**:</span>
+<span class="sd">        - **figure** (*matplotlib.pyplot.figure*):</span>
+<span class="sd">                    Figure object on which visualization</span>
+<span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
+<span class="sd">                    same figure provided.</span>
+<span class="sd">        - **axis** (*matplotlib.pyplot.axis*):</span>
+<span class="sd">                    Axis object on which visualization</span>
+<span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
+<span class="sd">                    same axis provided.</span>
+
+<span class="sd">    Examples::</span>
+
+<span class="sd">        &gt;&gt;&gt; # ImageClassifier takes a single input tensor of images Nx3x32x32,</span>
+<span class="sd">        &gt;&gt;&gt; # and returns an Nx10 tensor of class probabilities.</span>
+<span class="sd">        &gt;&gt;&gt; net = ImageClassifier()</span>
+<span class="sd">        &gt;&gt;&gt; ig = IntegratedGradients(net)</span>
+<span class="sd">        &gt;&gt;&gt; # Computes integrated gradients for class 3 for a given image .</span>
+<span class="sd">        &gt;&gt;&gt; attribution, delta = ig.attribute(orig_image, target=3)</span>
+<span class="sd">        &gt;&gt;&gt; # Displays original image and heat map visualization of</span>
+<span class="sd">        &gt;&gt;&gt; # computed attributions side by side.</span>
+<span class="sd">        &gt;&gt;&gt; _ = visualize_image_attr_multiple(attribution, orig_image,</span>
+<span class="sd">        &gt;&gt;&gt;                     ["original_image", "heat_map"], ["all", "positive"])</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">signs</span><span class="p">),</span> <span class="s2">"Methods and signs array lengths must match."</span>
+    <span class="k">if</span> <span class="n">titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">"If titles list is given, length must "</span> <span class="s2">"match that of methods list."</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">use_pyplot</span><span class="p">:</span>
+        <span class="n">plt_fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">fig_size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt_fig</span> <span class="o">=</span> <span class="n">Figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">fig_size</span><span class="p">)</span>
+    <span class="n">plt_axis_np</span> <span class="o">=</span> <span class="n">plt_fig</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">),</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]</span>
+    <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># When visualizing one</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Axes</span><span class="p">,</span> <span class="n">plt_axis_np</span><span class="p">)</span>
+        <span class="n">plt_axis_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">plt_axis</span><span class="p">]</span>
+        <span class="c1"># Figure.subplots returns Axes or array of Axes</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># https://github.com/numpy/numpy/issues/24738</span>
+        <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">],</span> <span class="n">cast</span><span class="p">(</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">plt_axis_np</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">plt_axis_list</span> <span class="o">=</span> <span class="n">plt_axis</span>
+        <span class="c1"># Figure.subplots returns Axes or array of Axes</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">methods</span><span class="p">)):</span>
+        <span class="n">visualize_image_attr</span><span class="p">(</span>
+            <span class="n">attr</span><span class="p">,</span>
+            <span class="n">original_image</span><span class="o">=</span><span class="n">original_image</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">methods</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">sign</span><span class="o">=</span><span class="n">signs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">plt_fig_axis</span><span class="o">=</span><span class="p">(</span><span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+            <span class="n">use_pyplot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">titles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">titles</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">plt_fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">use_pyplot</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_plot_attrs_as_axvspan</span><span class="p">(</span>
+    <span class="n">attr_vals</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">x_vals</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span>
+    <span class="n">cm_norm</span><span class="p">:</span> <span class="n">Normalize</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">half_col_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="k">for</span> <span class="n">icol</span><span class="p">,</span> <span class="n">col_center</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_vals</span><span class="p">):</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="n">col_center</span> <span class="o">-</span> <span class="n">half_col_width</span>
+        <span class="n">right</span> <span class="o">=</span> <span class="n">col_center</span> <span class="o">+</span> <span class="n">half_col_width</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span>
+            <span class="n">xmin</span><span class="o">=</span><span class="n">left</span><span class="p">,</span>
+            <span class="n">xmax</span><span class="o">=</span><span class="n">right</span><span class="p">,</span>
+            <span class="n">facecolor</span><span class="o">=</span><span class="p">(</span><span class="n">cmap</span><span class="p">(</span><span class="n">cm_norm</span><span class="p">(</span><span class="n">attr_vals</span><span class="p">[</span><span class="n">icol</span><span class="p">]))),</span>  <span class="c1"># type: ignore</span>
+            <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_overlay</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_overlay_individual</span><span class="p">(</span>
+    <span class="n">num_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">channel_labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span>
+    <span class="n">cm_norm</span><span class="p">:</span> <span class="n">Normalize</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># helper method for visualize_timeseries_attr</span>
+    <span class="n">pyplot_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pyplot_kwargs"</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
+        <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">chan</span><span class="p">,</span> <span class="p">:],</span> <span class="o">**</span><span class="n">pyplot_kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">channel_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">channel_labels</span><span class="p">[</span><span class="n">chan</span><span class="p">])</span>
+
+        <span class="n">_plot_attrs_as_axvspan</span><span class="p">(</span>
+            <span class="n">norm_attr</span><span class="p">[</span><span class="n">chan</span><span class="p">],</span>
+            <span class="n">x_values</span><span class="p">,</span>
+            <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">chan</span><span class="p">],</span>
+            <span class="n">x_values</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="p">,</span>
+            <span class="n">cm_norm</span><span class="p">,</span>
+            <span class="n">alpha_overlay</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_overlay_combined</span><span class="p">(</span>
+    <span class="n">num_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">channel_labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span>
+    <span class="n">cm_norm</span><span class="p">:</span> <span class="n">Normalize</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">pyplot_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pyplot_kwargs"</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="n">cycler</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cycler</span><span class="p">(</span><span class="s2">"color"</span><span class="p">,</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="p">[</span><span class="s2">"Dark2"</span><span class="p">]</span><span class="o">.</span><span class="n">colors</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="n">plt_axis_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_prop_cycle</span><span class="p">(</span><span class="n">cycler</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">channel_labels</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span> <span class="k">if</span> <span class="n">channel_labels</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">plt_axis_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">chan</span><span class="p">,</span> <span class="p">:],</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="o">**</span><span class="n">pyplot_kwargs</span><span class="p">)</span>
+
+    <span class="n">_plot_attrs_as_axvspan</span><span class="p">(</span>
+        <span class="n">norm_attr</span><span class="p">,</span>
+        <span class="n">x_values</span><span class="p">,</span>
+        <span class="n">plt_axis_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">x_values</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="p">,</span>
+        <span class="n">cm_norm</span><span class="p">,</span>
+        <span class="n">alpha_overlay</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">plt_axis_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_visualize_colored_graph</span><span class="p">(</span>
+    <span class="n">num_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">channel_labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span>
+    <span class="n">cm_norm</span><span class="p">:</span> <span class="n">Normalize</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># helper method for visualize_timeseries_attr</span>
+    <span class="n">pyplot_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pyplot_kwargs"</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_values</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">chan</span><span class="p">,</span> <span class="p">:]])</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">points</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">:]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">lc</span> <span class="o">=</span> <span class="n">LineCollection</span><span class="p">(</span>
+            <span class="n">segments</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+            <span class="n">norm</span><span class="o">=</span><span class="n">cm_norm</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">pyplot_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">lc</span><span class="o">.</span><span class="n">set_array</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">[</span><span class="n">chan</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">add_collection</span><span class="p">(</span><span class="n">lc</span><span class="p">)</span>
+        <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span>
+            <span class="mf">1.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">chan</span><span class="p">,</span> <span class="p">:]),</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">chan</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">channel_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plt_axis_list</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">channel_labels</span><span class="p">[</span><span class="n">chan</span><span class="p">])</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="visualize_timeseries_attr">
+<a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_timeseries_attr">[docs]</a>
+<span class="k">def</span> <span class="nf">visualize_timeseries_attr</span><span class="p">(</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">x_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"overlay_individual"</span><span class="p">,</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"absolute_value"</span><span class="p">,</span>
+    <span class="n">channel_labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">channels_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">plt_fig_axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">outlier_perc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">show_colorbar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">pyplot_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Visualizes attribution for a given timeseries data by normalizing</span>
+<span class="sd">    attribution values of the desired sign (positive, negative, absolute value,</span>
+<span class="sd">    or all) and displaying them using the desired mode in a matplotlib figure.</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">        attr (numpy.ndarray): Numpy array corresponding to attributions to be</span>
+<span class="sd">                    visualized. Shape must be in the form (N, C) with channels</span>
+<span class="sd">                    as last dimension, unless `channels_last` is set to True.</span>
+<span class="sd">                    Shape must also match that of the timeseries data.</span>
+<span class="sd">        data (numpy.ndarray): Numpy array corresponding to the original,</span>
+<span class="sd">                    equidistant timeseries data. Shape must be in the form</span>
+<span class="sd">                    (N, C) with channels as last dimension, unless</span>
+<span class="sd">                    `channels_last` is set to true.</span>
+<span class="sd">        x_values (numpy.ndarray, optional): Numpy array corresponding to the</span>
+<span class="sd">                    points on the x-axis. Shape must be in the form (N, ). If</span>
+<span class="sd">                    not provided, integers from 0 to N-1 are used.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        method (str, optional): Chosen method for visualizing attributions</span>
+<span class="sd">                    overlaid onto data. Supported options are:</span>
+
+<span class="sd">                    1. `overlay_individual` - Plot each channel individually in</span>
+<span class="sd">                        a separate panel, and overlay the attributions for each</span>
+<span class="sd">                        channel as a heat map. The `alpha_overlay` parameter</span>
+<span class="sd">                        controls the alpha of the heat map.</span>
+
+<span class="sd">                    2. `overlay_combined` - Plot all channels in the same panel,</span>
+<span class="sd">                        and overlay the average attributions as a heat map.</span>
+
+<span class="sd">                    3. `colored_graph` - Plot each channel in a separate panel,</span>
+<span class="sd">                        and color the graphs according to the attribution</span>
+<span class="sd">                        values. Works best with color maps that does not contain</span>
+<span class="sd">                        white or very bright colors.</span>
+
+<span class="sd">                    Default: `overlay_individual`</span>
+<span class="sd">        sign (str, optional): Chosen sign of attributions to visualize.</span>
+<span class="sd">                    Supported options are:</span>
+
+<span class="sd">                    1. `positive` - Displays only positive pixel attributions.</span>
+
+<span class="sd">                    2. `absolute_value` - Displays absolute value of</span>
+<span class="sd">                        attributions.</span>
+
+<span class="sd">                    3. `negative` - Displays only negative pixel attributions.</span>
+
+<span class="sd">                    4. `all` - Displays both positive and negative attribution</span>
+<span class="sd">                        values.</span>
+
+<span class="sd">                    Default: `absolute_value`</span>
+<span class="sd">        channel_labels (list[str], optional): List of labels</span>
+<span class="sd">                    corresponding to each channel in data.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        channels_last (bool, optional): If True, data is expected to have</span>
+<span class="sd">                    channels as the last dimension, i.e. (N, C). If False, data</span>
+<span class="sd">                    is expected to have channels first, i.e. (C, N).</span>
+<span class="sd">                    Default: True</span>
+<span class="sd">        plt_fig_axis (tuple, optional): Tuple of matplotlib.pyplot.figure and axis</span>
+<span class="sd">                    on which to visualize. If None is provided, then a new figure</span>
+<span class="sd">                    and axis are created.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        outlier_perc (float or int, optional): Top attribution values which</span>
+<span class="sd">                    correspond to a total of outlier_perc percentage of the</span>
+<span class="sd">                    total attribution are set to 1 and scaling is performed</span>
+<span class="sd">                    using the minimum of these values. For sign=`all`, outliers</span>
+<span class="sd">                    and scale value are computed using absolute value of</span>
+<span class="sd">                    attributions.</span>
+<span class="sd">                    Default: 2</span>
+<span class="sd">        cmap (str, optional): String corresponding to desired colormap for</span>
+<span class="sd">                    heatmap visualization. This defaults to "Reds" for negative</span>
+<span class="sd">                    sign, "Blues" for absolute value, "Greens" for positive sign,</span>
+<span class="sd">                    and a spectrum from red to green for all. Note that this</span>
+<span class="sd">                    argument is only used for visualizations displaying heatmaps.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        alpha_overlay (float, optional): Alpha to set for heatmap when using</span>
+<span class="sd">                    `blended_heat_map` visualization mode, which overlays the</span>
+<span class="sd">                    heat map over the greyscaled original image.</span>
+<span class="sd">                    Default: 0.7</span>
+<span class="sd">        show_colorbar (bool): Displays colorbar for heat map below</span>
+<span class="sd">                    the visualization.</span>
+<span class="sd">        title (str, optional): Title string for plot. If None, no title is</span>
+<span class="sd">                    set.</span>
+<span class="sd">                    Default: None</span>
+<span class="sd">        fig_size (tuple, optional): Size of figure created.</span>
+<span class="sd">                    Default: (6,6)</span>
+<span class="sd">        use_pyplot (bool): If true, uses pyplot to create and show</span>
+<span class="sd">                    figure and displays the figure after creating. If False,</span>
+<span class="sd">                    uses Matplotlib object oriented API and simply returns a</span>
+<span class="sd">                    figure object without showing.</span>
+<span class="sd">                    Default: True.</span>
+<span class="sd">        pyplot_kwargs: Keyword arguments forwarded to plt.plot, for example</span>
+<span class="sd">                    `linewidth=3`, `color='black'`, etc</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        2-element tuple of **figure**, **axis**:</span>
+<span class="sd">        - **figure** (*matplotlib.pyplot.figure*):</span>
+<span class="sd">                    Figure object on which visualization</span>
+<span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
+<span class="sd">                    same figure provided.</span>
+<span class="sd">        - **axis** (*matplotlib.pyplot.axis*):</span>
+<span class="sd">                    Axis object on which visualization</span>
+<span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
+<span class="sd">                    same axis provided.</span>
+
+<span class="sd">    Examples::</span>
+
+<span class="sd">        &gt;&gt;&gt; # Classifier takes input of shape (batch, length, channels)</span>
+<span class="sd">        &gt;&gt;&gt; model = Classifier()</span>
+<span class="sd">        &gt;&gt;&gt; dl = DeepLift(model)</span>
+<span class="sd">        &gt;&gt;&gt; attribution = dl.attribute(data, target=0)</span>
+<span class="sd">        &gt;&gt;&gt; # Pick the first sample and plot each channel in data in a separate</span>
+<span class="sd">        &gt;&gt;&gt; # panel, with attributions overlaid</span>
+<span class="sd">        &gt;&gt;&gt; visualize_timeseries_attr(attribution[0], data[0], "overlay_individual")</span>
+<span class="sd">    """</span>
+
+    <span class="c1"># Check input dimensions</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">attr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"Expected attr of shape (N, C), got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">attr</span><span class="o">.</span><span class="n">shape</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"Expected data of shape (N, C), got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">attr</span><span class="o">.</span><span class="n">shape</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Convert to channels-first</span>
+    <span class="k">if</span> <span class="n">channels_last</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">num_channels</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">timeseries_length</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">num_channels</span> <span class="o">&gt;</span> <span class="n">timeseries_length</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"Number of channels (</span><span class="si">{}</span><span class="s2">) greater than time series length (</span><span class="si">{}</span><span class="s2">), "</span>
+            <span class="s2">"please verify input format"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_channels</span><span class="p">,</span> <span class="n">timeseries_length</span><span class="p">),</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">num_subplots</span> <span class="o">=</span> <span class="n">num_channels</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">TimeseriesVisualizationMethod</span><span class="p">[</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="o">==</span> <span class="n">TimeseriesVisualizationMethod</span><span class="o">.</span><span class="n">overlay_combined</span><span class="o">.</span><span class="n">value</span>
+    <span class="p">):</span>
+        <span class="n">num_subplots</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Merge attributions across channels</span>
+
+    <span class="k">if</span> <span class="n">x_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">x_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">timeseries_length</span>
+        <span class="p">),</span> <span class="s2">"x_values must have same length as data"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">timeseries_length</span><span class="p">)</span>
+
+    <span class="c1"># Create plot if figure, axis not provided</span>
+    <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">_create_default_plot</span><span class="p">(</span>
+        <span class="n">plt_fig_axis</span><span class="p">,</span> <span class="n">use_pyplot</span><span class="p">,</span> <span class="n">fig_size</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">num_subplots</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plt_axis</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">plt_axis_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">plt_axis</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt_axis_list</span> <span class="o">=</span> <span class="n">plt_axis</span>
+
+    <span class="n">norm_attr</span> <span class="o">=</span> <span class="n">_normalize_attr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">outlier_perc</span><span class="p">)</span>
+
+    <span class="c1"># Set default colormap and bounds based on sign.</span>
+    <span class="n">default_cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">_initialize_cmap_and_vmin_vmax</span><span class="p">(</span><span class="n">sign</span><span class="p">)</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">cmap</span> <span class="k">if</span> <span class="n">cmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_cmap</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">cmap</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="n">cm_norm</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)</span>
+
+    <span class="n">visualization_methods</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">AxesImage</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"overlay_individual"</span><span class="p">:</span> <span class="n">_visualize_overlay_individual</span><span class="p">,</span>
+        <span class="s2">"overlay_combined"</span><span class="p">:</span> <span class="n">_visualize_overlay_combined</span><span class="p">,</span>
+        <span class="s2">"colored_graph"</span><span class="p">:</span> <span class="n">_visualize_colored_graph</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"num_channels"</span><span class="p">:</span> <span class="n">num_channels</span><span class="p">,</span>
+        <span class="s2">"plt_axis_list"</span><span class="p">:</span> <span class="n">plt_axis_list</span><span class="p">,</span>
+        <span class="s2">"x_values"</span><span class="p">:</span> <span class="n">x_values</span><span class="p">,</span>
+        <span class="s2">"data"</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+        <span class="s2">"channel_labels"</span><span class="p">:</span> <span class="n">channel_labels</span><span class="p">,</span>
+        <span class="s2">"norm_attr"</span><span class="p">:</span> <span class="n">norm_attr</span><span class="p">,</span>
+        <span class="s2">"cmap"</span><span class="p">:</span> <span class="n">cmap</span><span class="p">,</span>
+        <span class="s2">"cm_norm"</span><span class="p">:</span> <span class="n">cm_norm</span><span class="p">,</span>
+        <span class="s2">"alpha_overlay"</span><span class="p">:</span> <span class="n">alpha_overlay</span><span class="p">,</span>
+        <span class="s2">"pyplot_kwargs"</span><span class="p">:</span> <span class="n">pyplot_kwargs</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">visualization_methods</span><span class="p">:</span>
+        <span class="n">visualization_methods</span><span class="p">[</span><span class="n">method</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Invalid visualization method: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="n">x_values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x_values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="k">if</span> <span class="n">show_colorbar</span><span class="p">:</span>
+        <span class="n">axis_separator</span> <span class="o">=</span> <span class="n">make_axes_locatable</span><span class="p">(</span><span class="n">plt_axis_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">colorbar_axis</span> <span class="o">=</span> <span class="n">axis_separator</span><span class="o">.</span><span class="n">append_axes</span><span class="p">(</span><span class="s2">"bottom"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">"5%"</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+        <span class="n">colorbar_alpha</span> <span class="o">=</span> <span class="n">alpha_overlay</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">TimeseriesVisualizationMethod</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">TimeseriesVisualizationMethod</span><span class="o">.</span><span class="n">colored_graph</span>
+        <span class="p">):</span>
+            <span class="n">colorbar_alpha</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">plt_fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span>
+            <span class="n">cm</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">cm_norm</span><span class="p">,</span> <span class="n">cmap</span><span class="p">),</span>
+            <span class="n">orientation</span><span class="o">=</span><span class="s2">"horizontal"</span><span class="p">,</span>
+            <span class="n">cax</span><span class="o">=</span><span class="n">colorbar_axis</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">colorbar_alpha</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
+        <span class="n">plt_axis_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_pyplot</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span></div>
+
+
+
+<span class="c1"># These visualization methods are for text and are partially copied from</span>
+<span class="c1"># experiments conducted by Davide Testuggine at Facebook.</span>
+
+
+<span class="k">class</span> <span class="nc">VisualizationDataRecord</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    A data record for storing attribution relevant information</span>
+<span class="sd">    """</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">"word_attributions"</span><span class="p">,</span>
+        <span class="s2">"pred_prob"</span><span class="p">,</span>
+        <span class="s2">"pred_class"</span><span class="p">,</span>
+        <span class="s2">"true_class"</span><span class="p">,</span>
+        <span class="s2">"attr_class"</span><span class="p">,</span>
+        <span class="s2">"attr_score"</span><span class="p">,</span>
+        <span class="s2">"raw_input_ids"</span><span class="p">,</span>
+        <span class="s2">"convergence_score"</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">word_attributions</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">pred_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">pred_class</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">true_class</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">attr_class</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">attr_score</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">raw_input_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">convergence_score</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">word_attributions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="n">word_attributions</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pred_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">pred_prob</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pred_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">pred_class</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">true_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">true_class</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">attr_class</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">attr_score</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_input_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_input_ids</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">convergence_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">convergence_score</span>
+
+
+<span class="k">def</span> <span class="nf">_get_color</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="c1"># clip values to prevent CSS errors (Values should be from [-1,1])</span>
+    <span class="n">attr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">attr</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">hue</span> <span class="o">=</span> <span class="mi">120</span>
+        <span class="n">sat</span> <span class="o">=</span> <span class="mi">75</span>
+        <span class="n">lig</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">attr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hue</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">sat</span> <span class="o">=</span> <span class="mi">75</span>
+        <span class="n">lig</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span> <span class="o">*</span> <span class="n">attr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"hsl(</span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">%, </span><span class="si">{}</span><span class="s2">%)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hue</span><span class="p">,</span> <span class="n">sat</span><span class="p">,</span> <span class="n">lig</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">format_classname</span><span class="p">(</span><span class="n">classname</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s1">'&lt;td&gt;&lt;text style="padding-right:2em"&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s1">&lt;/b&gt;&lt;/text&gt;&lt;/td&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">classname</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">format_special_tokens</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"&lt;"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">token</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"&gt;"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"#"</span> <span class="o">+</span> <span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"&lt;&gt;"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">token</span>
+
+
+<span class="k">def</span> <span class="nf">format_tooltip</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s1">'&lt;div class="tooltip"&gt;</span><span class="si">{item}</span><span class="se">\</span>
+<span class="s1">        &lt;span class="tooltiptext"&gt;</span><span class="si">{text}</span><span class="s1">&lt;/span&gt;</span><span class="se">\</span>
+<span class="s1">        &lt;/div&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">format_word_importances</span><span class="p">(</span>
+    <span class="n">words</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">importances</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">importances</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">importances</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"&lt;td&gt;&lt;/td&gt;"</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">importances</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">importances</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">importances</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"Expected 1D array, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">importances</span><span class="o">.</span><span class="n">shape</span>
+        <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">importances</span><span class="p">)</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"&lt;td&gt;"</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">importance</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">importances</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)]):</span>
+        <span class="n">word</span> <span class="o">=</span> <span class="n">format_special_tokens</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">_get_color</span><span class="p">(</span><span class="n">importance</span><span class="p">)</span>
+        <span class="n">unwrapped_tag</span> <span class="o">=</span> <span class="s1">'&lt;mark style="background-color: </span><span class="si">{color}</span><span class="s1">; opacity:1.0; </span><span class="se">\</span>
+<span class="s1">                    line-height:1.75"&gt;&lt;font color="black"&gt; </span><span class="si">{word}</span><span class="se">\</span>
+<span class="s1">                    &lt;/font&gt;&lt;/mark&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">word</span><span class="o">=</span><span class="n">word</span>
+        <span class="p">)</span>
+        <span class="n">tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unwrapped_tag</span><span class="p">)</span>
+    <span class="n">tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;/td&gt;"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">visualize_text</span><span class="p">(</span>
+    <span class="n">datarecords</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">VisualizationDataRecord</span><span class="p">],</span> <span class="n">legend</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"HTML"</span><span class="p">:</span>  <span class="c1"># In quotes because this type doesn't exist in standalone mode</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Visualizes text attribution records and returns an IPython ``HTML`` object.</span>
+
+<span class="sd">    In notebooks this object is displayed inline. To persist the same rendering as</span>
+<span class="sd">    HTML, write ``html_obj.data`` from the returned object to an ``.html`` file.</span>
+<span class="sd">    Captum does not directly export this visualization as a raster image; use an</span>
+<span class="sd">    external HTML renderer or screenshot tool when an image file is required.</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="n">HAS_IPYTHON</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">"IPython must be available to visualize text. "</span>
+        <span class="s2">"Please run 'pip install ipython'."</span>
+    <span class="p">)</span>
+    <span class="n">dom</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"&lt;table width: 100%&gt;"</span><span class="p">]</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">"&lt;tr&gt;&lt;th&gt;True Label&lt;/th&gt;"</span>
+        <span class="s2">"&lt;th&gt;Predicted Label&lt;/th&gt;"</span>
+        <span class="s2">"&lt;th&gt;Attribution Label&lt;/th&gt;"</span>
+        <span class="s2">"&lt;th&gt;Attribution Score&lt;/th&gt;"</span>
+        <span class="s2">"&lt;th&gt;Word Importance&lt;/th&gt;"</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">datarecord</span> <span class="ow">in</span> <span class="n">datarecords</span><span class="p">:</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="s2">"&lt;tr&gt;"</span><span class="p">,</span>
+                    <span class="n">format_classname</span><span class="p">(</span><span class="n">datarecord</span><span class="o">.</span><span class="n">true_class</span><span class="p">),</span>
+                    <span class="n">format_classname</span><span class="p">(</span>
+                        <span class="s2">"</span><span class="si">{0}</span><span class="s2"> (</span><span class="si">{1:.2f}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">datarecord</span><span class="o">.</span><span class="n">pred_class</span><span class="p">,</span> <span class="n">datarecord</span><span class="o">.</span><span class="n">pred_prob</span>
+                        <span class="p">)</span>
+                    <span class="p">),</span>
+                    <span class="n">format_classname</span><span class="p">(</span><span class="n">datarecord</span><span class="o">.</span><span class="n">attr_class</span><span class="p">),</span>
+                    <span class="n">format_classname</span><span class="p">(</span><span class="s2">"</span><span class="si">{0:.2f}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">datarecord</span><span class="o">.</span><span class="n">attr_score</span><span class="p">)),</span>
+                    <span class="n">format_word_importances</span><span class="p">(</span>
+                        <span class="n">datarecord</span><span class="o">.</span><span class="n">raw_input_ids</span><span class="p">,</span> <span class="n">datarecord</span><span class="o">.</span><span class="n">word_attributions</span>
+                    <span class="p">),</span>
+                    <span class="s2">"&lt;tr&gt;"</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
+        <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s1">'&lt;div style="border-top: 1px solid; margin-top: 5px; </span><span class="se">\</span>
+<span class="s1">            padding-top: 5px; display: inline-block"&gt;'</span>
+        <span class="p">)</span>
+        <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;b&gt;Legend: &lt;/b&gt;"</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s2">"Negative"</span><span class="p">,</span> <span class="s2">"Neutral"</span><span class="p">,</span> <span class="s2">"Positive"</span><span class="p">]):</span>
+            <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s1">'&lt;span style="display: inline-block; width: 10px; height: 10px; </span><span class="se">\</span>
+<span class="s1">                border: 1px solid; background-color: </span><span class="se">\</span>
+<span class="s1">                </span><span class="si">{value}</span><span class="s1">"&gt;&lt;/span&gt; </span><span class="si">{label}</span><span class="s1">  '</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">value</span><span class="o">=</span><span class="n">_get_color</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;/div&gt;"</span><span class="p">)</span>
+
+    <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rows</span><span class="p">))</span>
+    <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;/table&gt;"</span><span class="p">)</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">HTML</span><span class="p">(</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dom</span><span class="p">))</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">html</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div aria-label="Main" class="sphinxsidebar" role="navigation">
+<div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Captum</a></h1>
+<search id="searchbox" role="search" style="display: none">
+<div class="searchformwrapper">
+<form action="../../../../search.html" class="search" method="get">
+<input aria-labelledby="searchlabel" autocapitalize="off" autocomplete="off" autocorrect="off" name="q" placeholder="Search" spellcheck="false" type="text"/>
+<input type="submit" value="Go"/>
+</form>
+</div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../attribution.html">Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../llm_attr.html">LLM Attribution Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../noise_tunnel.html">NoiseTunnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../layer.html">Layer Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../neuron.html">Neuron Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../robust.html">Robustness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../concept.html">Concept-based Interpretability</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../influence.html">Influential Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../module.html">Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../base_classes.html">Base Classes</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+<li><a href="../../../../index.html">Documentation overview</a><ul>
+<li><a href="../../../index.html">Module code</a><ul>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="clearer"></div>
+</div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><h5>Docs</h5><a href="/docs/introduction">Introduction</a><a href="/docs/getting_started">Getting Started</a><a href="/tutorials/">Tutorials</a><a href="/api/">API Reference</a></div><div class="footerSection"><h5>Legal</h5><a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></div><div class="footerSection"><h5>Social</h5><div class="social"><a class="github-button" href="https://github.com/pytorch/captum" data-count-href="https://github.com/pytorch/captum/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star Captum on GitHub">captum</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright"> Copyright © 2026 Facebook Inc.</section><script>
+            (function() {
+              var BAD_BASE = '/captum/';
+              if (window.location.origin !== 'https://captum.ai') {
+                var pathname = window.location.pathname;
+                var newPathname = pathname.slice(pathname.indexOf(BAD_BASE) === 0 ? BAD_BASE.length : 1);
+                var newLocation = 'https://captum.ai/' + newPathname;
+                console.log('redirecting to ' + newLocation);
+                window.location.href = newLocation;
+              }
+            })();
+          </script></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
+                document.addEventListener('keyup', function(e) {
+                  if (e.target !== document.body) {
+                    return;
+                  }
+                  // keyCode for '/' (slash)
+                  if (e.keyCode === 191) {
+                    const search = document.getElementById('search_input_react');
+                    search && search.focus();
+                  }
+                });
+              </script><script>
+              var search = docsearch({
+                
+                apiKey: '207c27d819f967749142d8611de7cb19',
+                indexName: 'captum',
+                inputSelector: '#search_input_react'
+              });
+            </script></body></html>
