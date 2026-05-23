@@ -136,6 +136,15 @@ Captum's implementation represents missing features with the values provided in 
 To learn more about KernelSHAP, visit the following resources:
 - [Original paper](https://arxiv.org/abs/1705.07874)
 
+### ReX
+ReX is a perturbation-based explainability approach, grounded in the theory of Actual Causality[1]. It works by partitioning the input, and occluding all combinations of partitions using a neutral masking value. Where there masking some combination of partitions changes the output of the model, those partitions are recursively re-partitioned to search for ever-smaller parts of the input which are responsible for the final output.
+
+To learn more about actual causality, responsibility and ReX:
+- [Actual Causality](https://www.cs.cornell.edu/home/halpern/papers/causalitybook-ch1-3.html)
+- [Responsibility and Blame](https://arxiv.org/pdf/cs/0312038)
+- [ReX Original Paper(called DC-Causal here)](https://www.hanachockler.com/iccv2021/)
+
+
 ## Layer Attribution
 ### Layer Conductance
 Conductance combines the neuron activation with the partial derivatives of both the neuron with respect to the input and the output with respect to the neuron to build a more complete picture of neuron importance.

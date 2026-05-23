@@ -207,7 +207,16 @@ Please, scroll to the right for more details.
     <td>Depends on the choice of above mentioned attribution algorithm. </td>
     <td>Depends on the choice of above mentioned attribution algorithm. | Adds gaussian noise to each input example #samples times, calls any above mentioned attribution algorithm for all #samples per example and aggregates / smoothens them based on different techniques for each input example. Supported smoothing techniques include: smoothgrad, vargrad, smoothgrad_sq.</td>
   </tr>
-
+  <tr>
+    <td><strong>ReX</strong></td>
+    <td> Perturbation </td>
+    <td>Any function returning a single value</td>
+    <td> O(#partitions ^ #max_depth)  - user defined values </td>
+    <td> Any function returning a single value </td>
+     <td>O( #iterations (#partitions ^ #max_depth))</td>
+    <td>Yes (strong assumption regarding neutral baseline) </td>
+    <td>Perturbation based approach based on a recursive search over the input. By recursively occluding partitions of an input, ReX searches for partitions who's values have predictive value wrt. the output. </td>
+  </tr>
 </table>
 
 **^ Including Layer Variant**

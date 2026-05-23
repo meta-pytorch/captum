@@ -18,3 +18,4 @@ Attribution
     lime
     kernel_shap
     lrp
+    rex
