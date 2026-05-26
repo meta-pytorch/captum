@@ -128,13 +128,31 @@ We offer two implementation variants of this method, LimeBase and Lime.
 To learn more about Lime, visit the following resources:
 - [Original paper](https://arxiv.org/abs/1602.04938)
 
-### KernelSHAP
+### KernelSHAP / Baseline KernelSHAP
 Kernel SHAP is a method that uses the LIME framework to compute Shapley Values. Setting the loss function, weighting kernel and regularization terms appropriately in the LIME framework allows theoretically obtaining Shapley Values more efficiently than directly computing Shapley Values.
 
 Captum's implementation represents missing features with the values provided in `baselines`. As a result, the attributions explain the model output relative to the chosen baseline values rather than by sampling missing features from a background data distribution.
 
+`BaselineKernelShap` is an alias for `KernelShap` that makes these baseline-substitution semantics explicit.
+
 To learn more about KernelSHAP, visit the following resources:
 - [Original paper](https://arxiv.org/abs/1705.07874)
+
+### Random Baseline KernelSHAP
+Random Baseline KernelSHAP computes Random Baseline Shapley (RBShap) values with the same Kernel SHAP weighted linear surrogate used by KernelSHAP. Instead of using one fixed baseline to represent missing features, it evaluates each sampled coalition against a distribution of baselines and averages those model outputs before fitting the surrogate model.
+
+For a coalition of selected features `S`, KernelSHAP / Baseline KernelSHAP uses:
+
+`v(S) = f(x_S; b_not_S)`
+
+Random Baseline KernelSHAP uses:
+
+`v(S) = E_b[f(x_S; b_not_S)]`
+
+where `b` is drawn from the provided baseline distribution. This makes the returned attributions the expected Baseline Shapley attribution over the baseline distribution. If `n_baseline_samples` is not provided, Captum averages over all provided baseline examples for each sampled coalition. If `n_baseline_samples` is provided, Captum samples that many baselines with replacement for each coalition.
+
+To learn more about Random Baseline Shapley, visit the following resources:
+- [The Many Shapley Values for Model Explanation](https://arxiv.org/abs/1908.08474)
 
 ## Layer Attribution
 ### Layer Conductance

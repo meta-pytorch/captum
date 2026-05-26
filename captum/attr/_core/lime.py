@@ -428,6 +428,11 @@ class LimeBase(PerturbationAttribution):
         expanded_additional_args = None
         expanded_target = None
         gen_perturb_func = self._get_perturb_generator_func(inputs, **kwargs)
+        model_input_multiplier = self._get_model_input_multiplier(**kwargs)
+        assert model_input_multiplier >= 1, (
+            "Model input multiplier must be a positive integer, "
+            f"received {model_input_multiplier}."
+        )
 
         if show_progress:
             attr_progress = progress(
@@ -460,18 +465,22 @@ class LimeBase(PerturbationAttribution):
             )
 
             if len(curr_model_inputs) == perturbations_per_eval:
+                num_model_inputs = len(curr_model_inputs) * model_input_multiplier
                 if expanded_additional_args is None:
                     expanded_additional_args = _expand_additional_forward_args(
-                        additional_forward_args, len(curr_model_inputs)
+                        additional_forward_args, num_model_inputs
                     )
                 if expanded_target is None:
-                    expanded_target = _expand_target(target, len(curr_model_inputs))
+                    expanded_target = _expand_target(target, num_model_inputs)
 
                 model_out = self._evaluate_batch(
                     curr_model_inputs,
                     expanded_target,
                     expanded_additional_args,
                     device,
+                    len(curr_model_inputs),
+                    model_input_multiplier,
+                    **kwargs,
                 )
 
                 if show_progress:
@@ -482,15 +491,19 @@ class LimeBase(PerturbationAttribution):
                 curr_model_inputs = []
 
         if len(curr_model_inputs) > 0:
+            num_model_inputs = len(curr_model_inputs) * model_input_multiplier
             expanded_additional_args = _expand_additional_forward_args(
-                additional_forward_args, len(curr_model_inputs)
+                additional_forward_args, num_model_inputs
             )
-            expanded_target = _expand_target(target, len(curr_model_inputs))
+            expanded_target = _expand_target(target, num_model_inputs)
             model_out = self._evaluate_batch(
                 curr_model_inputs,
                 expanded_target,
                 expanded_additional_args,
                 device,
+                len(curr_model_inputs),
+                model_input_multiplier,
+                **kwargs,
             )
             if show_progress:
                 attr_progress.update()
@@ -562,6 +575,9 @@ class LimeBase(PerturbationAttribution):
         expanded_target: TargetType,
         expanded_additional_args: object,
         device: torch.device,
+        num_interp_inputs: int,
+        model_input_multiplier: int,
+        **kwargs: Any,
     ) -> Tensor:
         model_out = _run_forward(
             self.forward_func,
@@ -569,14 +585,36 @@ class LimeBase(PerturbationAttribution):
             expanded_target,
             expanded_additional_args,
         )
+        expected_num_outputs = num_interp_inputs * model_input_multiplier
         if isinstance(model_out, Tensor):
-            assert model_out.numel() == len(curr_model_inputs), (
+            assert model_out.numel() == expected_num_outputs, (
                 "Number of outputs is not appropriate, must return "
                 "one output per perturbed input"
             )
         if isinstance(model_out, Tensor):
-            return model_out.flatten()
+            return self._aggregate_model_outputs(
+                model_out.flatten(),
+                num_interp_inputs,
+                model_input_multiplier,
+                **kwargs,
+            )
+        assert expected_num_outputs == 1, (
+            "Forward function must return a Tensor when each interpretable "
+            "sample expands to multiple model inputs."
+        )
         return torch.tensor([model_out], device=device)
+
+    def _get_model_input_multiplier(self, **kwargs: Any) -> int:
+        return 1
+
+    def _aggregate_model_outputs(
+        self,
+        model_out: Tensor,
+        num_interp_inputs: int,
+        model_input_multiplier: int,
+        **kwargs: Any,
+    ) -> Tensor:
+        return model_out
 
     def has_convergence_delta(self) -> bool:
         return False
@@ -1258,7 +1296,7 @@ class Lime(LimeBase):
                 leading_dim_one=(bsz > 1),
             )
         else:
-            return coefs
+            return cast(TensorOrTupleOfTensorsGeneric, coefs)
 
     @typing.overload
     def _convert_output_shape(
