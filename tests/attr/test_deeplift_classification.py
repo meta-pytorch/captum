@@ -5,6 +5,7 @@
 from typing import TypeVar, Union
 
 import torch
+import torch.nn.functional as F
 from captum._utils.typing import TargetType
 from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
 from captum.attr._core.integrated_gradients import IntegratedGradients
@@ -22,6 +23,99 @@ from torch import Tensor
 from torch.nn import Module
 
 DeepLiftAttrMethod = TypeVar("DeepLiftAttrMethod", DeepLift, DeepLiftShap)
+
+
+class FunctionalExpModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return torch.exp(input).sum(dim=1)
+
+
+class FunctionalSquareModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return (input * input).sum(dim=1)
+
+
+class FunctionalSigmoidProductModel(Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, input: Tensor) -> Tensor:
+        return (self.sigmoid(1.702 * input) * input).sum(dim=1)
+
+
+class FunctionalSoftmaxProfileModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        logits = input - input.mean(dim=-1, keepdim=True)
+        probs = F.softmax(logits, dim=-1)
+        return (probs * logits).sum(dim=-1)
+
+
+class FunctionalUnaryNonlinearModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        positive_input = input + 4
+        return (
+            F.relu(input)
+            + F.leaky_relu(input, negative_slope=0.2)
+            + torch.sigmoid(input)
+            + torch.tanh(input)
+            + F.softplus(input)
+            + F.elu(input)
+            + F.selu(input)
+            + F.gelu(input)
+            + torch.rsqrt(positive_input)
+            + torch.clamp(input, min=-0.25, max=1.25)
+        ).sum(dim=1)
+
+
+class FunctionalMinMaxModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        other = torch.flip(input, dims=[1]) + 0.25
+        return (
+            torch.minimum(input, other)
+            + torch.maximum(0.5 * input, other)
+            + torch.min(input + 0.1, other)
+            + torch.max(input - 0.1, other)
+        ).sum(dim=1)
+
+
+class FunctionalConstantMinMaxModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        lower = torch.zeros_like(input)
+        upper = torch.full_like(input, 0.5)
+        return (torch.maximum(input, lower) + torch.minimum(input, upper)).sum(dim=1)
+
+
+class FunctionalMatmulModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        left = input.unsqueeze(2)
+        right = input.unsqueeze(1)
+        return torch.matmul(left, right).sum(dim=(1, 2))
+
+
+class FunctionalMaxReductionModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return torch.amax(input, dim=1)
+
+
+class FunctionalTorchMaxReductionModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return torch.max(input, dim=1).values
+
+
+class FunctionalMaxPool2dModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return F.max_pool2d(input, 2).flatten(1).sum(dim=1)
+
+
+class SeluGeluModel(Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.selu = torch.nn.SELU()
+        self.gelu = torch.nn.GELU()
+
+    def forward(self, input: Tensor) -> Tensor:
+        return self.gelu(self.selu(input)).sum(dim=1)
 
 
 class Test(BaseTest):
@@ -156,6 +250,126 @@ class Test(BaseTest):
 
         self.softmax_classification(model, dl, input, baseline, torch.tensor(2))
 
+    def test_functional_exp_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalExpModel(), input, baseline
+        )
+
+    def test_functional_multiply_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalSquareModel(), input, baseline
+        )
+        self._assert_functional_model_completeness(
+            FunctionalSigmoidProductModel(), input, baseline
+        )
+
+    def test_functional_softmax_profile_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalSoftmaxProfileModel(), input, baseline
+        )
+
+    def test_functional_unary_nonlinear_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalUnaryNonlinearModel(), input, baseline
+        )
+
+    def test_functional_binary_min_max_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalMinMaxModel(), input, baseline
+        )
+        self._assert_functional_model_completeness(
+            FunctionalConstantMinMaxModel(), input, baseline
+        )
+
+    def test_functional_matmul_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalMatmulModel(), input, baseline
+        )
+
+    def test_functional_max_reduction_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalMaxReductionModel(), input, baseline
+        )
+        self._assert_functional_model_completeness(
+            FunctionalTorchMaxReductionModel(), input, baseline
+        )
+
+    def test_functional_max_pool_rescale(self) -> None:
+        input = torch.tensor(
+            [
+                [[[1.0, 0.0], [0.0, 0.0]]],
+                [[[0.0, 3.0], [1.0, 2.0]]],
+            ],
+            requires_grad=True,
+        )
+        baseline = torch.tensor(
+            [
+                [[[0.0, 2.0], [0.0, 0.0]]],
+                [[[1.0, 0.0], [4.0, 0.0]]],
+            ]
+        )
+
+        self._assert_functional_model_completeness(
+            FunctionalMaxPool2dModel(), input, baseline
+        )
+
+    def test_selu_gelu_module_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(SeluGeluModel(), input, baseline)
+
+    def test_deeplift_shap_functional_tensor_ops(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baselines = torch.tensor(
+            [[0.0, 0.0, 0.0], [0.25, -0.25, 0.5], [-0.5, 0.5, -0.25]]
+        )
+
+        for model in (
+            FunctionalExpModel(),
+            FunctionalSquareModel(),
+            FunctionalSoftmaxProfileModel(),
+            FunctionalUnaryNonlinearModel(),
+            FunctionalMinMaxModel(),
+            FunctionalConstantMinMaxModel(),
+            FunctionalMatmulModel(),
+            FunctionalMaxReductionModel(),
+            FunctionalTorchMaxReductionModel(),
+            SeluGeluModel(),
+        ):
+            _, delta = DeepLiftShap(model).attribute(  # type: ignore[has-type]
+                input,
+                baselines=baselines,
+                return_convergence_delta=True,
+            )
+            self.assertTrue(
+                (delta.abs() < 0.0001).all(),
+                "Functional tensor op DeepLiftShap delta is too large: {}".format(
+                    delta
+                ),
+            )
+
     def softmax_classification(
         self,
         model: Module,
@@ -208,3 +422,19 @@ class Test(BaseTest):
                 inputs, baselines=baselines, target=target
             )
             assertAttributionComparision(self, attributions, attributions_ig)
+
+    def _assert_functional_model_completeness(
+        self, model: Module, input: Tensor, baseline: Tensor
+    ) -> None:
+        attributions, delta = DeepLift(model).attribute(  # type: ignore[has-type]
+            input,
+            baselines=baseline,
+            return_convergence_delta=True,
+        )
+        attr_sum = attributions.reshape(attributions.shape[0], -1).sum(dim=1)
+        output_diff = model(input) - model(baseline)
+        torch.testing.assert_close(attr_sum, output_diff, atol=0.0001, rtol=0.0001)
+        self.assertTrue(
+            (delta.abs() < 0.0001).all(),
+            "Functional tensor op DeepLift delta is too large: {}".format(delta),
+        )

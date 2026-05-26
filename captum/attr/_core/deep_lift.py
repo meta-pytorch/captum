@@ -3,7 +3,18 @@
 # pyre-strict
 import typing
 import warnings
-from typing import Callable, cast, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import torch
 import torch.nn as nn
@@ -37,7 +48,911 @@ from captum.attr._utils.common import (
 from captum.log import log_usage
 from torch import Tensor
 from torch.nn import Module
+from torch.overrides import TorchFunctionMode
 from torch.utils.hooks import RemovableHandle
+
+
+def _can_apply_deeplift_tensor_rule(input: object) -> bool:
+    # DeepLift runs one combined forward with actual inputs followed by
+    # baselines along batch dimension 0. Functional-op rules are valid only
+    # for tensors that participate in that paired actual / reference batch.
+    return (
+        isinstance(input, Tensor)
+        and input.requires_grad
+        and input.dim() > 0
+        and input.shape[0] % 2 == 0
+    )
+
+
+def _can_apply_deeplift_binary_tensor_rule(input: object, other: object) -> bool:
+    return (
+        _can_apply_deeplift_tensor_rule(input)
+        and _can_apply_deeplift_tensor_rule(other)
+        and cast(Tensor, input).shape[0] == cast(Tensor, other).shape[0]
+    )
+
+
+def _is_square_power(power: object) -> bool:
+    return isinstance(power, (int, float)) and power == 2
+
+
+def _is_number_or_none(value: object) -> bool:
+    return value is None or isinstance(value, (int, float))
+
+
+def _forward_deeplift_unary_tensor_op(
+    input: Tensor, op_name: str, options: Tuple[object, ...]
+) -> Tensor:
+    if op_name == "exp":
+        return torch.exp(input)
+    if op_name == "square":
+        return input * input
+    if op_name == "relu":
+        return F.relu(input)
+    if op_name == "leaky_relu":
+        return F.leaky_relu(input, negative_slope=cast(float, options[0]))
+    if op_name == "sigmoid":
+        return torch.sigmoid(input)
+    if op_name == "tanh":
+        return torch.tanh(input)
+    if op_name == "softplus":
+        return F.softplus(
+            input,
+            beta=cast(float, options[0]),
+            threshold=cast(float, options[1]),
+        )
+    if op_name == "elu":
+        return F.elu(input, alpha=cast(float, options[0]))
+    if op_name == "selu":
+        return F.selu(input)
+    if op_name == "gelu":
+        return F.gelu(input, approximate=cast(str, options[0]))
+    if op_name == "rsqrt":
+        return torch.rsqrt(input)
+    if op_name == "clamp":
+        return torch.clamp(
+            input,
+            min=cast(Optional[float], options[0]),
+            max=cast(Optional[float], options[1]),
+        )
+    raise AssertionError("Unsupported DeepLift tensor unary op.")
+
+
+def _gradient_deeplift_unary_tensor_op(
+    input: Tensor, output: Tensor, op_name: str, options: Tuple[object, ...]
+) -> Tensor:
+    if op_name == "exp":
+        return output
+    if op_name == "square":
+        return 2 * input
+    if op_name == "relu":
+        return (input > 0).to(input.dtype)
+    if op_name == "leaky_relu":
+        negative_slope = cast(float, options[0])
+        return torch.where(
+            input > 0,
+            torch.ones_like(input),
+            torch.full_like(input, negative_slope),
+        )
+    if op_name == "sigmoid":
+        return output * (1 - output)
+    if op_name == "tanh":
+        return 1 - output * output
+    if op_name == "softplus":
+        beta = cast(float, options[0])
+        threshold = cast(float, options[1])
+        return torch.where(
+            input * beta > threshold,
+            torch.ones_like(input),
+            torch.sigmoid(input * beta),
+        )
+    if op_name == "elu":
+        alpha = cast(float, options[0])
+        return torch.where(input > 0, torch.ones_like(input), alpha * torch.exp(input))
+    if op_name == "selu":
+        scale = 1.0507009873554805
+        alpha = 1.6732632423543772
+        return torch.where(
+            input > 0,
+            torch.full_like(input, scale),
+            scale * alpha * torch.exp(input),
+        )
+    if op_name == "gelu":
+        approximate = cast(str, options[0])
+        if approximate == "tanh":
+            inner = 0.7978845608028654 * (input + 0.044715 * input.pow(3))
+            tanh_inner = torch.tanh(inner)
+            inner_grad = 0.7978845608028654 * (1 + 3 * 0.044715 * input.pow(2))
+            return (
+                0.5 * (1 + tanh_inner)
+                + 0.5 * input * (1 - tanh_inner.pow(2)) * inner_grad
+            )
+        return (
+            0.5 * (1 + torch.erf(input / 1.4142135623730951))
+            + input * torch.exp(-0.5 * input.pow(2)) * 0.3989422804014327
+        )
+    if op_name == "rsqrt":
+        return -0.5 * input.pow(-1.5)
+    if op_name == "clamp":
+        min_value = cast(Optional[float], options[0])
+        max_value = cast(Optional[float], options[1])
+        grad = torch.ones_like(input)
+        if min_value is not None:
+            grad = torch.where(input < min_value, torch.zeros_like(grad), grad)
+        if max_value is not None:
+            grad = torch.where(input > max_value, torch.zeros_like(grad), grad)
+        return grad
+    raise AssertionError("Unsupported DeepLift tensor unary op.")
+
+
+def _run_deeplift_max_pool(
+    input: Tensor,
+    pool_dim: int,
+    kernel_size: Any,
+    stride: Any,
+    padding: Any,
+    dilation: Any,
+    ceil_mode: bool,
+) -> Tuple[Tensor, Tensor]:
+    if pool_dim == 1:
+        return F.max_pool1d(
+            input,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            ceil_mode,
+            return_indices=True,
+        )
+    if pool_dim == 2:
+        return F.max_pool2d(
+            input,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            ceil_mode,
+            return_indices=True,
+        )
+    if pool_dim == 3:
+        return F.max_pool3d(
+            input,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            ceil_mode,
+            return_indices=True,
+        )
+    raise AssertionError("Unsupported DeepLift tensor max-pool op.")
+
+
+def _run_deeplift_max_unpool(
+    input: Tensor,
+    indices: Tensor,
+    pool_dim: int,
+    kernel_size: Any,
+    stride: Any,
+    padding: Any,
+    output_size: Any,
+) -> Tensor:
+    if pool_dim == 1:
+        return F.max_unpool1d(input, indices, kernel_size, stride, padding, output_size)
+    if pool_dim == 2:
+        return F.max_unpool2d(input, indices, kernel_size, stride, padding, output_size)
+    if pool_dim == 3:
+        return F.max_unpool3d(input, indices, kernel_size, stride, padding, output_size)
+    raise AssertionError("Unsupported DeepLift tensor max-pool op.")
+
+
+class _DeepLiftTensorUnaryOp(torch.autograd.Function):
+    """
+    DeepLift Rescale rule for functional one-input tensor ops.
+
+    Module hooks do not see calls like ``torch.exp(x)`` or ``x.pow(2)``, so this
+    autograd function replaces their backward multipliers with
+    ``delta_out / delta_in`` while preserving the original forward value.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(
+        ctx: Any,
+        input: Tensor,
+        eps: float,
+        op_name: str,
+        options: Tuple[object, ...],
+    ) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            output = _forward_deeplift_unary_tensor_op(input, op_name, options)
+        ctx.eps = eps
+        ctx.op_name = op_name
+        ctx.options = options
+        ctx.save_for_backward(input.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, None, None, None]:
+        inputs, outputs = ctx.saved_tensors
+        delta_in, delta_out = _compute_diffs(inputs, outputs)
+        grad_input = grad_output * _gradient_deeplift_unary_tensor_op(
+            inputs, outputs, ctx.op_name, ctx.options
+        )
+        new_grad_input = torch.where(
+            abs(delta_in) < ctx.eps,
+            grad_input,
+            grad_output * delta_out / delta_in,
+        )
+        return new_grad_input, None, None, None
+
+
+class _DeepLiftTensorBinaryOp(torch.autograd.Function):
+    """
+    DeepLift rule for functional two-input tensor ops where both inputs vary.
+
+    For ops such as multiplication and division, plain gradients do not satisfy
+    completeness when both operands differ from their baselines. This uses the
+    same symmetric contribution split as SHAP's DeepExplainer op handlers.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(
+        ctx: Any, input: Tensor, other: Tensor, eps: float, op_name: str
+    ) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            if op_name == "mul":
+                output = input * other
+            elif op_name == "div":
+                output = input / other
+            elif op_name == "minimum":
+                output = torch.minimum(input, other)
+            elif op_name == "maximum":
+                output = torch.maximum(input, other)
+            else:
+                raise AssertionError("Unsupported DeepLift tensor binary op.")
+        ctx.eps = eps
+        ctx.op_name = op_name
+        ctx.input_shape = input.shape
+        ctx.other_shape = other.shape
+        ctx.save_for_backward(input.detach(), other.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, Tensor, None, None]:
+        input, other, output = ctx.saved_tensors
+        input, other = torch.broadcast_tensors(input, other)
+        if output.shape != input.shape:
+            output = output.expand_as(input)
+        if grad_output.shape != input.shape:
+            grad_output = grad_output.expand_as(input)
+
+        input_actual, input_ref = input.chunk(2)
+        other_actual, other_ref = other.chunk(2)
+        output_actual, output_ref = output.chunk(2)
+        delta_input = input_actual - input_ref
+        delta_other = other_actual - other_ref
+
+        if ctx.op_name == "mul":
+            cross_input_actual = input_actual * other_ref
+            cross_other_actual = input_ref * other_actual
+            grad_input = other
+            grad_other = input
+        elif ctx.op_name == "div":
+            cross_input_actual = input_actual / other_ref
+            cross_other_actual = input_ref / other_actual
+            grad_input = 1 / other
+            grad_other = -input / (other * other)
+        elif ctx.op_name == "minimum":
+            cross_input_actual = torch.minimum(input_actual, other_ref)
+            cross_other_actual = torch.minimum(input_ref, other_actual)
+            grad_input = (input <= other).to(input.dtype)
+            grad_other = (other < input).to(other.dtype)
+        elif ctx.op_name == "maximum":
+            cross_input_actual = torch.maximum(input_actual, other_ref)
+            cross_other_actual = torch.maximum(input_ref, other_actual)
+            grad_input = (input >= other).to(input.dtype)
+            grad_other = (other > input).to(other.dtype)
+        else:
+            raise AssertionError("Unsupported DeepLift tensor binary op.")
+
+        input_contrib = cast(
+            Tensor,
+            0.5
+            * (output_actual - cross_other_actual + cross_input_actual - output_ref),
+        )
+        other_contrib = cast(
+            Tensor,
+            0.5
+            * (output_actual - cross_input_actual + cross_other_actual - output_ref),
+        )
+
+        delta_input = torch.cat([delta_input, delta_input])
+        delta_other = torch.cat([delta_other, delta_other])
+        input_contrib = torch.cat([input_contrib, input_contrib])
+        other_contrib = torch.cat([other_contrib, other_contrib])
+
+        input_multiplier = torch.where(
+            abs(delta_input) < ctx.eps,
+            grad_input,
+            input_contrib / delta_input,
+        )
+        other_multiplier = torch.where(
+            abs(delta_other) < ctx.eps,
+            grad_other,
+            other_contrib / delta_other,
+        )
+        input_grad = (grad_output * input_multiplier).sum_to_size(ctx.input_shape)
+        other_grad = (grad_output * other_multiplier).sum_to_size(ctx.other_shape)
+        return input_grad, other_grad, None, None
+
+
+class _DeepLiftTensorSingleInputBinaryOp(torch.autograd.Function):
+    """
+    DeepLift rule for binary nonlinear ops where only one tensor input varies.
+
+    Elementwise min/max with a constant threshold is nonlinear in the varying
+    input, so the plain PyTorch gradient can violate completeness across a
+    reference crossing. This applies the same Rescale multiplier used for unary
+    nonlinearities to the varying side of the binary op.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(
+        ctx: Any,
+        input: Tensor,
+        other: Tensor,
+        eps: float,
+        op_name: str,
+        input_is_left: bool,
+    ) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            if op_name == "minimum":
+                output = torch.minimum(input, other)
+            elif op_name == "maximum":
+                output = torch.maximum(input, other)
+            else:
+                raise AssertionError("Unsupported DeepLift tensor binary op.")
+        ctx.eps = eps
+        ctx.op_name = op_name
+        ctx.input_shape = input.shape
+        ctx.input_is_left = input_is_left
+        ctx.save_for_backward(input.detach(), other.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(
+        ctx: Any, grad_output: Tensor
+    ) -> Tuple[Tensor, None, None, None, None]:
+        input, other, output = ctx.saved_tensors
+        input, other = torch.broadcast_tensors(input, other)
+        if output.shape != input.shape:
+            output = output.expand_as(input)
+        if grad_output.shape != input.shape:
+            grad_output = grad_output.expand_as(input)
+
+        if ctx.op_name == "minimum":
+            grad_input = (input <= other if ctx.input_is_left else input < other).to(
+                input.dtype
+            )
+        elif ctx.op_name == "maximum":
+            grad_input = (input >= other if ctx.input_is_left else input > other).to(
+                input.dtype
+            )
+        else:
+            raise AssertionError("Unsupported DeepLift tensor binary op.")
+
+        delta_in, delta_out = _compute_diffs(input, output)
+        new_grad_input = torch.where(
+            abs(delta_in) < ctx.eps,
+            grad_output * grad_input,
+            grad_output * delta_out / delta_in,
+        )
+        return new_grad_input.sum_to_size(ctx.input_shape), None, None, None, None
+
+
+class _DeepLiftTensorMatmulOp(torch.autograd.Function):
+    """
+    DeepLift rule for matrix multiplication when both operands vary.
+
+    This is the matmul analogue of the symmetric two-input rule: each operand
+    receives the linear multiplier induced by the average of the other operand's
+    actual and reference values.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(ctx: Any, input: Tensor, other: Tensor, eps: float) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            output = torch.matmul(input, other)
+        ctx.input_shape = input.shape
+        ctx.other_shape = other.shape
+        ctx.save_for_backward(input.detach(), other.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, Tensor, None]:
+        input, other = ctx.saved_tensors
+        input_actual, input_ref = input.chunk(2)
+        other_actual, other_ref = other.chunk(2)
+        average_input_half = cast(Tensor, 0.5 * (input_actual + input_ref))
+        average_other_half = cast(Tensor, 0.5 * (other_actual + other_ref))
+        average_input = torch.cat([average_input_half, average_input_half])
+        average_other = torch.cat([average_other_half, average_other_half])
+        input_grad = torch.matmul(
+            grad_output, average_other.transpose(-2, -1)
+        ).sum_to_size(ctx.input_shape)
+        other_grad = torch.matmul(
+            average_input.transpose(-2, -1), grad_output
+        ).sum_to_size(ctx.other_shape)
+        return input_grad, other_grad, None
+
+
+class _DeepLiftTensorMaxReductionOp(torch.autograd.Function):
+    """
+    DeepLift rule for max reductions over a non-batch dimension.
+
+    This mirrors the max-pool rule: compare actual/reference max outputs,
+    route the resulting output differences to the winning input positions, and
+    divide by the input differences to obtain multipliers.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(ctx: Any, input: Tensor, dim: int, keepdim: bool, eps: float) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            output, indices = torch.max(input, dim=dim, keepdim=True)
+        ctx.dim = dim
+        ctx.keepdim = keepdim
+        ctx.eps = eps
+        ctx.save_for_backward(input.detach(), output.detach(), indices.detach())
+        return output if keepdim else output.squeeze(dim)
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, None, None, None]:
+        input, output, indices = ctx.saved_tensors
+        dim = ctx.dim
+        grad_output = grad_output if ctx.keepdim else grad_output.unsqueeze(dim)
+
+        input_actual, input_ref = input.chunk(2)
+        output_actual, output_ref = output.chunk(2)
+        cross_max = torch.maximum(output_actual, output_ref)
+        output_diffs = torch.cat([cross_max - output_ref, output_actual - cross_max])
+        max_positions = torch.zeros_like(input).scatter_add(
+            dim, indices, grad_output * output_diffs
+        )
+        max_positions_actual, max_positions_ref = max_positions.chunk(2)
+        max_positions = torch.cat(2 * [max_positions_actual + max_positions_ref])
+
+        delta_input = torch.cat(2 * [input_actual - input_ref])
+        grad_input = torch.zeros_like(input).scatter_add(dim, indices, grad_output)
+        new_grad_input = torch.where(
+            abs(delta_input) < ctx.eps,
+            grad_input,
+            max_positions / delta_input,
+        )
+        return new_grad_input, None, None, None
+
+
+class _DeepLiftTensorMaxPoolOp(torch.autograd.Function):
+    """
+    DeepLift rule for functional max-pool operations.
+
+    ``nn.MaxPool*`` modules already use the same routing rule through module
+    hooks. Functional max-pool calls need a private autograd wrapper because
+    they do not create a module boundary for Captum to hook.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(
+        ctx: Any,
+        input: Tensor,
+        eps: float,
+        pool_dim: int,
+        kernel_size: object,
+        stride: object,
+        padding: object,
+        dilation: object,
+        ceil_mode: bool,
+        return_indices: bool,
+    ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
+        with torch._C.DisableTorchFunction():
+            output, indices = _run_deeplift_max_pool(
+                input,
+                pool_dim,
+                kernel_size,
+                stride,
+                padding,
+                dilation,
+                ceil_mode,
+            )
+        ctx.eps = eps
+        ctx.pool_dim = pool_dim
+        ctx.kernel_size = kernel_size
+        ctx.stride = stride
+        ctx.padding = padding
+        ctx.input_shape = input.shape
+        ctx.return_indices = return_indices
+        ctx.save_for_backward(input.detach(), output.detach(), indices.detach())
+        if return_indices:
+            ctx.mark_non_differentiable(indices)
+            return output, indices
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(
+        ctx: Any, grad_output: Tensor, grad_indices: Optional[Tensor] = None
+    ) -> Tuple[
+        Tensor,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ]:
+        input, output, indices = ctx.saved_tensors
+        with torch.no_grad():
+            input_actual, input_ref = input.chunk(2)
+            output_actual, output_ref = output.chunk(2)
+            delta_input = torch.cat(2 * [input_actual - input_ref])
+            cross_max = torch.maximum(output_actual, output_ref)
+            output_diffs = torch.cat(
+                [cross_max - output_ref, output_actual - cross_max]
+            )
+            output_size = list(cast(torch.Size, ctx.input_shape))
+            unpool_delta, unpool_ref_delta = torch.chunk(
+                _run_deeplift_max_unpool(
+                    grad_output * output_diffs,
+                    indices,
+                    ctx.pool_dim,
+                    ctx.kernel_size,
+                    ctx.stride,
+                    ctx.padding,
+                    output_size,
+                ),
+                2,
+            )
+            unpool_delta = torch.cat(2 * [unpool_delta + unpool_ref_delta])
+            grad_input = _run_deeplift_max_unpool(
+                grad_output,
+                indices,
+                ctx.pool_dim,
+                ctx.kernel_size,
+                ctx.stride,
+                ctx.padding,
+                output_size,
+            )
+
+        new_grad_input = torch.where(
+            abs(delta_input) < ctx.eps,
+            grad_input,
+            unpool_delta / delta_input,
+        )
+        return new_grad_input, None, None, None, None, None, None, None, None
+
+
+class _DeepLiftTensorSoftmaxShift(torch.autograd.Function):
+    """
+    Rescale the numerically stable softmax shift back to the original input.
+
+    Functional softmax is decomposed into shifted input, exp, sum, and division
+    so the existing unary / binary rules can handle it. This op accounts for
+    the data-dependent max subtraction introduced for stability.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(ctx: Any, input: Tensor, dim: int, eps: float) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            output = input - torch.max(input, dim=dim, keepdim=True).values
+        ctx.eps = eps
+        ctx.save_for_backward(input.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, None, None]:
+        inputs, outputs = ctx.saved_tensors
+        delta_in, delta_out = _compute_diffs(inputs, outputs)
+        new_grad_input = torch.where(
+            abs(delta_in) < ctx.eps,
+            grad_output,
+            grad_output * delta_out / delta_in,
+        )
+        return new_grad_input, None, None
+
+
+class _DeepLiftTensorOpMode(TorchFunctionMode):
+    """
+    Intercepts selected functional tensor ops during DeepLift's model forward.
+
+    Captum's historical DeepLift support is module-hook based. This mode adds
+    equivalent private handling for common functional ops that have no
+    ``nn.Module`` boundary, while leaving unrelated tensor operations unchanged.
+    """
+
+    def __init__(self, eps: float) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def __torch_function__(
+        self,
+        func: Callable[..., object],
+        types: Tuple[Type[object], ...],
+        args: Tuple[object, ...] = (),
+        kwargs: Optional[Dict[str, object]] = None,
+    ) -> object:
+        kwargs = kwargs or {}
+        func_name = getattr(func, "__name__", None)
+
+        if (
+            func_name == "exp"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, "exp", ())
+
+        if (
+            func_name == "square"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, "square", ())
+
+        if (
+            func_name == "pow"
+            and len(args) > 1
+            and _can_apply_deeplift_tensor_rule(args[0])
+            and _is_square_power(args[1])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, "square", ())
+
+        if (
+            func_name
+            in (
+                "relu",
+                "sigmoid",
+                "tanh",
+                "selu",
+                "rsqrt",
+            )
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, func_name, ())
+
+        if (
+            func_name == "leaky_relu"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            negative_slope = kwargs.get(
+                "negative_slope", args[1] if len(args) > 1 else 0.01
+            )
+            if isinstance(negative_slope, (int, float)):
+                return _DeepLiftTensorUnaryOp.apply(
+                    args[0], self.eps, "leaky_relu", (float(negative_slope),)
+                )
+
+        if (
+            func_name == "softplus"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            beta = kwargs.get("beta", args[1] if len(args) > 1 else 1)
+            threshold = kwargs.get("threshold", args[2] if len(args) > 2 else 20)
+            if isinstance(beta, (int, float)) and isinstance(threshold, (int, float)):
+                return _DeepLiftTensorUnaryOp.apply(
+                    args[0],
+                    self.eps,
+                    "softplus",
+                    (float(beta), float(threshold)),
+                )
+
+        if (
+            func_name == "elu"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            alpha = kwargs.get("alpha", args[1] if len(args) > 1 else 1)
+            if isinstance(alpha, (int, float)):
+                return _DeepLiftTensorUnaryOp.apply(
+                    args[0], self.eps, "elu", (float(alpha),)
+                )
+
+        if (
+            func_name == "gelu"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            approximate = kwargs.get("approximate", "none")
+            if isinstance(approximate, str):
+                return _DeepLiftTensorUnaryOp.apply(
+                    args[0], self.eps, "gelu", (approximate,)
+                )
+
+        if (
+            func_name in ("clamp", "clip")
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            min_value = kwargs.get("min", args[1] if len(args) > 1 else None)
+            max_value = kwargs.get("max", args[2] if len(args) > 2 else None)
+            if _is_number_or_none(min_value) and _is_number_or_none(max_value):
+                return _DeepLiftTensorUnaryOp.apply(
+                    args[0],
+                    self.eps,
+                    "clamp",
+                    (
+                        None if min_value is None else float(cast(float, min_value)),
+                        None if max_value is None else float(cast(float, max_value)),
+                    ),
+                )
+
+        if (
+            func_name in ("mul", "div", "truediv")
+            and len(args) > 1
+            and _can_apply_deeplift_binary_tensor_rule(args[0], args[1])
+        ):
+            return _DeepLiftTensorBinaryOp.apply(
+                args[0],
+                args[1],
+                self.eps,
+                "mul" if func_name == "mul" else "div",
+            )
+
+        if (
+            func_name in ("minimum", "maximum", "min", "max")
+            and len(args) > 1
+            and _can_apply_deeplift_binary_tensor_rule(args[0], args[1])
+        ):
+            return _DeepLiftTensorBinaryOp.apply(
+                args[0],
+                args[1],
+                self.eps,
+                "minimum" if func_name in ("minimum", "min") else "maximum",
+            )
+
+        if func_name in ("minimum", "maximum", "min", "max") and len(args) > 1:
+            op_name = "minimum" if func_name in ("minimum", "min") else "maximum"
+            if (
+                _can_apply_deeplift_tensor_rule(args[0])
+                and isinstance(args[1], Tensor)
+                and not _can_apply_deeplift_tensor_rule(args[1])
+            ):
+                return _DeepLiftTensorSingleInputBinaryOp.apply(
+                    args[0], args[1], self.eps, op_name, True
+                )
+            if (
+                isinstance(args[0], Tensor)
+                and not _can_apply_deeplift_tensor_rule(args[0])
+                and _can_apply_deeplift_tensor_rule(args[1])
+            ):
+                return _DeepLiftTensorSingleInputBinaryOp.apply(
+                    args[1], args[0], self.eps, op_name, False
+                )
+
+        if (
+            func_name in ("matmul", "mm", "bmm")
+            and len(args) > 1
+            and _can_apply_deeplift_binary_tensor_rule(args[0], args[1])
+            and cast(Tensor, args[0]).dim() >= 2
+            and cast(Tensor, args[1]).dim() >= 2
+        ):
+            return _DeepLiftTensorMatmulOp.apply(args[0], args[1], self.eps)
+
+        if (
+            func_name == "amax"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            dim = kwargs.get("dim", args[1] if len(args) > 1 else None)
+            keepdim = kwargs.get("keepdim", args[2] if len(args) > 2 else False)
+            if isinstance(dim, int) and isinstance(keepdim, bool):
+                input_dim = cast(Tensor, args[0]).dim()
+                dim = dim if dim >= 0 else input_dim + dim
+                if dim != 0:
+                    return _DeepLiftTensorMaxReductionOp.apply(
+                        args[0], dim, keepdim, self.eps
+                    )
+
+        if (
+            func_name == "max"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            dim = kwargs.get("dim", args[1] if len(args) > 1 else None)
+            keepdim = kwargs.get("keepdim", args[2] if len(args) > 2 else False)
+            if isinstance(dim, int) and isinstance(keepdim, bool):
+                input = cast(Tensor, args[0])
+                input_dim = input.dim()
+                dim = dim if dim >= 0 else input_dim + dim
+                if dim != 0:
+                    values = _DeepLiftTensorMaxReductionOp.apply(
+                        input, dim, keepdim, self.eps
+                    )
+                    with torch._C.DisableTorchFunction():
+                        _, indices = torch.max(input, dim=dim, keepdim=keepdim)
+                    # pyre-fixme[16]: `torch.return_types` has no attribute `max`.
+                    return torch.return_types.max((values, indices))
+
+        if (
+            func_name
+            in (
+                "max_pool1d",
+                "max_pool1d_with_indices",
+                "max_pool2d",
+                "max_pool2d_with_indices",
+                "max_pool3d",
+                "max_pool3d_with_indices",
+            )
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            pool_dim = 1 if "1d" in func_name else 2 if "2d" in func_name else 3
+            kernel_size = args[1] if len(args) > 1 else kwargs.get("kernel_size")
+            stride = kwargs.get("stride", args[2] if len(args) > 2 else None)
+            padding = kwargs.get("padding", args[3] if len(args) > 3 else 0)
+            dilation = kwargs.get("dilation", args[4] if len(args) > 4 else 1)
+            ceil_mode = kwargs.get("ceil_mode", args[5] if len(args) > 5 else False)
+            return_indices = kwargs.get(
+                "return_indices",
+                args[6] if len(args) > 6 else func_name.endswith("_with_indices"),
+            )
+            if (
+                kernel_size is not None
+                and isinstance(ceil_mode, bool)
+                and isinstance(return_indices, bool)
+            ):
+                return _DeepLiftTensorMaxPoolOp.apply(
+                    args[0],
+                    self.eps,
+                    pool_dim,
+                    kernel_size,
+                    stride,
+                    padding,
+                    dilation,
+                    ceil_mode,
+                    return_indices,
+                )
+
+        if (
+            func_name == "softmax"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            dim = kwargs.get("dim", args[1] if len(args) > 1 else None)
+            if isinstance(dim, int):
+                input = cast(Tensor, args[0])
+                input_dim = input.dim()
+                normalized_dim = dim if dim >= 0 else input_dim + dim
+                if normalized_dim != 0:
+                    dtype = kwargs.get("dtype")
+                    if isinstance(dtype, torch.dtype):
+                        input = input.to(dtype=dtype)
+                    shifted_input = _DeepLiftTensorSoftmaxShift.apply(
+                        input, normalized_dim, self.eps
+                    )
+                    exp_input = _DeepLiftTensorUnaryOp.apply(
+                        shifted_input, self.eps, "exp", ()
+                    )
+                    exp_sum = exp_input.sum(dim=normalized_dim, keepdim=True)
+                    return _DeepLiftTensorBinaryOp.apply(
+                        exp_input, exp_sum, self.eps, "div"
+                    )
+
+        return func(*args, **kwargs)
 
 
 class DeepLift(GradientAttribution):
@@ -376,10 +1291,11 @@ class DeepLift(GradientAttribution):
         additional_forward_args: Optional[Tuple[object, ...]] = None,
     ) -> Callable[[], Tensor]:
         def forward_fn() -> Tensor:
-            model_out = cast(
-                Tensor,
-                _run_forward(forward_func, inputs, None, additional_forward_args),
-            )
+            with _DeepLiftTensorOpMode(self.eps):
+                model_out = cast(
+                    Tensor,
+                    _run_forward(forward_func, inputs, None, additional_forward_args),
+                )
             return _select_targets(
                 torch.cat((model_out[:, 0], model_out[:, 1])),
                 target,
@@ -1087,6 +2003,8 @@ SUPPORTED_NON_LINEAR: Dict[Type[Module], Callable[..., Tensor]] = {
     nn.Sigmoid: nonlinear,
     nn.Tanh: nonlinear,
     nn.Softplus: nonlinear,
+    nn.SELU: nonlinear,
+    nn.GELU: nonlinear,
     nn.MaxPool1d: maxpool1d,
     nn.MaxPool2d: maxpool2d,
     nn.MaxPool3d: maxpool3d,
