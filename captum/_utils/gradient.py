@@ -62,8 +62,7 @@ def apply_gradient_requirements(
                 warnings.warn(
                     """Input Tensor %d has a dtype of %s.
                     Gradients cannot be activated
-                    for these data types."""
-                    % (index, str(inputs_dtype)),
+                    for these data types.""" % (index, str(inputs_dtype)),
                     stacklevel=2,
                 )
         elif not input.requires_grad:
@@ -298,10 +297,21 @@ def _forward_layer_distributed_eval(
         # pyre-fixme[2]: Parameter must be annotated.
         def forward_hook(module, inp, out=None):
             eval_tsrs = inp if attribute_to_layer_input else out
-            is_eval_tuple_or_list = isinstance(eval_tsrs, (tuple, list))
+            raw_eval_tsrs = eval_tsrs
+            is_eval_tuple_or_list = isinstance(raw_eval_tsrs, (tuple, list))
 
             if not is_eval_tuple_or_list:
                 eval_tsrs = (eval_tsrs,)
+            else:
+                eval_tsrs = tuple(
+                    eval_tsr
+                    for eval_tsr in raw_eval_tsrs
+                    if isinstance(eval_tsr, Tensor)
+                )
+            assert len(eval_tsrs) > 0, (
+                "Forward hook did not obtain any tensor inputs or outputs for "
+                "given layer."
+            )
             if require_layer_grads:
                 apply_gradient_requirements(eval_tsrs, warn=False)
             with lock:
@@ -312,13 +322,25 @@ def _forward_layer_distributed_eval(
                     saved_layer[original_module][eval_tsrs[0].device] = eval_tsrs
                     if not is_eval_tuple_or_list:
                         eval_tsrs_to_return = eval_tsrs[0].clone()
-                    elif isinstance(eval_tsrs, list):
+                    elif isinstance(raw_eval_tsrs, list):
+                        eval_tsr_iter = iter(eval_tsr.clone() for eval_tsr in eval_tsrs)
                         eval_tsrs_to_return = [
-                            eval_tsr.clone() for eval_tsr in eval_tsrs
+                            (
+                                next(eval_tsr_iter)
+                                if isinstance(eval_tsr, Tensor)
+                                else eval_tsr
+                            )
+                            for eval_tsr in raw_eval_tsrs
                         ]
                     else:
+                        eval_tsr_iter = iter(eval_tsr.clone() for eval_tsr in eval_tsrs)
                         eval_tsrs_to_return = tuple(
-                            eval_tsr.clone() for eval_tsr in eval_tsrs
+                            (
+                                next(eval_tsr_iter)
+                                if isinstance(eval_tsr, Tensor)
+                                else eval_tsr
+                            )
+                            for eval_tsr in raw_eval_tsrs
                         )
                     return eval_tsrs_to_return
                 else:

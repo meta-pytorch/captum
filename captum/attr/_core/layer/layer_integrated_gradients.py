@@ -138,7 +138,7 @@ class LayerIntegratedGradients(LayerAttribution, GradientAttribution):
             else:
                 # scatter method does not have a precise enough return type in its
                 # stub, so suppress the type warning.
-                scattered_inputs = scatter(  # type:ignore
+                scattered_inputs = scatter(  # type: ignore
                     # pyre-fixme[6]: For 1st argument expected `Tensor` but got
                     #  `Union[Tensor, typing.Tuple[Tensor, ...]]`.
                     inputs,
@@ -169,13 +169,34 @@ class LayerIntegratedGradients(LayerAttribution, GradientAttribution):
                     )
 
                     if is_layer_tuple:
+                        replacement_outputs = scattered_inputs_dict[device][
+                            num_outputs_cumsum[layer_idx] : num_outputs_cumsum[
+                                layer_idx + 1
+                            ]
+                        ]
+                        if hook_outputs is not None and isinstance(
+                            hook_outputs, (tuple, list)
+                        ):
+                            replacement_output_iter = iter(replacement_outputs)
+                            replaced_outputs = [
+                                (
+                                    next(replacement_output_iter)
+                                    if isinstance(hook_output, Tensor)
+                                    else hook_output
+                                )
+                                for hook_output in hook_outputs
+                            ]
+                            return cast(
+                                Union[Tensor, Tuple[Tensor, ...]],
+                                (
+                                    tuple(replaced_outputs)
+                                    if isinstance(hook_outputs, tuple)
+                                    else replaced_outputs
+                                ),
+                            )
                         return cast(
                             Union[Tensor, Tuple[Tensor, ...]],
-                            scattered_inputs_dict[device][
-                                num_outputs_cumsum[layer_idx] : num_outputs_cumsum[
-                                    layer_idx + 1
-                                ]
-                            ],
+                            replacement_outputs,
                         )
 
                     return scattered_inputs_dict[device][num_outputs_cumsum[layer_idx]]

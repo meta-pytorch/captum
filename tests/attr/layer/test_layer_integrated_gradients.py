@@ -92,6 +92,62 @@ class Test(BaseTest):
             ([[90.0, 100.0, 100.0, 100.0]], [[90.0, 100.0, 100.0, 100.0]]),
         )
 
+    def test_lstm_layer_output_with_state_tuple(self) -> None:
+        class LSTMModel(Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.lstm = torch.nn.LSTM(7, 3, 1, batch_first=True)
+                self.linear = torch.nn.Linear(3, 2)
+
+            def forward(self, input: Tensor) -> Tensor:
+                output, _ = self.lstm(input)
+                return self.linear(output[:, -1, :])
+
+        model = LSTMModel().eval()
+        inputs = torch.randn(4, 5, 7)
+        layer_ig = LayerIntegratedGradients(model, model.lstm)
+
+        attributions, delta = layer_ig.attribute(  # type: ignore[has-type]
+            inputs, target=0, return_convergence_delta=True
+        )
+
+        self.assertEqual(attributions.shape, (4, 5, 3))
+        self.assertEqual(delta.shape, (4,))
+
+    def test_tensor_layer_output_with_non_tensor_metadata(self) -> None:
+        class TensorAndMetadataLayer(Module):
+            def forward(self, input: Tensor) -> Tuple[Tensor, None]:
+                return 2 * input, None
+
+        class TensorAndMetadataModel(Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.layer = TensorAndMetadataLayer()
+
+            def forward(self, input: Tensor) -> Tensor:
+                layer_output, _ = self.layer(input)
+                return 3 * layer_output[:, 0] - 2 * layer_output[:, 1]
+
+        model = TensorAndMetadataModel()
+        inputs = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+        baselines = torch.zeros_like(inputs)
+        layer_ig = LayerIntegratedGradients(model, model.layer)
+
+        attributions, delta = layer_ig.attribute(  # type: ignore[has-type]
+            inputs,
+            baselines,
+            return_convergence_delta=True,
+        )
+
+        assertTensorAlmostEqual(
+            self,
+            attributions,
+            [[6.0, -8.0], [18.0, -16.0]],
+            delta=1e-5,
+            mode="max",
+        )
+        assertTensorAlmostEqual(self, delta, [0.0, 0.0], delta=1e-5, mode="max")
+
     def test_multiple_layers_single_inputs(self) -> None:
         input1 = torch.tensor([[2, 5, 0, 1], [3, 1, 1, 0]])
         input2 = torch.tensor([[0, 2, 4, 1], [2, 3, 5, 7]])

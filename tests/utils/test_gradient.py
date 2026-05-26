@@ -248,6 +248,54 @@ class Test(BaseTest):
         assertTensorAlmostEqual(self, grads[0], [[0.0, 1.0]], delta=0.01, mode="max")
         assertTensorAlmostEqual(self, eval[0], [[26.0, 28.0]], delta=0.01, mode="max")
 
+    def test_layer_gradient_ignores_non_tensor_layer_outputs(self) -> None:
+        class TensorAndMetadataLayer(torch.nn.Module):
+            def forward(self, input: torch.Tensor) -> Tuple[torch.Tensor, None]:
+                return 2 * input, None
+
+        class TensorAndMetadataModel(torch.nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.layer = TensorAndMetadataLayer()
+
+            def forward(self, input: torch.Tensor) -> torch.Tensor:
+                layer_output, _ = self.layer(input)
+                return 3 * layer_output[:, 0] - 2 * layer_output[:, 1]
+
+        model = TensorAndMetadataModel()
+        input = torch.tensor([[1.0, 2.0], [3.0, 4.0]], requires_grad=True)
+
+        grads, eval = compute_layer_gradients_and_eval(model, model.layer, input)
+
+        assertTensorAlmostEqual(
+            self, grads[0], [[3.0, -2.0], [3.0, -2.0]], delta=0.0, mode="max"
+        )
+        assertTensorAlmostEqual(
+            self, eval[0], [[2.0, 4.0], [6.0, 8.0]], delta=0.0, mode="max"
+        )
+
+    def test_layer_gradient_lstm_output_with_state_tuple(self) -> None:
+        class LSTMModel(torch.nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.lstm = torch.nn.LSTM(3, 2, 1, batch_first=True)
+                self.linear = torch.nn.Linear(2, 1, bias=False)
+                self.linear.weight = torch.nn.Parameter(torch.tensor([[3.0, -2.0]]))
+
+            def forward(self, input: torch.Tensor) -> torch.Tensor:
+                output, _ = self.lstm(input)
+                return self.linear(output[:, -1, :]).squeeze(1)
+
+        model = LSTMModel().eval()
+        input = torch.randn(4, 5, 3, requires_grad=True)
+
+        grads, eval = compute_layer_gradients_and_eval(model, model.lstm, input)
+
+        expected_grads = torch.zeros_like(eval[0])
+        expected_grads[:, -1, :] = model.linear.weight
+        assertTensorAlmostEqual(self, grads[0], expected_grads, delta=0.0, mode="max")
+        self.assertEqual(eval[0].shape, (4, 5, 2))
+
     def test_layer_gradient_unused_layer(self) -> None:
         if version.parse(torch.__version__) < version.parse("2.1.0"):
             raise unittest.SkipTest(
