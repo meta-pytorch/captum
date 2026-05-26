@@ -1,272 +1,306 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Interpreting text models:  IMDB sentiment analysis
+# # Interpreting text models: IMDB sentiment analysis
 
-# This notebook loads a pretrained CNN model for sentiment analysis on an IMDB dataset. It makes predictions on test samples and interprets those predictions using the Integrated Gradients method.
+# This notebook trains a small CNN sentiment classifier on a subset of the IMDB dataset and interprets predictions with `LayerIntegratedGradients`.
 # 
-# The model was trained using an open source sentiment analysis tutorials described in: https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/4%20-%20Convolutional%20Sentiment%20Analysis.ipynb with the following changes:
+# The vocabulary is built with the current TorchText APIs and is used before the model is initialized, so the embedding rows and token indices are always aligned. The notebook does not depend on the removed `torchtext.data.Field` / `LabelField` APIs or on a separately serialized model without its vocabulary.
 # 
-# - TEXT: set lower=True at initialization and call build_vocab() on the entire training data including validation, to avoid mismatched indices
-# - model: save the entire model instead of just model.state_dict()
-# 
-# **Note:** Before running this tutorial, please install the spacy package, and its NLP modules for English language.
+# **Note:** Before running this tutorial, please install torchtext. The raw ACL IMDB files are downloaded directly to avoid TorchText dataset / TorchData DataPipe version mismatches.
 
-# In[1]:
+# In[ ]:
 
+
+import os
+import tarfile
+from pathlib import Path
+from urllib.request import urlretrieve
 
 import captum
-
-import spacy
-
 import torch
-import torchtext
-import torchtext.data
-
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torchtext.vocab import Vocab
+import torchtext
+from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import build_vocab_from_iterator
 
 from captum.attr import LayerIntegratedGradients, TokenReferenceBase, visualization
-
-nlp = spacy.load('en')
 
 # In[2]:
 
 
-for package in (captum, spacy, torch, torchtext):
+for package in (captum, torch, torchtext):
     print(package.__name__, package.__version__)
 
-# In[ ]:
+# ## Load a small IMDB subset
+
+# The full IMDB dataset can be used by increasing the subset limits. A smaller subset keeps this tutorial quick enough to run interactively. The notebook reads the raw ACL IMDB directory layout directly instead of `torchtext.datasets.IMDB`, since TorchText 0.18 expects an older TorchData DataPipe namespace that newer TorchData versions no longer expose.
+
+# In[3]:
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+tokenizer = get_tokenizer("basic_english")
+label_names = ["negative", "positive"]
+DATA_ROOT = Path("data")
+IMDB_DIR = DATA_ROOT / "aclImdb"
+IMDB_ARCHIVE = DATA_ROOT / "aclImdb_v1.tar.gz"
+IMDB_URL = "https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
 
-# The dataset used for training this model can be found in: https://ai.stanford.edu/~amaas/data/sentiment/.
-# 
-# Redefining the model in order to be able to load it.
-# 
+def extract_archive_safely(archive_path, destination):
+    destination = destination.resolve()
+    with tarfile.open(archive_path, "r:gz") as archive:
+        for member in archive.getmembers():
+            member_path = (destination / member.name).resolve()
+            if os.path.commonpath([destination, member_path]) != str(destination):
+                raise RuntimeError(f"Unsafe path in archive: {member.name}")
+        archive.extractall(destination)
+
+def ensure_imdb_dataset():
+    if IMDB_DIR.exists():
+        return
+    DATA_ROOT.mkdir(exist_ok=True)
+    if not IMDB_ARCHIVE.exists():
+        urlretrieve(IMDB_URL, IMDB_ARCHIVE)
+    extract_archive_safely(IMDB_ARCHIVE, DATA_ROOT)
+
+def load_rows(split, limit):
+    ensure_imdb_dataset()
+    rows = []
+    per_label_limit = limit // 2
+    extra_positive = limit % 2
+    for label_index, label_dir in enumerate(("neg", "pos")):
+        label_limit = per_label_limit + (extra_positive if label_dir == "pos" else 0)
+        paths = sorted((IMDB_DIR / split / label_dir).glob("*.txt"))[:label_limit]
+        rows.extend((label_index, path.read_text(encoding="utf-8")) for path in paths)
+    return rows
+
+train_rows = load_rows("train", 4000)
+test_rows = load_rows("test", 500)
+
+print("Train examples:", len(train_rows))
+print("Test examples:", len(test_rows))
+
+# ## Build the vocabulary before constructing the model
 
 # In[4]:
 
 
-class CNN(nn.Module):
-    def __init__(self, vocab_size, embedding_dim, n_filters, filter_sizes, output_dim, 
-                 dropout, pad_idx):
-        
-        super().__init__()
-                
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = pad_idx)
-        
-        self.convs = nn.ModuleList([
-                                    nn.Conv2d(in_channels = 1, 
-                                              out_channels = n_filters, 
-                                              kernel_size = (fs, embedding_dim)) 
-                                    for fs in filter_sizes
-                                    ])
-        
-        self.fc = nn.Linear(len(filter_sizes) * n_filters, output_dim)
+UNK_TOKEN = "<unk>"
+PAD_TOKEN = "<pad>"
+MAX_TOKENS = 20000
+MAX_LEN = 256
+MIN_LEN = 5
 
-        self.dropout = nn.Dropout(dropout)
-        
-    def forward(self, text):
-        
-        # text = [sent len, batch size]
-        
-        # text = text.permute(1, 0)
-                
-        # text = [batch size, sent len]
-        
-        embedded = self.embedding(text)
+def yield_tokens(rows):
+    for _, text in rows:
+        yield tokenizer(text)
 
-        # embedded = [batch size, sent len, emb dim]
-        
-        embedded = embedded.unsqueeze(1)
-        
-        # embedded = [batch size, 1, sent len, emb dim]
-        
-        conved = [F.relu(conv(embedded)).squeeze(3) for conv in self.convs]
-            
-        # conved_n = [batch size, n_filters, sent len - filter_sizes[n] + 1]
-                
-        pooled = [F.max_pool1d(conv, conv.shape[2]).squeeze(2) for conv in conved]
-        
-        # pooled_n = [batch size, n_filters]
-        
-        cat = self.dropout(torch.cat(pooled, dim = 1))
+vocab = build_vocab_from_iterator(
+    yield_tokens(train_rows),
+    specials=[UNK_TOKEN, PAD_TOKEN],
+    max_tokens=MAX_TOKENS,
+)
+vocab.set_default_index(vocab[UNK_TOKEN])
+PAD_IDX = vocab[PAD_TOKEN]
 
-        # cat = [batch size, n_filters * len(filter_sizes)]
-            
-        return self.fc(cat)
+print("Vocabulary size:", len(vocab))
+print("Padding index:", PAD_IDX)
 
-# Loads pretrained model and sets the model to eval mode.
-# 
-# The model can be downloaded here: https://github.com/pytorch/captum/blob/master/tutorials/models/imdb-model-cnn-large.pt.
-
-# In[ ]:
+# In[5]:
 
 
-model = torch.load('models/imdb-model-cnn-large.pt')
-model.eval()
-model = model.to(device)
+def encode_text(text):
+    token_ids = vocab(tokenizer(text))[:MAX_LEN]
+    if len(token_ids) < MIN_LEN:
+        token_ids += [PAD_IDX] * (MIN_LEN - len(token_ids))
+    return torch.tensor(token_ids, dtype=torch.long)
 
-# Forward function that supports sigmoid.
+def collate_batch(batch):
+    labels = torch.tensor([label for label, _ in batch], dtype=torch.long)
+    texts = [encode_text(text) for _, text in batch]
+    texts = pad_sequence(texts, batch_first=True, padding_value=PAD_IDX)
+    return texts, labels
+
+train_loader = DataLoader(train_rows, batch_size=64, shuffle=True, collate_fn=collate_batch)
+test_loader = DataLoader(test_rows, batch_size=128, shuffle=False, collate_fn=collate_batch)
+
+# ## Define and train a CNN sentiment classifier
 
 # In[6]:
 
 
-def forward_with_sigmoid(input):
-    return torch.sigmoid(model(input))
+class CNN(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, n_filters, filter_sizes, output_dim, dropout, pad_idx):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_idx)
+        self.convs = nn.ModuleList([
+            nn.Conv2d(
+                in_channels=1,
+                out_channels=n_filters,
+                kernel_size=(filter_size, embedding_dim),
+            )
+            for filter_size in filter_sizes
+        ])
+        self.fc = nn.Linear(len(filter_sizes) * n_filters, output_dim)
+        self.dropout = nn.Dropout(dropout)
 
-# Load a small subset of test data using torchtext from IMDB dataset.
+    def forward(self, text):
+        embedded = self.embedding(text)
+        embedded = embedded.unsqueeze(1)
+        conved = [F.relu(conv(embedded)).squeeze(3) for conv in self.convs]
+        pooled = [F.max_pool1d(conv, conv.shape[2]).squeeze(2) for conv in conved]
+        cat = self.dropout(torch.cat(pooled, dim=1))
+        return self.fc(cat)
 
-# In[ ]:
-
-
-TEXT = torchtext.data.Field(lower=True, tokenize='spacy')
-Label = torchtext.data.LabelField(dtype = torch.float)
-
-# In[ ]:
-
-
-# If you use torchtext version >= 0.9, make sure to access train and test splits with:
-# train, test = IMDB(tokenizer=get_tokenizer("spacy"))
-train, test = torchtext.datasets.IMDB.splits(text_field=TEXT,
-                                      label_field=Label,
-                                      train='train',
-                                      test='test',
-                                      path='data/aclImdb')
+# In[7]:
 
 
-test, _ = test.split(split_ratio = 0.04)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Loading and setting up vocabulary for word embeddings using torchtext.
+model = CNN(
+    vocab_size=len(vocab),
+    embedding_dim=100,
+    n_filters=100,
+    filter_sizes=[3, 4, 5],
+    output_dim=2,
+    dropout=0.5,
+    pad_idx=PAD_IDX,
+).to(device)
+
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+for epoch in range(3):
+    model.train()
+    total_loss = 0.0
+    for text, labels in train_loader:
+        text = text.to(device)
+        labels = labels.to(device)
+
+        logits = model(text)
+        loss = F.cross_entropy(logits, labels)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+
+    print(f"Epoch {epoch + 1}: loss = {total_loss / len(train_loader):.4f}")
+
+# In[8]:
+
+
+model.eval()
+correct = 0
+total = 0
+
+with torch.no_grad():
+    for text, labels in test_loader:
+        text = text.to(device)
+        labels = labels.to(device)
+        preds = model(text).argmax(dim=1)
+        correct += (preds == labels).sum().item()
+        total += labels.numel()
+
+print("Test accuracy:", correct / total)
+
+# ## Attribute sentiment predictions
+
+# Token ids are discrete, so gradients are computed with respect to the embedding layer output rather than the token id tensor. The padding token provides a natural reference token for the baseline sentence.
 
 # In[9]:
 
 
-from torchtext import vocab
+def forward_with_softmax(input_indices):
+    return F.softmax(model(input_indices), dim=1)
 
-#loaded_vectors = vocab.GloVe(name='6B', dim=100)
-
-# If you prefer to use pre-downloaded glove vectors, you can load them with the following two command line
-loaded_vectors = torchtext.vocab.Vectors('data/glove.6B.100d.txt')
-TEXT.build_vocab(train, vectors=loaded_vectors, max_size=len(loaded_vectors.stoi))
-    
-TEXT.vocab.set_vectors(stoi=loaded_vectors.stoi, vectors=loaded_vectors.vectors, dim=loaded_vectors.dim)
-Label.build_vocab(train)
+lig = LayerIntegratedGradients(forward_with_softmax, model.embedding)
+token_reference = TokenReferenceBase(reference_token_idx=PAD_IDX)
+vis_data_records_ig = []
 
 # In[10]:
 
 
-print('Vocabulary Size: ', len(TEXT.vocab))
+def add_attributions_to_visualizer(attributions, tokens, pred_prob, pred_idx, true_label, delta):
+    attributions = attributions.sum(dim=2).squeeze(0)
+    norm = torch.norm(attributions)
+    if norm > 0:
+        attributions = attributions / norm
 
-# In order to apply Integrated Gradients and many other interpretability algorithms on sentences, we need to create a reference (aka baseline) for the sentences and its constituent parts, tokens.
-# 
-# Captum provides a helper class called `TokenReferenceBase` which allows us to generate a reference for each input text using the number of tokens in the text and a reference token index.
-# 
-# To use `TokenReferenceBase` we need to provide a `reference_token_idx`. Since padding is one of the most commonly used references for tokens, padding index is passed as reference token index.
+    attributions = attributions.detach().cpu()
+    true_class = label_names[true_label] if true_label is not None else "unknown"
+
+    vis_data_records_ig.append(
+        visualization.VisualizationDataRecord(
+            attributions,
+            pred_prob,
+            label_names[pred_idx],
+            true_class,
+            label_names[pred_idx],
+            attributions.sum().item(),
+            tokens,
+            delta,
+        )
+    )
+
+def interpret_sentence(sentence, true_label=None):
+    model.zero_grad()
+
+    tokens = tokenizer(sentence)[:MAX_LEN]
+    if len(tokens) < MIN_LEN:
+        tokens += [PAD_TOKEN] * (MIN_LEN - len(tokens))
+
+    input_indices = torch.tensor([vocab(tokens)], dtype=torch.long, device=device)
+    reference_indices = token_reference.generate_reference(
+        input_indices.shape[1], device=device
+    ).unsqueeze(0)
+
+    probs = forward_with_softmax(input_indices)
+    pred_prob, pred_idx_tensor = probs.max(dim=1)
+    pred_idx = pred_idx_tensor.item()
+
+    attributions_ig, delta = lig.attribute(
+        input_indices,
+        baselines=reference_indices,
+        target=pred_idx,
+        n_steps=50,
+        return_convergence_delta=True,
+    )
+
+    print(
+        "pred:",
+        label_names[pred_idx],
+        f"({pred_prob.item():.2f})",
+        "delta:",
+        abs(delta.item()),
+    )
+    add_attributions_to_visualizer(
+        attributions_ig,
+        tokens,
+        pred_prob.item(),
+        pred_idx,
+        true_label,
+        delta.item(),
+    )
+
+# Below cells interpret a few handcrafted review phrases.
 
 # In[11]:
 
 
-PAD_IND = TEXT.vocab.stoi[TEXT.pad_token]
+interpret_sentence("It was a fantastic performance!", true_label=1)
+interpret_sentence("Best film ever", true_label=1)
+interpret_sentence("Such a great show!", true_label=1)
+interpret_sentence("It was a horrible movie", true_label=0)
+interpret_sentence("I have never watched something as bad", true_label=0)
+interpret_sentence("That is a terrible movie.", true_label=0)
+
+# ## Visualize token attributions
 
 # In[12]:
 
 
-token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
-
-# Let's create an instance of `LayerIntegratedGradients` using forward function of our model and the embedding layer.
-# This instance of Layer Integrated Gradients will be used to interpret movie rating review.
-# 
-# Layer Integrated Gradients will allow us to assign an attribution score to each word/token embedding tensor in the movie review text. We will ultimately sum the attribution scores across all embedding dimensions for each word/token in order to attain a word/token level attribution score.
-# 
-# Note that we can also use `IntegratedGradients` class instead, however in that case we need to precompute the embeddings and wrap Embedding layer with `InterpretableEmbeddingBase` module. This is necessary because we cannot perform input scaling and subtraction on the level of word/token indices and need access to the embedding layer.
-
-# In[13]:
-
-
-lig = LayerIntegratedGradients(model, model.embedding)
-
-# In the cell below, we define a generic function that generates attributions for each movie rating and stores them in a list using `VisualizationDataRecord` class. This will ultimately be used for visualization purposes.
-
-# In[14]:
-
-
-# accumulate couple samples in this array for visualization purposes
-vis_data_records_ig = []
-
-def interpret_sentence(model, sentence, min_len = 7, label = 0):
-    text = [tok.text for tok in nlp.tokenizer(sentence.lower())]
-    if len(text) < min_len:
-        text += [TEXT.pad_token] * (min_len - len(text))
-    indexed = [TEXT.vocab.stoi[t] for t in text]
-
-    model.zero_grad()
-
-    input_indices = torch.tensor(indexed, device=device)
-    input_indices = input_indices.unsqueeze(0)
-    
-    # input_indices dim: [sequence_length]
-    seq_length = min_len
-
-    # predict
-    pred = forward_with_sigmoid(input_indices).item()
-    pred_ind = round(pred)
-
-    # generate reference indices for each sample
-    reference_indices = token_reference.generate_reference(seq_length, device=device).unsqueeze(0)
-
-    # compute attributions and approximation delta using layer integrated gradients
-    attributions_ig, delta = lig.attribute(input_indices, reference_indices, \
-                                           n_steps=500, return_convergence_delta=True)
-
-    print('pred: ', Label.vocab.itos[pred_ind], '(', '%.2f'%pred, ')', ', delta: ', abs(delta))
-
-    add_attributions_to_visualizer(attributions_ig, text, pred, pred_ind, label, delta, vis_data_records_ig)
-    
-def add_attributions_to_visualizer(attributions, text, pred, pred_ind, label, delta, vis_data_records):
-    attributions = attributions.sum(dim=2).squeeze(0)
-    attributions = attributions / torch.norm(attributions)
-    attributions = attributions.cpu().detach().numpy()
-
-    # storing couple samples in an array for visualization purposes
-    vis_data_records.append(visualization.VisualizationDataRecord(
-                            attributions,
-                            pred,
-                            Label.vocab.itos[pred_ind],
-                            Label.vocab.itos[label],
-                            Label.vocab.itos[1],
-                            attributions.sum(),
-                            text,
-                            delta))
-
-# Below cells call `interpret_sentence` to interpret a couple handcrafted review phrases.
-
-# In[15]:
-
-
-interpret_sentence(model, 'It was a fantastic performance !', label=1)
-interpret_sentence(model, 'Best film ever', label=1)
-interpret_sentence(model, 'Such a great show!', label=1)
-interpret_sentence(model, 'It was a horrible movie', label=0)
-interpret_sentence(model, 'I\'ve never watched something as bad', label=0)
-interpret_sentence(model, 'That is a terrible movie.', label=0)
-
-# Below is an example of how we can visualize attributions for the text tokens. Feel free to visualize it differently if you choose to have a different visualization method.
-
-# In[16]:
-
-
-print('Visualize attributions based on Integrated Gradients')
-_ = visualization.visualize_text(vis_data_records_ig)
-
-# Above cell generates an output similar to this:
-
-# In[17]:
-
-
-from IPython.display import Image
-Image(filename='img/sentiment_analysis.png')
+visualization.visualize_text(vis_data_records_ig)
