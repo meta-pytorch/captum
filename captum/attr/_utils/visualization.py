@@ -170,6 +170,19 @@ def _prepare_image(attr_visual: npt.NDArray) -> npt.NDArray:
     return np.clip(attr_visual.astype(int), 0, 255)
 
 
+def _prepare_image_for_display(original_image: npt.NDArray) -> npt.NDArray:
+    if np.issubdtype(original_image.dtype, np.floating):
+        min_value = np.min(original_image)
+        max_value = np.max(original_image)
+        if min_value < 0 or max_value > 1:
+            if min_value != max_value:
+                original_image = (original_image - min_value) / (max_value - min_value)
+            else:
+                original_image = np.zeros_like(original_image)
+        original_image = original_image * 255
+    return _prepare_image(original_image)
+
+
 def _normalize_scale(attr: npt.NDArray, scale_factor: float) -> npt.NDArray:
     assert scale_factor != 0, "Cannot normalize by scale factor = 0"
     if abs(scale_factor) < 1e-5:
@@ -478,8 +491,7 @@ def visualize_image_attr(
         plt_axis = plt_axis[0]
 
     if original_image is not None:
-        if np.max(original_image) <= 1.0:
-            original_image = _prepare_image(original_image * 255)
+        original_image = _prepare_image_for_display(original_image)
     elif (
         ImageVisualizationMethod[method].value
         != ImageVisualizationMethod.heat_map.value
