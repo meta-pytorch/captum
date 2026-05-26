@@ -171,7 +171,13 @@ def _prepare_image(attr_visual: npt.NDArray) -> npt.NDArray:
 
 
 def _normalize_scale(attr: npt.NDArray, scale_factor: float) -> npt.NDArray:
-    assert scale_factor != 0, "Cannot normalize by scale factor = 0"
+    if scale_factor == 0:
+        warnings.warn(
+            "No non-zero attribution values found for the selected sign; "
+            "returning an all-zero attribution visualization.",
+            stacklevel=2,
+        )
+        return np.zeros_like(attr)
     if abs(scale_factor) < 1e-5:
         warnings.warn(
             "Attempting to normalize by value approximately 0, visualized results"
