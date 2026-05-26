@@ -63,6 +63,22 @@ def _get_simple_model2(inplace: bool = False) -> Tuple[Module, Tensor]:
 
 
 class Test(BaseTest):
+    def _assert_lrp_supports_module(self, module: Module, inputs: Tensor) -> None:
+        class SingleModuleModel(nn.Module):
+            module: Module
+
+            def __init__(self, module: Module) -> None:
+                super().__init__()
+                self.module = module
+
+            def forward(self, input: Tensor) -> Tensor:
+                return self.module(input).flatten(1).sum(dim=1)
+
+        model = SingleModuleModel(module).eval()
+        attributions = cast(Tensor, LRP(model).attribute(inputs))
+        self.assertEqual(attributions.shape, inputs.shape)
+        self.assertTrue(torch.isfinite(attributions).all())
+
     def test_lrp_creator(self) -> None:
         model, _ = _get_basic_config()
         model.conv1.rule = 1  # type: ignore
@@ -283,6 +299,58 @@ class Test(BaseTest):
             self,
             relevance,
             torch.Tensor([[[[[0.0, 0.0], [0.0, 0.0]], [[0.0, 0.0], [0.0, 8.0]]]]]),
+        )
+
+    def test_lrp_conv1D_default_rule(self) -> None:
+        conv = nn.Conv1d(1, 1, kernel_size=1, bias=False)
+        conv.weight.data.fill_(2.0)
+        self._assert_lrp_supports_module(
+            conv,
+            torch.tensor([[[1.0, 2.0, 3.0]]]),
+        )
+
+    def test_lrp_conv3D_default_rule(self) -> None:
+        conv = nn.Conv3d(1, 1, kernel_size=1, bias=False)
+        conv.weight.data.fill_(2.0)
+        self._assert_lrp_supports_module(
+            conv,
+            torch.arange(8, dtype=torch.float).view(1, 1, 2, 2, 2) + 1.0,
+        )
+
+    def test_lrp_avgpool1D_default_rule(self) -> None:
+        self._assert_lrp_supports_module(
+            nn.AvgPool1d(kernel_size=2),
+            torch.tensor([[[1.0, 2.0, 3.0, 4.0]]]),
+        )
+
+    def test_lrp_avgpool3D_default_rule(self) -> None:
+        self._assert_lrp_supports_module(
+            nn.AvgPool3d(kernel_size=2),
+            torch.arange(8, dtype=torch.float).view(1, 1, 2, 2, 2) + 1.0,
+        )
+
+    def test_lrp_adaptive_avgpool1D_default_rule(self) -> None:
+        self._assert_lrp_supports_module(
+            nn.AdaptiveAvgPool1d(output_size=2),
+            torch.tensor([[[1.0, 2.0, 3.0, 4.0]]]),
+        )
+
+    def test_lrp_adaptive_avgpool3D_default_rule(self) -> None:
+        self._assert_lrp_supports_module(
+            nn.AdaptiveAvgPool3d(output_size=(1, 1, 1)),
+            torch.arange(8, dtype=torch.float).view(1, 1, 2, 2, 2) + 1.0,
+        )
+
+    def test_lrp_batchnorm1D_default_rule(self) -> None:
+        self._assert_lrp_supports_module(
+            nn.BatchNorm1d(num_features=1),
+            torch.tensor([[[1.0, 2.0, 3.0, 4.0]]]),
+        )
+
+    def test_lrp_batchnorm3D_default_rule(self) -> None:
+        self._assert_lrp_supports_module(
+            nn.BatchNorm3d(num_features=1),
+            torch.arange(8, dtype=torch.float).view(1, 1, 2, 2, 2) + 1.0,
         )
 
     def test_lrp_multi(self) -> None:
