@@ -846,15 +846,6 @@ class LLMAttribution(BaseLLMAttribution):
         for target_token in target_tokens:
             if use_cached_outputs:
                 if outputs is not None:
-                    # Lazily import to avoid importing transformers package
-                    # if it isn't needed
-                    from captum._utils.transformers_typing import (
-                        convert_legacy_cache_if_needed,
-                    )
-
-                    outputs.past_key_values = convert_legacy_cache_if_needed(
-                        outputs.past_key_values
-                    )
                     # nn.Module typing suggests non-base attributes are modules or
                     # tensors
                     _update_model_kwargs_for_generation = cast(

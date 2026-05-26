@@ -401,6 +401,11 @@ class TracInCPBase(DataInfluence):
                     or opponents (`proponents=False`), if running in k-most influential
                     mode.
                     Default: True
+            unpack_inputs (bool, optional): If True and `inputs` is a tuple or list,
+                    the elements are unpacked as separate positional arguments to the
+                    model. If False, `inputs` is wrapped in a tuple and passed as a
+                    single argument.
+                    Default: True
             show_progress (bool, optional): For all modes, computation of results
                     requires "training dataset computations": computations for each
                     batch in the training dataset `train_dataset`, which may
@@ -561,7 +566,7 @@ class TracInCP(TracInCPBase):
                     inefficient. We offer an implementation of batch-wise gradient
                     computations w.r.t. to model parameters which is computationally
                     more efficient. This implementation can be enabled by setting the
-                    `sample_wise_grad_per_batch` argument to `True`, and should be
+                    `sample_wise_grads_per_batch` argument to `True`, and should be
                     enabled if and only if the `loss_fn` argument is a "reduction" loss
                     function. For example, `nn.BCELoss(reduction="sum")` would be a
                     valid `loss_fn` if this implementation is enabled (see

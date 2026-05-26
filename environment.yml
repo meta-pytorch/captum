@@ -1,9 +1,0 @@
-name: captum
-channels:
-  - pytorch
-dependencies:
-  - numpy
-  - pytorch>=2.3
-  - matplotlib-base
-  - tqdm
-  - packaging

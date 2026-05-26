@@ -1,0 +1,16 @@
+# Why this file exists:
+# flake8 does not natively support pyproject.toml configuration.
+# To use pyproject.toml, you would need to install an extra package like
+# Flake8-pyproject. We use this separate .flake8 file to avoid that dependency.
+
+[flake8]
+# E203: black and flake8 disagree on whitespace before ':'
+# W503: black and flake8 disagree on how to place operators
+# E704: black and flake8 disagree on Multiple statements on one line (def)
+ignore = E203, W503, E704
+max-line-length = 88
+exclude =
+    build,
+    dist,
+    tutorials,
+    website

@@ -555,6 +555,7 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...], Tuple[Tensor, ...]]: ...
 
 
@@ -574,6 +575,7 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Tuple[List[Tuple[Tensor, ...]], List[Tuple[Tensor, ...]]]: ...
 
 
@@ -593,6 +595,7 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...]]: ...
 
 
@@ -612,6 +615,7 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Union[
     Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...]],
     Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...], Tuple[Tensor, ...]],
@@ -669,6 +673,7 @@ def compute_layer_gradients_and_eval(
     with torch.autograd.set_grad_enabled(True):
         # saved_layer is a dictionary mapping device to a tuple of
         # layer evaluations on that device.
+        saved_layer: Dict[Module, Dict[device, Tuple[Tensor, ...]]]
         saved_layer, output = _forward_layer_distributed_eval(
             forward_fn,
             inputs,
@@ -693,35 +698,44 @@ def compute_layer_gradients_and_eval(
             list(next(iter(saved_layer.values())).keys()), device_ids
         )
         all_outputs: Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]
+
+        def _get_layer_output(
+            single_layer: Module, device_id: device
+        ) -> Tuple[Tensor, ...]:
+            layer_out = saved_layer[single_layer][device_id]
+            if output_fn is not None:
+                layer_out = output_fn(layer_out)
+            # When offloading to CPU, move tensors before reduction (torch.cat)
+            # to avoid GPU OOM. This is safe because all_outputs is not used by
+            # torch.autograd.grad, which reads from saved_layer directly.
+            if offload_to_cpu:
+                layer_out = tuple(t.detach().cpu() for t in layer_out)
+            return layer_out
+
+        # pyre-fixme[9]: all_layers has type `List[Module]`; used as
+        #  `Union[List[Variable[ModuleOrModuleList <: [Module, List[Module]]]],
+        #  Variable[ModuleOrModuleList <: [Module, List[Module]]]]`.
+        all_layers: List[Module] = [layer] if isinstance(layer, Module) else layer
+
+        # Build all_outputs before backward pass. _get_layer_output detaches
+        # and moves tensors to CPU when offload_to_cpu is set, so these copies
+        # do not participate in the autograd graph and won't affect GPU memory
+        # during torch.autograd.grad (which reads from saved_layer directly).
         if isinstance(layer, Module):
             all_outputs = _reduce_list(
-                [
-                    (
-                        saved_layer[layer][device_id]
-                        if output_fn is None
-                        else output_fn(saved_layer[layer][device_id])
-                    )
-                    for device_id in key_list
-                ]
+                [_get_layer_output(layer, device_id) for device_id in key_list]
             )
         else:
             all_outputs = [
                 _reduce_list(
                     [
-                        (
-                            saved_layer[single_layer][device_id]
-                            if output_fn is None
-                            else output_fn(saved_layer[single_layer][device_id])
-                        )
+                        _get_layer_output(single_layer, device_id)
                         for device_id in key_list
                     ]
                 )
                 for single_layer in layer
             ]
-        # pyre-fixme[9]: all_layers has type `List[Module]`; used as
-        #  `Union[List[Variable[ModuleOrModuleList <: [Module, List[Module]]]],
-        #  Variable[ModuleOrModuleList <: [Module, List[Module]]]]`.
-        all_layers: List[Module] = [layer] if isinstance(layer, Module) else layer
+
         grad_inputs = tuple(
             layer_tensor
             for single_layer in all_layers
@@ -733,6 +747,19 @@ def compute_layer_gradients_and_eval(
             inputs=grad_inputs,
             **grad_kwargs or {},
         )
+
+        # When grad_kwargs sets ``allow_unused=True`` (e.g. layer attribution
+        # for multi-task models where some target layers are not connected to
+        # the selected output), ``torch.autograd.grad`` returns ``None`` for
+        # any input that did not contribute to the output. The mathematically
+        # correct gradient in that case is a zero tensor with the same shape
+        # as the layer output. Substitute zeros here so downstream consumers
+        # (e.g. ``_reduce_list``) keep their Tensor-only invariant intact.
+        if any(g is None for g in saved_grads):
+            saved_grads = tuple(
+                torch.zeros_like(layer_tensor) if grad is None else grad
+                for grad, layer_tensor in zip(saved_grads, grad_inputs)
+            )
 
         offset = 0
         all_grads: List[Tuple[Tensor, ...]] = []
@@ -750,7 +777,13 @@ def compute_layer_gradients_and_eval(
                     output_fn(curr_saved_grad) for curr_saved_grad in curr_saved_grads
                 ]
 
-            all_grads.append(_reduce_list(curr_saved_grads))
+            reduced = _reduce_list(curr_saved_grads)
+            # When offloading to CPU, move gradient tensors after reduction
+            # (torch.cat) since reducing on GPU first is slightly more
+            # memory-efficient than moving individual tensors before reduction.
+            if offload_to_cpu:
+                reduced = tuple(t.cpu() for t in reduced)
+            all_grads.append(reduced)
 
         layer_grads: Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]
         layer_grads = all_grads
@@ -909,7 +942,9 @@ def _compute_jacobian_wrt_params_with_sample_wise_trick(
     batch trick to fully vectorize the Jacobian calculation. Currently, only
     linear and conv2d layers are supported.
 
-    User must `add_hooks(model)` before calling this function.
+    Hooks required for sample-wise gradients are registered and removed internally.
+    Users do not need to call `SampleGradientWrapper.add_hooks()` before calling
+    this function.
 
     Args:
         model (torch.nn.Module): The trainable model providing the forward pass

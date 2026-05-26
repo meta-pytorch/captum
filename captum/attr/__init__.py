@@ -66,6 +66,7 @@ from captum.attr._utils.class_summarizer import ClassSummarizer
 from captum.attr._utils.interpretable_input import (
     ImageMaskInput,
     InterpretableInput,
+    TextSegmentInput,
     TextTemplateInput,
     TextTokenInput,
 )
@@ -140,6 +141,7 @@ __all__ = [
     "GradientShap",
     "ImageMaskInput",
     "InterpretableEmbeddingBase",
+    "TextSegmentInput",
     "TextTemplateInput",
     "TextTokenInput",
     "TokenReferenceBase",

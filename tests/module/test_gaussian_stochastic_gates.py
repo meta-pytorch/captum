@@ -33,13 +33,8 @@ class TestGaussianStochasticGates(BaseTest):
 
         gated_input, reg = gstg(input_tensor)
         expected_reg = 2.5213
+        expected_gated_input = [[0.0000, 0.0198, 0.1483], [0.1848, 0.3402, 0.1782]]
 
-        if self.testing_device == "cpu":
-            expected_gated_input = [[0.0000, 0.0198, 0.1483], [0.1848, 0.3402, 0.1782]]
-        elif self.testing_device == "cuda":
-            expected_gated_input = [[0.0000, 0.0788, 0.0470], [0.0134, 0.0000, 0.1884]]
-
-        # pyre-fixme[61]: `expected_gated_input` is undefined, or not always defined.
         assertTensorAlmostEqual(self, gated_input, expected_gated_input, mode="max")
         assertTensorAlmostEqual(self, reg, expected_reg)
 
@@ -90,13 +85,8 @@ class TestGaussianStochasticGates(BaseTest):
 
         gated_input, reg = gstg(input_tensor)
         expected_reg = 1.6849
+        expected_gated_input = [[0.0000, 0.0000, 0.1225], [0.0583, 0.0777, 0.3779]]
 
-        if self.testing_device == "cpu":
-            expected_gated_input = [[0.0000, 0.0000, 0.1225], [0.0583, 0.0777, 0.3779]]
-        elif self.testing_device == "cuda":
-            expected_gated_input = [[0.0000, 0.0000, 0.1577], [0.0736, 0.0981, 0.0242]]
-
-        # pyre-fixme[61]: `expected_gated_input` is undefined, or not always defined.
         assertTensorAlmostEqual(self, gated_input, expected_gated_input, mode="max")
         assertTensorAlmostEqual(self, reg, expected_reg)
 
@@ -137,19 +127,11 @@ class TestGaussianStochasticGates(BaseTest):
 
         gated_input, reg = gstg(input_tensor)
         expected_reg = 5.0458
+        expected_gated_input = [
+            [[0.0000, 0.0851], [0.0713, 0.3000], [0.2180, 0.1878]],
+            [[0.2538, 0.0000], [0.3391, 0.8501], [0.3633, 0.8913]],
+        ]
 
-        if self.testing_device == "cpu":
-            expected_gated_input = [
-                [[0.0000, 0.0851], [0.0713, 0.3000], [0.2180, 0.1878]],
-                [[0.2538, 0.0000], [0.3391, 0.8501], [0.3633, 0.8913]],
-            ]
-        elif self.testing_device == "cuda":
-            expected_gated_input = [
-                [[0.0000, 0.0788], [0.0470, 0.0139], [0.0000, 0.1960]],
-                [[0.0000, 0.7000], [0.1052, 0.2120], [0.5978, 0.0166]],
-            ]
-
-        # pyre-fixme[61]: `expected_gated_input` is undefined, or not always defined.
         assertTensorAlmostEqual(self, gated_input, expected_gated_input, mode="max")
         assertTensorAlmostEqual(self, reg, expected_reg)
 
@@ -200,19 +182,11 @@ class TestGaussianStochasticGates(BaseTest):
 
         gated_input, reg = gstg(input_tensor)
         expected_reg = 2.5213
+        expected_gated_input = [
+            [[0.0000, 0.0198], [0.0396, 0.0594], [0.2435, 0.3708]],
+            [[0.3696, 0.5954], [0.6805, 0.7655], [0.6159, 0.3921]],
+        ]
 
-        if self.testing_device == "cpu":
-            expected_gated_input = [
-                [[0.0000, 0.0198], [0.0396, 0.0594], [0.2435, 0.3708]],
-                [[0.3696, 0.5954], [0.6805, 0.7655], [0.6159, 0.3921]],
-            ]
-        elif self.testing_device == "cuda":
-            expected_gated_input = [
-                [[0.0000, 0.0788], [0.1577, 0.2365], [0.0000, 0.1174]],
-                [[0.0269, 0.0000], [0.0000, 0.0000], [0.0448, 0.4145]],
-            ]
-
-        # pyre-fixme[61]: `expected_gated_input` is undefined, or not always defined.
         assertTensorAlmostEqual(self, gated_input, expected_gated_input, mode="max")
         assertTensorAlmostEqual(self, reg, expected_reg)
 

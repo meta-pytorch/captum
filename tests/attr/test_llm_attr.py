@@ -184,7 +184,12 @@ class DummyLLM(nn.Module):
         emb = self.emb(input_ids)
         if "past_key_values" in kwargs:
             emb = torch.cat((kwargs["past_key_values"], emb), dim=1)
-        encoding = self.trans(emb)
+        # Generate causal mask for the sequence length
+        seq_len = emb.size(1)
+        mask = nn.Transformer.generate_square_subsequent_mask(
+            seq_len, device=emb.device
+        )
+        encoding = self.trans(emb, src_mask=mask, is_causal=True)
         logits = self.linear(encoding)
         return Result(logits=logits, past_key_values=emb)
 
@@ -236,32 +241,36 @@ class DummyLLM(nn.Module):
 
 
 @parameterized_class(
-    ("device", "use_cached_outputs"),
-    (
-        [("cpu", True), ("cpu", False), ("cuda", True), ("cuda", False)]
-        if torch.cuda.is_available()
-        else [("cpu", True), ("cpu", False)]
-    ),
+    ("device", "use_cached_outputs", "forward_in_tokens"),
+    [
+        (device, use_cached_outputs, forward_in_tokens)
+        for device in (["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"])
+        for use_cached_outputs in [True, False]
+        for forward_in_tokens in [True, False]
+    ],
 )
 class TestLLMAttr(BaseTest):
     device: str = "cpu"
     use_cached_outputs: bool = False
+    forward_in_tokens: bool = True
 
     @parameterized.expand(
         [
             # FeatureAblation
+            # With causal masking, both forward_in_tokens=True and False produce
+            # identical results since the model can only attend to previous tokens.
             (
                 FeatureAblation,
                 0.001,
                 None,
-                torch.tensor([-0.0007, -0.0031, -0.0126, 0.0102]),
+                torch.tensor([-0.0006, -0.0031, -0.0126, 0.0102]),
                 torch.tensor(
                     [
-                        [0.0075, 0.0007, -0.0006, 0.0010],
+                        [0.0075, 0.0007, -0.0006, 0.001],
                         [-0.0062, -0.0073, -0.0079, -0.0003],
-                        [-0.0020, -0.0050, -0.0056, -0.0011],
-                        [0.0113, 0.0034, 0.0006, 0.0047],
-                        [-0.0112, 0.0050, 0.0009, 0.0058],
+                        [-0.002, -0.005, -0.0056, -0.0011],
+                        [0.0113, 0.0035, 0.0006, 0.0047],
+                        [-0.0112, 0.005, 0.0009, 0.0058],
                     ]
                 ),
             ),
@@ -270,14 +279,14 @@ class TestLLMAttr(BaseTest):
                 ShapleyValueSampling,
                 0.001,
                 1000,
-                torch.tensor([0.0021, -0.0047, -0.0193, 0.0302]),
+                torch.tensor([0.002, -0.0047, -0.0195, 0.0305]),
                 torch.tensor(
                     [
-                        [0.0037, -0.0006, -0.0011, -0.0029],
-                        [0.0005, 0.0002, -0.0134, 0.0081],
-                        [0.0017, 0.0010, -0.0098, 0.0028],
-                        [0.0100, -0.0021, 0.0025, 0.0087],
-                        [-0.0138, -0.0031, 0.0025, 0.0134],
+                        [0.0036, -0.0005, -0.001, -0.003],
+                        [0.0009, -0.0003, -0.0137, 0.0084],
+                        [0.0021, 0.0007, -0.01, 0.0029],
+                        [0.0097, -0.0018, 0.0026, 0.0087],
+                        [-0.0143, -0.0028, 0.0026, 0.0135],
                     ]
                 ),
             ),
@@ -291,8 +300,8 @@ class TestLLMAttr(BaseTest):
                     [
                         [0.0037, -0.0006, -0.0011, -0.0029],
                         [0.0005, 0.0002, -0.0134, 0.0081],
-                        [0.0017, 0.0010, -0.0098, 0.0028],
-                        [0.0100, -0.0021, 0.0025, 0.0087],
+                        [0.0017, 0.001, -0.0098, 0.0028],
+                        [0.01, -0.0021, 0.0025, 0.0087],
                         [-0.0138, -0.0031, 0.0025, 0.0134],
                     ]
                 ),
@@ -307,6 +316,9 @@ class TestLLMAttr(BaseTest):
         true_seq_attr: Tensor,
         true_tok_attr: Tensor,
     ) -> None:
+        # Set random seed for reproducibility across forward_in_tokens modes
+        torch.manual_seed(42)
+
         attr_kws: Dict[str, Any] = {}
         if n_samples is not None:
             attr_kws["n_samples"] = n_samples
@@ -322,6 +334,7 @@ class TestLLMAttr(BaseTest):
             inp,
             "m n o p q",
             use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
             **attr_kws,
         )
 
@@ -359,6 +372,7 @@ class TestLLMAttr(BaseTest):
             inp,
             gen_args={"mock_response": "x y z"},
             use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
         )
 
         self.assertEqual(res.seq_attr.shape, (4,))
@@ -380,6 +394,7 @@ class TestLLMAttr(BaseTest):
             inp,
             "m n o p q",
             use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
         )
 
         # With FeatureAblation, the seq attr in log_prob
@@ -393,7 +408,7 @@ class TestLLMAttr(BaseTest):
                 Lime,
                 0.003,
                 1000,
-                torch.tensor([0.0000, -0.0032, -0.0158, 0.0231]),
+                torch.tensor([0.0, -0.0034, -0.016, 0.0239]),
                 SkLearnLasso(alpha=0.001),
             ),
             # KernelShap
@@ -401,7 +416,7 @@ class TestLLMAttr(BaseTest):
                 KernelShap,
                 0.001,
                 2500,
-                torch.tensor([0.0021, -0.0047, -0.0193, 0.0302]),
+                torch.tensor([0.003, -0.0045, -0.0197, 0.0296]),
                 None,
             ),
         ]
@@ -414,6 +429,9 @@ class TestLLMAttr(BaseTest):
         true_seq_attr: Tensor,
         interpretable_model: Optional[nn.Module] = None,
     ) -> None:
+        # Set random seed for reproducibility across forward_in_tokens modes
+        torch.manual_seed(42)
+
         init_kws = {}
         if interpretable_model is not None:
             init_kws["interpretable_model"] = interpretable_model
@@ -433,6 +451,7 @@ class TestLLMAttr(BaseTest):
             inp,
             "m n o p q",
             use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
             **attr_kws,  # type: ignore
         )
 
@@ -472,6 +491,7 @@ class TestLLMAttr(BaseTest):
             inp,
             "m n o p q",
             use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
         )
 
         # 5 output tokens, 4 input tokens including sos
@@ -494,6 +514,8 @@ class TestLLMAttr(BaseTest):
         res = llm_fa.attribute(
             inp,
             torch.tensor(tokenizer.encode("m n o p q", add_special_tokens=False)),
+            use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
         )
 
         # 5 output tokens, 4 input tokens including sos

@@ -15,10 +15,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-captum/insights/frontend/node_modules/
-captum/insights/frontend/.pnp/
-captum/insights/frontend/build/
-captum/insights/widget/static/
 lib/
 lib64/
 parts/
@@ -53,13 +49,9 @@ wheels/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
-captum/insights/frontend/npm-debug.log*
-captum/insights/frontend/yarn-debug.log*
-captum/insights/frontend/yarn-error.log*
 
 # Unit test / coverage reports
 htmlcov/
-captum/insights/frontend/coverage
 .tox/
 .coverage
 .coverage.*
@@ -110,7 +102,3 @@ website/pages/tutorials/*
 ## Generated for Sphinx
 website/pages/api/
 website/static/_sphinx/
-
-# Insight
-captum/insights/attr_vis/frontend/node_modules/
-captum/insights/attr_vis/widget/static

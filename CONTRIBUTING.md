@@ -55,18 +55,8 @@ Captum is fully typed using Python 3.10+
 We expect any contributions to also use proper type annotations, and we enforce
 consistency of these in our continuous integration tests.
 
-To type check your code locally, install [mypy](https://github.com/python/mypy),
-which can be done with pip using `pip install "mypy>=0.760"`
-Then run this script from the repository root:
-```bash
-./scripts/run_mypy.sh
-```
-Note that we expect mypy to have version 0.760 or higher, and when type checking, use PyTorch 1.10 or
-higher due to fixes to the PyTorch type hints available. We also use the Literal feature which is
-available only in Python 3.10 or above.
-
-We also use [pyre](https://pyre-check.org/) for type checking. For contributors, the nightly version of
-pyre is used which can be installed with pip `pip install pyre-check-nightly`. To run pyre, you can
+We use [Pyre](https://pyre-check.org/) for type checking. For contributors, the nightly version of
+Pyre is used which can be installed with pip `pip install pyre-check-nightly`. To run Pyre, you can
 use the following command from inside the repository root:
 ```bash
 pyre check

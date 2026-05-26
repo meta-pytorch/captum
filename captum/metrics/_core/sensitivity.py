@@ -10,6 +10,7 @@ import torch
 from captum._utils.common import (
     _expand_and_update_additional_forward_args,
     _expand_and_update_baselines,
+    _expand_and_update_feature_mask,
     _expand_and_update_target,
     _format_baseline,
     _format_tensor_into_tuples,
@@ -178,7 +179,8 @@ def sensitivity_max(
                 Any additional arguments that need be passed to the explanation
                 function should be included here.
                 For instance, such arguments include:
-                `additional_forward_args`, `baselines` and `target`.
+                `additional_forward_args`, `baselines`, `target`,
+                and `feature_mask`.
 
     Returns:
 
@@ -245,6 +247,7 @@ def sensitivity_max(
                 current_n_perturb_samples, kwargs_copy
             )
             _expand_and_update_target(current_n_perturb_samples, kwargs_copy)
+            _expand_and_update_feature_mask(current_n_perturb_samples, kwargs_copy)
             if "baselines" in kwargs:
                 baselines = kwargs["baselines"]
                 baselines = _format_baseline(

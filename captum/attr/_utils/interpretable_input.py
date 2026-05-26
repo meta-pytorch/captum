@@ -1,4 +1,5 @@
 # pyre-strict
+import re
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -378,6 +379,144 @@ class TextTemplateInput(InterpretableInput):
             torch.tensor([self.formatted_mask], device=device),
         )
         return formatted_attr
+
+
+class TextSegmentInput(TextTemplateInput):
+    """
+    TextSegmentInput is an implementation of InterpretableInput that automatically
+    segments a text string into interpretable features based on a segmentation level.
+    It builds on TextTemplateInput by auto-generating the template and values from
+    the raw text, so users don't need to manually define them.
+
+    Supported segmentation levels:
+
+    - ``"word"``: split on whitespace and common punctuation
+      (``. , ! ? ; : ' " - ( ) [ ] { }``). Punctuation stays in the template.
+    - ``"sentence"``: split after sentence-ending punctuation (``.``, ``!``, ``?``)
+      or on newlines
+    - ``"line"``: split on newlines
+    - ``"paragraph"``: split on blank lines (one or more empty lines)
+
+    Args:
+
+        text (str): the raw text to segment
+        level (str, optional): the segmentation level.
+                Default: "word"
+        baselines (str or None, optional): the baseline value for each segment
+                when it is "absent". If None, the segment is removed (empty string).
+                If a string, it is used as the baseline for all segments.
+                Default: None
+        group_size (int, optional): group every ``group_size`` consecutive
+                segments into one interpretable feature. Segments in the same
+                group are perturbed together and share the same attribution.
+                The last group may contain fewer segments.
+                Default: 1 (each segment is its own feature)
+
+    Examples::
+
+        >>> seg_inp = TextSegmentInput(
+        >>>     "Hello, world. Welcome!",
+        >>>     level="word",
+        >>> )
+        >>>
+        >>> seg_inp.values
+        >>> # ["Hello", "world", "Welcome"]
+        >>>
+        >>> seg_inp.to_model_input()
+        >>> # "Hello, world. Welcome!"
+        >>>
+        >>> seg_inp.to_model_input(torch.tensor([[1, 0, 1]]))
+        >>> # "Hello, . Welcome!"
+
+        >>> seg_inp = TextSegmentInput(
+        >>>     "one two three four five six",
+        >>>     level="word",
+        >>>     group_size=2,
+        >>> )
+        >>>
+        >>> seg_inp.n_itp_features
+        >>> # 3
+        >>>
+        >>> seg_inp.to_model_input(torch.tensor([[1, 0, 1]]))
+        >>> # "one two   five six"
+
+    """
+
+    SPLIT_PATTERNS: Dict[str, str] = {
+        "word": r"([\s.,!?;:'\"\-()\[\]{}]+)",
+        "sentence": r"((?<=[.!?])\s+|\n+)",
+        "line": r"(\n)",
+        "paragraph": r"(\n\s*\n)",
+    }
+
+    def __init__(
+        self,
+        text: str,
+        level: str = "word",
+        baselines: Optional[str] = None,
+        group_size: int = 1,
+    ) -> None:
+        segments, template = self._segment_text(text, level)
+
+        assert len(segments) > 0, "text must contain at least one segment"
+        assert group_size > 0, "group_size must be a positive integer"
+
+        baseline_list: Optional[List[str]] = None
+        if baselines is not None:
+            baseline_list = [baselines] * len(segments)
+
+        mask: Optional[List[int]] = None
+        if group_size > 1:
+            mask = [i // group_size for i in range(len(segments))]
+
+        super().__init__(
+            template=template,
+            values=segments,
+            baselines=baseline_list,
+            mask=mask,
+        )
+
+        self.text = text
+        self.level = level
+        self.group_size = group_size
+
+    @staticmethod
+    def _segment_text(text: str, level: str) -> Tuple[List[str], str]:
+        """
+        Segment text by the given level and return (segments, template).
+
+        Uses ``re.split`` with a capture group so delimiters are preserved.
+        Segments become values and delimiters become literal parts of the
+        template string with ``{}`` placeholders where segments were.
+        """
+        assert level in TextSegmentInput.SPLIT_PATTERNS, (
+            f"unsupported segmentation level: {level}, "
+            f"must be one of {list(TextSegmentInput.SPLIT_PATTERNS.keys())}"
+        )
+
+        pattern = TextSegmentInput.SPLIT_PATTERNS[level]
+        parts = re.split(pattern, text)
+
+        segments: List[str] = []
+        template_parts: List[str] = []
+        escape_braces = TextSegmentInput._escape_braces
+
+        for i, part in enumerate(parts):
+            if i % 2 == 0:
+                # segment position
+                if part:
+                    segments.append(part)
+                    template_parts.append("{}")
+                # empty segment: skip (no placeholder)
+            else:
+                # delimiter position: always goes into the template
+                template_parts.append(escape_braces(part))
+
+        return segments, "".join(template_parts)
+
+    @staticmethod
+    def _escape_braces(s: str) -> str:
+        return s.replace("{", "{{").replace("}", "}}")
 
 
 class TextTokenInput(InterpretableInput):

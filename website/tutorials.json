@@ -51,6 +51,10 @@
       "title": "Understanding Llama2 with Captum LLM Attribution"
     },
     {
+      "id": "Multimodal_Image_Segment_Attribution",
+      "title": "Image Segment Attribution for Multi-Modal LLMs"
+    },
+    {
       "title": "Interpreting BERT",
       "children": [
         {
@@ -84,16 +88,6 @@
     {
       "id": "TracInCP_Tutorial",
       "title": "Identifying influential examples and mis-labelled examples with TracInCP"
-    }
-  ],
-  "Captum Insight": [
-    {
-      "id": "CIFAR_TorchVision_Captum_Insights",
-      "title": "Getting started with Captum Insights"
-    },
-    {
-      "id": "Multimodal_VQA_Captum_Insights",
-      "title": "Using Captum Insights with multimodal models (VQA)"
     }
   ]
 }

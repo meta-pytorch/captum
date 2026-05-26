@@ -75,7 +75,7 @@ echo "-----------------------------------"
 echo "Install Website dependencies"
 echo "-----------------------------------"
 cd website || exit
-yarn
+yarn --ignore-scripts
 
 if [[ $BUILD_STATIC == true ]]; then
   echo "-----------------------------------"

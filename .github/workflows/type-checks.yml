@@ -1,4 +1,4 @@
-name: Unit-tests for Pip install with type checks
+name: Type checks
 
 on:
   pull_request:
@@ -24,7 +24,6 @@ jobs:
         ./scripts/install_via_pip.sh ${{ matrix.pytorch_args }} -d
         # Fix the version of numpy to install to avoid pyre issues
         pip install --upgrade numpy==2.1.3
-        ./scripts/run_mypy.sh
+        # See https://github.com/facebook/pyre-check/issues/988
+        pip install 'click<8.2.0'
         pyre check
-        # Run Tests
-        python3 -m pytest -ra --cov=. --cov-report term-missing

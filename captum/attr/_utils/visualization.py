@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # pyre-strict
+import html
 import warnings
 from enum import Enum
 from typing import (
@@ -1121,7 +1122,7 @@ def format_word_importances(
     assert len(words) <= len(importances)
     tags = ["<td>"]
     for word, importance in zip(words, importances[: len(words)]):
-        word = format_special_tokens(word)
+        word = html.escape(format_special_tokens(word))
         color = _get_color(importance)
         unwrapped_tag = '<mark style="background-color: {color}; opacity:1.0; \
                     line-height:1.75"><font color="black"> {word}\
@@ -1136,6 +1137,14 @@ def format_word_importances(
 def visualize_text(
     datarecords: Iterable[VisualizationDataRecord], legend: bool = True
 ) -> "HTML":  # In quotes because this type doesn't exist in standalone mode
+    r"""
+    Visualizes text attribution records and returns an IPython ``HTML`` object.
+
+    In notebooks this object is displayed inline. To persist the same rendering as
+    HTML, write ``html_obj.data`` from the returned object to an ``.html`` file.
+    Captum does not directly export this visualization as a raster image; use an
+    external HTML renderer or screenshot tool when an image file is required.
+    """
     assert HAS_IPYTHON, (
         "IPython must be available to visualize text. "
         "Please run 'pip install ipython'."

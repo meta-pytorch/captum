@@ -403,7 +403,9 @@ def sklearn_train_linear_model(
 
     t2 = time.time()
 
-    # Convert weights to pytorch
+    # `w` above is an optional per-example sample weight passed to sklearn.fit.
+    # The learned linear model weights are populated by sklearn during fit and
+    # exposed separately through `coef_` and `intercept_`.
     classes = (
         torch.IntTensor(sklearn_model.classes_)
         if hasattr(sklearn_model, "classes_")

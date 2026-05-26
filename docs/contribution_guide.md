@@ -76,7 +76,7 @@ https://captum.ai/tutorials/House_Prices_Regression_Interpret
 
 **Multimodal**
 - You can use VQA model and dataset described here:
-https://captum.ai/tutorials/Multimodal_VQA_Captum_Insights
+https://captum.ai/tutorials/Multimodal_VQA_Interpret
 
 
 ## Docstring style

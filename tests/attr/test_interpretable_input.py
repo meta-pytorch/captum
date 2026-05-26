@@ -10,6 +10,7 @@ import torch
 from captum._utils.typing import BatchEncodingType
 from captum.attr._utils.interpretable_input import (
     ImageMaskInput,
+    TextSegmentInput,
     TextTemplateInput,
     TextTokenInput,
 )
@@ -193,6 +194,196 @@ class TestTextTemplateInput(BaseTest):
         assertTensorAlmostEqual(
             self, tt_input.format_attr(attr), torch.tensor([[0.1, 0.2, 0.1, 0.2]])
         )
+
+
+class TestTextSegmentInput(BaseTest):
+    def test_word_segmentation(self) -> None:
+        text = "The quick brown fox"
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["The", "quick", "brown", "fox"])
+        self.assertEqual(seg_inp.n_itp_features, 4)
+
+        expected_tensor = torch.tensor([[1.0] * 4])
+        assertTensorAlmostEqual(self, seg_inp.to_tensor(), expected_tensor)
+
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        perturbed = torch.tensor([[1.0, 0.0, 1.0, 0.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "The  brown ")
+
+    def test_word_segmentation_with_punctuation(self) -> None:
+        text = "Hello, world."
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["Hello", "world"])
+        self.assertEqual(seg_inp.n_itp_features, 2)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        perturbed = torch.tensor([[1.0, 0.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "Hello, .")
+
+    def test_word_segmentation_with_hyphens(self) -> None:
+        text = "a good-example here"
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["a", "good", "example", "here"])
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+    def test_sentence_segmentation(self) -> None:
+        text = "Hello world. How are you? Fine!"
+        seg_inp = TextSegmentInput(text, level="sentence")
+
+        self.assertEqual(seg_inp.values, ["Hello world.", "How are you?", "Fine!"])
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        perturbed = torch.tensor([[1.0, 0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "Hello world.  Fine!")
+
+    def test_sentence_segmentation_with_newlines(self) -> None:
+        text = "First sentence.\nSecond line\nThird line."
+        seg_inp = TextSegmentInput(text, level="sentence")
+
+        self.assertEqual(
+            seg_inp.values,
+            ["First sentence.", "Second line", "Third line."],
+        )
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+    def test_line_segmentation(self) -> None:
+        text = "line one\nline two\nline three"
+        seg_inp = TextSegmentInput(text, level="line")
+
+        self.assertEqual(seg_inp.values, ["line one", "line two", "line three"])
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        perturbed = torch.tensor([[0.0, 1.0, 0.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "\nline two\n")
+
+    def test_paragraph_segmentation(self) -> None:
+        text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
+        seg_inp = TextSegmentInput(text, level="paragraph")
+
+        self.assertEqual(
+            seg_inp.values,
+            ["First paragraph.", "Second paragraph.", "Third paragraph."],
+        )
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        perturbed = torch.tensor([[1.0, 0.0, 1.0]])
+        self.assertEqual(
+            seg_inp.to_model_input(perturbed),
+            "First paragraph.\n\n\n\nThird paragraph.",
+        )
+
+    def test_baselines_none(self) -> None:
+        text = "hello world"
+        seg_inp = TextSegmentInput(text, level="word", baselines=None)
+
+        perturbed = torch.tensor([[0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), " world")
+
+    def test_baselines_string(self) -> None:
+        text = "hello world"
+        seg_inp = TextSegmentInput(text, level="word", baselines="[MASK]")
+
+        perturbed = torch.tensor([[0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "[MASK] world")
+
+        perturbed = torch.tensor([[0.0, 0.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "[MASK] [MASK]")
+
+    def test_single_segment(self) -> None:
+        text = "oneword"
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["oneword"])
+        self.assertEqual(seg_inp.n_itp_features, 1)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+    def test_multiple_whitespace(self) -> None:
+        text = "hello   world"
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["hello", "world"])
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+    def test_leading_delimiter(self) -> None:
+        text = ". Hello world"
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["Hello", "world"])
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+    def test_trailing_delimiter(self) -> None:
+        text = "Hello world! "
+        seg_inp = TextSegmentInput(text, level="word")
+
+        self.assertEqual(seg_inp.values, ["Hello", "world"])
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+    def test_default_level_is_word(self) -> None:
+        seg_inp = TextSegmentInput("a b c")
+        self.assertEqual(seg_inp.values, ["a", "b", "c"])
+
+    def test_invalid_level(self) -> None:
+        with self.assertRaises(AssertionError):
+            TextSegmentInput("hello", level="invalid")
+
+    def test_is_instance_of_text_template_input(self) -> None:
+        seg_inp = TextSegmentInput("hello world")
+        self.assertIsInstance(seg_inp, TextTemplateInput)
+
+    def test_group_size_even(self) -> None:
+        text = "one two three four five six"
+        seg_inp = TextSegmentInput(text, level="word", group_size=2)
+
+        self.assertEqual(seg_inp.values, ["one", "two", "three", "four", "five", "six"])
+        self.assertEqual(seg_inp.n_itp_features, 3)
+
+        expected_tensor = torch.tensor([[1.0] * 3])
+        assertTensorAlmostEqual(self, seg_inp.to_tensor(), expected_tensor)
+
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        # remove middle group (three, four)
+        perturbed = torch.tensor([[1.0, 0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "one two   five six")
+
+    def test_group_size_uneven(self) -> None:
+        text = "a b c d e f g"
+        seg_inp = TextSegmentInput(text, level="word", group_size=3)
+
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.to_model_input(), text)
+
+        # remove last group (only 1 segment: "g")
+        perturbed = torch.tensor([[1.0, 1.0, 0.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "a b c d e f ")
+
+    def test_group_size_default(self) -> None:
+        seg_inp = TextSegmentInput("a b c")
+        self.assertEqual(seg_inp.n_itp_features, 3)
+        self.assertEqual(seg_inp.group_size, 1)
+
+    def test_group_size_format_attr(self) -> None:
+        text = "a b c d"
+        seg_inp = TextSegmentInput(text, level="word", group_size=2)
+
+        # 2 interpretable features → scatter back to 4 raw features
+        attr = torch.tensor([[0.5, 0.8]])
+        formatted = seg_inp.format_attr(attr)
+        assertTensorAlmostEqual(self, formatted, torch.tensor([[0.5, 0.5, 0.8, 0.8]]))
+
+    def test_group_size_with_baselines(self) -> None:
+        text = "a b c d"
+        seg_inp = TextSegmentInput(text, level="word", baselines="X", group_size=2)
+
+        perturbed = torch.tensor([[0.0, 1.0]])
+        self.assertEqual(seg_inp.to_model_input(perturbed), "X X c d")
 
 
 class TestTextTokenInput(BaseTest):

@@ -131,6 +131,8 @@ To learn more about Lime, visit the following resources:
 ### KernelSHAP
 Kernel SHAP is a method that uses the LIME framework to compute Shapley Values. Setting the loss function, weighting kernel and regularization terms appropriately in the LIME framework allows theoretically obtaining Shapley Values more efficiently than directly computing Shapley Values.
 
+Captum's implementation represents missing features with the values provided in `baselines`. As a result, the attributions explain the model output relative to the chosen baseline values rather than by sampling missing features from a background data distribution.
+
 To learn more about KernelSHAP, visit the following resources:
 - [Original paper](https://arxiv.org/abs/1705.07874)
 

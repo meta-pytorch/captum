@@ -18,6 +18,6 @@ jobs:
       script: |
         sudo chmod -R 777 .
         ./scripts/install_via_pip.sh
-        ufmt check .
+        ufmt check . || (ufmt diff . && exit 1)
         flake8
         sphinx-build -WT --keep-going sphinx/source sphinx/build
