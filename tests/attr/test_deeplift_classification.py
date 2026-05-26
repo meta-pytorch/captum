@@ -5,6 +5,7 @@
 from typing import TypeVar, Union
 
 import torch
+import torch.nn.functional as F
 from captum._utils.typing import TargetType
 from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
 from captum.attr._core.integrated_gradients import IntegratedGradients
@@ -22,6 +23,32 @@ from torch import Tensor
 from torch.nn import Module
 
 DeepLiftAttrMethod = TypeVar("DeepLiftAttrMethod", DeepLift, DeepLiftShap)
+
+
+class FunctionalExpModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return torch.exp(input).sum(dim=1)
+
+
+class FunctionalSquareModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        return (input * input).sum(dim=1)
+
+
+class FunctionalSigmoidProductModel(Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, input: Tensor) -> Tensor:
+        return (self.sigmoid(1.702 * input) * input).sum(dim=1)
+
+
+class FunctionalSoftmaxProfileModel(Module):
+    def forward(self, input: Tensor) -> Tensor:
+        logits = input - input.mean(dim=-1, keepdim=True)
+        probs = F.softmax(logits, dim=-1)
+        return (probs * logits).sum(dim=-1)
 
 
 class Test(BaseTest):
@@ -156,6 +183,56 @@ class Test(BaseTest):
 
         self.softmax_classification(model, dl, input, baseline, torch.tensor(2))
 
+    def test_functional_exp_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalExpModel(), input, baseline
+        )
+
+    def test_functional_multiply_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalSquareModel(), input, baseline
+        )
+        self._assert_functional_model_completeness(
+            FunctionalSigmoidProductModel(), input, baseline
+        )
+
+    def test_functional_softmax_profile_rescale(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baseline = torch.zeros_like(input)
+
+        self._assert_functional_model_completeness(
+            FunctionalSoftmaxProfileModel(), input, baseline
+        )
+
+    def test_deeplift_shap_functional_tensor_ops(self) -> None:
+        input = torch.tensor([[1.0, -2.0, 0.5], [-0.5, 2.0, 1.5]], requires_grad=True)
+        baselines = torch.tensor(
+            [[0.0, 0.0, 0.0], [0.25, -0.25, 0.5], [-0.5, 0.5, -0.25]]
+        )
+
+        for model in (
+            FunctionalExpModel(),
+            FunctionalSquareModel(),
+            FunctionalSoftmaxProfileModel(),
+        ):
+            _, delta = DeepLiftShap(model).attribute(  # type: ignore[has-type]
+                input,
+                baselines=baselines,
+                return_convergence_delta=True,
+            )
+            self.assertTrue(
+                (delta.abs() < 0.0001).all(),
+                "Functional tensor op DeepLiftShap delta is too large: {}".format(
+                    delta
+                ),
+            )
+
     def softmax_classification(
         self,
         model: Module,
@@ -208,3 +285,19 @@ class Test(BaseTest):
                 inputs, baselines=baselines, target=target
             )
             assertAttributionComparision(self, attributions, attributions_ig)
+
+    def _assert_functional_model_completeness(
+        self, model: Module, input: Tensor, baseline: Tensor
+    ) -> None:
+        attributions, delta = DeepLift(model).attribute(  # type: ignore[has-type]
+            input,
+            baselines=baseline,
+            return_convergence_delta=True,
+        )
+        attr_sum = attributions.reshape(attributions.shape[0], -1).sum(dim=1)
+        output_diff = model(input) - model(baseline)
+        torch.testing.assert_close(attr_sum, output_diff, atol=0.0001, rtol=0.0001)
+        self.assertTrue(
+            (delta.abs() < 0.0001).all(),
+            "Functional tensor op DeepLift delta is too large: {}".format(delta),
+        )

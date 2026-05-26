@@ -3,7 +3,18 @@
 # pyre-strict
 import typing
 import warnings
-from typing import Callable, cast, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import torch
 import torch.nn as nn
@@ -37,7 +48,270 @@ from captum.attr._utils.common import (
 from captum.log import log_usage
 from torch import Tensor
 from torch.nn import Module
+from torch.overrides import TorchFunctionMode
 from torch.utils.hooks import RemovableHandle
+
+
+def _can_apply_deeplift_tensor_rule(input: object) -> bool:
+    # DeepLift runs one combined forward with actual inputs followed by
+    # baselines along batch dimension 0. Functional-op rules are valid only
+    # for tensors that participate in that paired actual / reference batch.
+    return (
+        isinstance(input, Tensor)
+        and input.requires_grad
+        and input.dim() > 0
+        and input.shape[0] % 2 == 0
+    )
+
+
+def _can_apply_deeplift_binary_tensor_rule(input: object, other: object) -> bool:
+    return (
+        _can_apply_deeplift_tensor_rule(input)
+        and _can_apply_deeplift_tensor_rule(other)
+        and cast(Tensor, input).shape[0] == cast(Tensor, other).shape[0]
+    )
+
+
+def _is_square_power(power: object) -> bool:
+    return isinstance(power, (int, float)) and power == 2
+
+
+class _DeepLiftTensorUnaryOp(torch.autograd.Function):
+    """
+    DeepLift Rescale rule for functional one-input tensor ops.
+
+    Module hooks do not see calls like ``torch.exp(x)`` or ``x.pow(2)``, so this
+    autograd function replaces their backward multipliers with
+    ``delta_out / delta_in`` while preserving the original forward value.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(ctx: Any, input: Tensor, eps: float, op_name: str) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            if op_name == "exp":
+                output = torch.exp(input)
+            elif op_name == "square":
+                output = input * input
+            else:
+                raise AssertionError("Unsupported DeepLift tensor unary op.")
+        ctx.eps = eps
+        ctx.op_name = op_name
+        ctx.save_for_backward(input.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, None, None]:
+        inputs, outputs = ctx.saved_tensors
+        delta_in, delta_out = _compute_diffs(inputs, outputs)
+
+        if ctx.op_name == "exp":
+            grad_input = grad_output * outputs
+        elif ctx.op_name == "square":
+            grad_input = grad_output * 2 * inputs
+        else:
+            raise AssertionError("Unsupported DeepLift tensor unary op.")
+
+        new_grad_input = torch.where(
+            abs(delta_in) < ctx.eps,
+            grad_input,
+            grad_output * delta_out / delta_in,
+        )
+        return new_grad_input, None, None
+
+
+class _DeepLiftTensorBinaryOp(torch.autograd.Function):
+    """
+    DeepLift rule for functional two-input tensor ops where both inputs vary.
+
+    For ops such as multiplication and division, plain gradients do not satisfy
+    completeness when both operands differ from their baselines. This uses the
+    same symmetric contribution split as SHAP's DeepExplainer op handlers.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(
+        ctx: Any, input: Tensor, other: Tensor, eps: float, op_name: str
+    ) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            if op_name == "mul":
+                output = input * other
+            elif op_name == "div":
+                output = input / other
+            else:
+                raise AssertionError("Unsupported DeepLift tensor binary op.")
+        ctx.eps = eps
+        ctx.op_name = op_name
+        ctx.input_shape = input.shape
+        ctx.other_shape = other.shape
+        ctx.save_for_backward(input.detach(), other.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, Tensor, None, None]:
+        input, other, output = ctx.saved_tensors
+        input, other = torch.broadcast_tensors(input, other)
+        if output.shape != input.shape:
+            output = output.expand_as(input)
+        if grad_output.shape != input.shape:
+            grad_output = grad_output.expand_as(input)
+
+        input_actual, input_ref = input.chunk(2)
+        other_actual, other_ref = other.chunk(2)
+        output_actual, output_ref = output.chunk(2)
+        delta_input = input_actual - input_ref
+        delta_other = other_actual - other_ref
+
+        if ctx.op_name == "mul":
+            cross_input_actual = input_actual * other_ref
+            cross_other_actual = input_ref * other_actual
+            grad_input = other
+            grad_other = input
+        elif ctx.op_name == "div":
+            cross_input_actual = input_actual / other_ref
+            cross_other_actual = input_ref / other_actual
+            grad_input = 1 / other
+            grad_other = -input / (other * other)
+        else:
+            raise AssertionError("Unsupported DeepLift tensor binary op.")
+
+        input_contrib = (
+            output_actual - cross_other_actual + cross_input_actual - output_ref
+        ) * 0.5
+        other_contrib = (
+            output_actual - cross_input_actual + cross_other_actual - output_ref
+        ) * 0.5
+
+        delta_input = torch.cat(2 * [delta_input])
+        delta_other = torch.cat(2 * [delta_other])
+        input_contrib = torch.cat(2 * [input_contrib])
+        other_contrib = torch.cat(2 * [other_contrib])
+
+        input_multiplier = torch.where(
+            abs(delta_input) < ctx.eps,
+            grad_input,
+            input_contrib / delta_input,
+        )
+        other_multiplier = torch.where(
+            abs(delta_other) < ctx.eps,
+            grad_other,
+            other_contrib / delta_other,
+        )
+        input_grad = (grad_output * input_multiplier).sum_to_size(ctx.input_shape)
+        other_grad = (grad_output * other_multiplier).sum_to_size(ctx.other_shape)
+        return input_grad, other_grad, None, None
+
+
+class _DeepLiftTensorSoftmaxShift(torch.autograd.Function):
+    """
+    Rescale the numerically stable softmax shift back to the original input.
+
+    Functional softmax is decomposed into shifted input, exp, sum, and division
+    so the existing unary / binary rules can handle it. This op accounts for
+    the data-dependent max subtraction introduced for stability.
+    """
+
+    @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    def forward(ctx: Any, input: Tensor, dim: int, eps: float) -> Tensor:
+        with torch._C.DisableTorchFunction():
+            output = input - torch.max(input, dim=dim, keepdim=True).values
+        ctx.eps = eps
+        ctx.save_for_backward(input.detach(), output.detach())
+        return output
+
+    @staticmethod
+    # pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.
+    def backward(ctx: Any, grad_output: Tensor) -> Tuple[Tensor, None, None]:
+        inputs, outputs = ctx.saved_tensors
+        delta_in, delta_out = _compute_diffs(inputs, outputs)
+        new_grad_input = torch.where(
+            abs(delta_in) < ctx.eps,
+            grad_output,
+            grad_output * delta_out / delta_in,
+        )
+        return new_grad_input, None, None
+
+
+class _DeepLiftTensorOpMode(TorchFunctionMode):
+    """
+    Intercepts selected functional tensor ops during DeepLift's model forward.
+
+    Captum's historical DeepLift support is module-hook based. This mode adds
+    equivalent private handling for common functional ops that have no
+    ``nn.Module`` boundary, while leaving unrelated tensor operations unchanged.
+    """
+
+    def __init__(self, eps: float) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def __torch_function__(
+        self,
+        func: Callable[..., object],
+        types: Tuple[Type[object], ...],
+        args: Tuple[object, ...] = (),
+        kwargs: Optional[Dict[str, object]] = None,
+    ) -> object:
+        kwargs = kwargs or {}
+        func_name = getattr(func, "__name__", None)
+
+        if (
+            func_name == "exp"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, "exp")
+
+        if (
+            func_name == "square"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, "square")
+
+        if (
+            func_name == "pow"
+            and len(args) > 1
+            and _can_apply_deeplift_tensor_rule(args[0])
+            and _is_square_power(args[1])
+        ):
+            return _DeepLiftTensorUnaryOp.apply(args[0], self.eps, "square")
+
+        if (
+            func_name in ("mul", "div", "truediv")
+            and len(args) > 1
+            and _can_apply_deeplift_binary_tensor_rule(args[0], args[1])
+        ):
+            return _DeepLiftTensorBinaryOp.apply(
+                args[0],
+                args[1],
+                self.eps,
+                "mul" if func_name == "mul" else "div",
+            )
+
+        if (
+            func_name == "softmax"
+            and len(args) > 0
+            and _can_apply_deeplift_tensor_rule(args[0])
+        ):
+            dim = kwargs.get("dim", args[1] if len(args) > 1 else None)
+            if isinstance(dim, int):
+                input = cast(Tensor, args[0])
+                dtype = kwargs.get("dtype")
+                if isinstance(dtype, torch.dtype):
+                    input = input.to(dtype=dtype)
+                shifted_input = _DeepLiftTensorSoftmaxShift.apply(input, dim, self.eps)
+                exp_input = _DeepLiftTensorUnaryOp.apply(shifted_input, self.eps, "exp")
+                exp_sum = exp_input.sum(dim=dim, keepdim=True)
+                return _DeepLiftTensorBinaryOp.apply(
+                    exp_input, exp_sum, self.eps, "div"
+                )
+
+        return func(*args, **kwargs)
 
 
 class DeepLift(GradientAttribution):
@@ -376,10 +650,11 @@ class DeepLift(GradientAttribution):
         additional_forward_args: Optional[Tuple[object, ...]] = None,
     ) -> Callable[[], Tensor]:
         def forward_fn() -> Tensor:
-            model_out = cast(
-                Tensor,
-                _run_forward(forward_func, inputs, None, additional_forward_args),
-            )
+            with _DeepLiftTensorOpMode(self.eps):
+                model_out = cast(
+                    Tensor,
+                    _run_forward(forward_func, inputs, None, additional_forward_args),
+                )
             return _select_targets(
                 torch.cat((model_out[:, 0], model_out[:, 1])),
                 target,
