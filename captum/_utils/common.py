@@ -866,6 +866,18 @@ def _register_backward_hook(
 ) -> List[torch.utils.hooks.RemovableHandle]:
     grad_out: Dict[device, Tensor] = {}
 
+    def backward_pre_hook(
+        module: Module,
+        grad_output: Union[Tensor, Tuple[Tensor, ...]],
+    ) -> None:
+        if isinstance(grad_output, tuple):
+            assert (
+                len(grad_output) == 1
+            ), "Backward hooks not supported for module with >1 output"
+            grad_out[grad_output[0].device] = grad_output[0]
+        else:
+            grad_out[grad_output.device] = grad_output
+
     def forward_hook(
         module: Module,
         inp: Union[Tensor, Tuple[Tensor, ...]],
@@ -905,10 +917,13 @@ def _register_backward_hook(
             inp.register_hook(input_tensor_hook)
             return inp.clone()
 
-    return [
+    hooks = [
         module.register_forward_pre_hook(pre_hook),
         module.register_forward_hook(forward_hook),
     ]
+    if not getattr(module, "inplace", False):
+        hooks.append(module.register_full_backward_pre_hook(backward_pre_hook))
+    return hooks
 
 
 def _get_max_feature_index(feature_mask: Tuple[Tensor, ...]) -> int:
