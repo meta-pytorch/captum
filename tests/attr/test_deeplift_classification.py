@@ -6,7 +6,7 @@ from typing import TypeVar, Union
 
 import torch
 from captum._utils.typing import TargetType
-from captum.attr._core.deep_lift import DeepLift, DeepLiftShap, maxpool1d
+from captum.attr._core.deep_lift import DeepLift, DeepLiftShap, maxpool1d, softmax
 from captum.attr._core.integrated_gradients import IntegratedGradients
 from captum.testing.helpers.basic import assertAttributionComparision, BaseTest
 from captum.testing.helpers.basic_models import (
@@ -178,6 +178,31 @@ class Test(BaseTest):
         self.assertTrue(
             torch.equal(multipliers[zero_delta_mask], grad_input[zero_delta_mask])
         )
+
+    def test_softmax_uses_rescale_without_normalization(self) -> None:
+        module = torch.nn.Softmax(dim=1)
+        inputs = torch.tensor(
+            [
+                [1.0, 2.0, 3.0],
+                [3.0, 1.0, 0.0],
+                [0.5, 1.0, 1.5],
+                [1.0, 0.0, -1.0],
+            ]
+        )
+        outputs = module(inputs)
+        grad_input = torch.full_like(inputs, 0.25)
+        grad_output = torch.ones_like(outputs)
+
+        multipliers = softmax(module, inputs, outputs, grad_input, grad_output)
+
+        delta_in = inputs[:2] - inputs[2:]
+        delta_out = outputs[:2] - outputs[2:]
+        delta_in = torch.cat(2 * [delta_in])
+        delta_out = torch.cat(2 * [delta_out])
+        expected = torch.where(
+            delta_in.abs() < 1e-10, grad_input, grad_output * delta_out / delta_in
+        )
+        torch.testing.assert_close(multipliers, expected)
 
     def softmax_classification(
         self,
