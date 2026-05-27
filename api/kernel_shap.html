@@ -45,7 +45,8 @@ can be found in the original paper here:
 <p>In Captum, missing features are represented by the values provided in
 <cite>baselines</cite>. This means Captum’s KernelShap explains the model output
 relative to the chosen baseline values, rather than sampling missing
-features from a background distribution.</p>
+features from a background distribution. <cite>BaselineKernelShap</cite> is an alias
+for this class that makes these baseline-substitution semantics explicit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>forward_func</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – The forward function of the model or
@@ -329,6 +330,216 @@ k(M, k) = (M - 1) / (k * (M - k) * (M choose k))</p>
 </dd></dl>
 </dd></dl>
 </section>
+<section id="baselinekernelshap">
+<h1>BaselineKernelShap<a class="headerlink" href="#baselinekernelshap" title="Link to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">BaselineKernelShap</span></code> is an alias for <a class="reference internal" href="#captum.attr.KernelShap" title="captum.attr.KernelShap"><code class="xref py py-class docutils literal notranslate"><span class="pre">captum.attr.KernelShap</span></code></a>.</p>
+</section>
+<section id="randombaselinekernelshap">
+<h1>RandomBaselineKernelShap<a class="headerlink" href="#randombaselinekernelshap" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="captum.attr.RandomBaselineKernelShap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">captum.attr.</span></span><span class="sig-name descname"><span class="pre">RandomBaselineKernelShap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/captum/attr/_core/kernel_shap.html#RandomBaselineKernelShap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#captum.attr.RandomBaselineKernelShap" title="Link to this definition">¶</a></dt>
+<dd><p>Random Baseline Kernel SHAP is a perturbation-based method that computes
+Random Baseline Shapley (RBShap) values using the Kernel SHAP weighted
+linear surrogate. RBShap averages Baseline Shapley values over a
+distribution of baselines. For a coalition of selected features <cite>S</cite>,
+the value function is:</p>
+<div class="math">
+\[v(S) = E_{b \sim D}[f(x_S; b_{\bar{S}})]
+
+\]</div>
+<p>Captum’s <cite>KernelShap</cite> / <cite>BaselineKernelShap</cite> uses one fixed baseline value
+to represent missing features. <cite>RandomBaselineKernelShap</cite> instead uses a
+baseline distribution and averages model evaluations over baseline samples
+for each sampled coalition before fitting the same Kernel SHAP surrogate
+model. This corresponds to the Random Baseline Shapley definition described
+in “The Many Shapley Values for Model Explanation”:
+<a class="reference external" href="https://arxiv.org/abs/1908.08474">https://arxiv.org/abs/1908.08474</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>forward_func</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – The forward function of the model or
+any modification of it.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="captum.attr.RandomBaselineKernelShap.attribute">
+<span class="sig-name descname"><span class="pre">attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baselines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_forward_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perturbations_per_eval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_input_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_baseline_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/captum/attr/_core/kernel_shap.html#RandomBaselineKernelShap.attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#captum.attr.RandomBaselineKernelShap.attribute" title="Link to this definition">¶</a></dt>
+<dd><p>This method attributes the output of the model with given target index
+(in case it is provided, otherwise it assumes that output is a
+scalar) to the inputs of the model using Random Baseline Kernel SHAP.
+It trains an interpretable weighted linear model using the Kernel SHAP
+sampling distribution and returns the learned coefficients.</p>
+<p>It is recommended to only provide a single example as input (tensors
+with first dimension or batch size = 1). This is because LIME / KernelShap
+is generally used for sample-based interpretability, training a separate
+interpretable model to explain a model’s prediction on each individual
+example.</p>
+<p>A batch of inputs can also be provided as inputs, similar to
+other perturbation-based attribution methods. In this case, if forward_fn
+returns a scalar per example, attributions will be computed for each
+example independently, with a separate interpretable model trained for each
+example. The same baseline distribution is used for each example.</p>
+<p>The number of interpretable features is determined from the provided
+feature mask, or if none is provided, from the default feature mask,
+which considers each scalar input as a separate feature. It is
+generally recommended to provide a feature mask which groups features
+into a small number of interpretable features / components (e.g.
+superpixels in images).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a><em>, </em><em>...</em><em>]</em>) – Input for which Random
+Baseline Kernel SHAP is computed. If forward_func takes
+a single tensor as input, a single input tensor should be
+provided. If forward_func takes multiple tensors as input,
+a tuple of input tensors should be provided. It is assumed
+that for all given input tensors, dimension 0 corresponds
+to the number of examples, and if multiple input tensors
+are provided, the examples must be aligned appropriately.</p></li>
+<li><p><strong>baselines</strong> (<em>scalar</em><em>, </em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><em>scalar</em><em>, or </em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a>) – Baselines define the reference distribution used to
+represent missing features. Tensor baselines should have
+first dimension equal to the number of baseline samples,
+and all remaining dimensions must match the corresponding
+input tensor’s dimensions starting from dimension 1.
+If multiple input tensors are provided, tensor baselines
+may either share the same first dimension or have first
+dimension 1, in which case that baseline is broadcast
+across baseline samples. Scalar baselines are treated as
+a degenerate one-sample baseline distribution.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – <p>Output indices for
+which surrogate model is trained
+(for classification cases,
+this is usually the target class).
+If the network returns a scalar value per example,
+no target index is necessary.
+For general 2D outputs, targets can be either:</p>
+<ul>
+<li><p>a single integer or a tensor containing a single
+integer, which is applied to all input examples</p></li>
+<li><p>a list of integers or a 1D tensor, with length matching
+the number of examples in inputs (dim 0). Each integer
+is applied as the target for the corresponding example.</p></li>
+</ul>
+<p>For outputs with &gt; 2 dimensions, targets can be either:</p>
+<ul>
+<li><p>A single tuple, which contains #output_dims - 1
+elements. This target index is applied to all examples.</p></li>
+<li><p>A list of tuples with length equal to the number of
+examples in inputs (dim 0), and each tuple containing
+#output_dims - 1 elements. Each tuple is applied as the
+target for the corresponding example.</p></li>
+</ul>
+<p>Default: None</p>
+</p></li>
+<li><p><strong>additional_forward_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>optional</em>) – If the forward function
+requires additional arguments other than the inputs for
+which attributions should not be computed, this argument
+can be provided. It must be either a single additional
+argument of a Tensor or arbitrary (non-tuple) type or a
+tuple containing multiple additional arguments including
+tensors or any arbitrary python types. These arguments
+are provided to forward_func in order following the
+arguments in inputs. For a tensor, the first dimension
+of the tensor must correspond to the number of examples.
+For all other types, the given argument is used for all
+forward evaluations. Note that attributions are not
+computed with respect to these arguments.
+Default: None</p></li>
+<li><p><strong>feature_mask</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.12)"><em>Tensor</em></a><em>, </em><em>...</em><em>]</em><em>, </em><em>optional</em>) – feature_mask defines a mask for the input, grouping
+features which correspond to the same interpretable
+feature. feature_mask should contain the same number of
+tensors as inputs. Each tensor should be the same size as
+the corresponding input or broadcastable to match the
+input tensor. Values across all tensors should be
+integers in the range 0 to num_interp_features - 1, and
+indices corresponding to the same feature should have the
+same value. Note that features are grouped across
+tensors, so if the same index is used in different
+tensors, those features are still grouped and added
+simultaneously. If None, then a feature mask is
+constructed which assigns each scalar within a tensor as
+a separate feature.
+Default: None</p></li>
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – The number of sampled coalitions of the
+original model used to train the surrogate interpretable
+model.
+Default: 25</p></li>
+<li><p><strong>perturbations_per_eval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Allows multiple sampled
+coalitions to be processed simultaneously in one call to
+forward_fn. Each forward pass will contain a maximum of
+perturbations_per_eval * #examples * #baseline_samples
+samples.
+Default: 1</p></li>
+<li><p><strong>return_input_shape</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Determines whether the returned
+tensor(s) only contain the coefficients for each
+interpretable feature from the trained surrogate model,
+or whether the returned attributions match the input
+shape. When return_input_shape is True, the return type
+of attribute matches the input shape, with each element
+containing the coefficient of the corresponding
+interpretable feature. All elements with the same value
+in the feature mask will contain the same coefficient in
+the returned attributions. If return_input_shape is
+False, a 1D tensor is returned, containing only the
+coefficients of the trained interpretable model, with
+length num_interp_features.
+Default: True</p></li>
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Displays the progress of computation.
+It will try to use tqdm if available for advanced
+features (e.g. time estimation). Otherwise, it will
+fallback to a simple output of progress.
+Default: False</p></li>
+<li><p><strong>n_baseline_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – The number of baseline samples
+to draw with replacement from the baseline distribution
+for each sampled coalition. If None, all provided
+baselines are used for each coalition, giving the exact
+average over the finite baseline distribution.
+Default: None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><dl class="simple">
+<dt><strong>attributions</strong> (<em>Tensor</em> or <em>tuple[Tensor, …]</em>):</dt><dd><p>The attributions with respect to each input feature.
+If return_input_shape = True, attributions will be the
+same size as the provided inputs, with each value
+providing the coefficient of the corresponding
+interpretable feature. If return_input_shape is False,
+a 1D tensor is returned, containing only the coefficients
+of the trained interpretable model, with length
+num_interp_features.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Tensor</em> or <em>tuple[Tensor, …]</em> of <strong>attributions</strong></p>
+</dd>
+</dl>
+<dl>
+<dt>Examples::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># SimpleClassifier takes a single input tensor of size Nx4x4,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># and returns an Nx3 tensor of class probabilities.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span> <span class="o">=</span> <span class="n">SimpleClassifier</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Generating random input with size 1 x 4 x 4 and a</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># distribution of 10 baseline examples.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">baselines</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Defining Random Baseline Kernel SHAP interpreter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rbks</span> <span class="o">=</span> <span class="n">RandomBaselineKernelShap</span><span class="p">(</span><span class="n">net</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attr</span> <span class="o">=</span> <span class="n">rbks</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">baselines</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+</dd></dl>
+</section>
 </div>
 </div>
 </div>
@@ -362,6 +573,8 @@ k(M, k) = (M - 1) / (k * (M - k) * (M choose k))</p>
 <li class="toctree-l2"><a class="reference internal" href="shapley_value_sampling.html">Shapley Value Sampling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lime.html">Lime</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">KernelShap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#baselinekernelshap">BaselineKernelShap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#randombaselinekernelshap">RandomBaselineKernelShap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lrp.html">LRP</a></li>
 </ul>
 </li>

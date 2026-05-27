@@ -464,6 +464,11 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">expanded_additional_args</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">expanded_target</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">gen_perturb_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_perturb_generator_func</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">model_input_multiplier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_model_input_multiplier</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">model_input_multiplier</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"Model input multiplier must be a positive integer, "</span>
+            <span class="sa">f</span><span class="s2">"received </span><span class="si">{</span><span class="n">model_input_multiplier</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
             <span class="n">attr_progress</span> <span class="o">=</span> <span class="n">progress</span><span class="p">(</span>
@@ -496,18 +501,22 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">)</span> <span class="o">==</span> <span class="n">perturbations_per_eval</span><span class="p">:</span>
+                <span class="n">num_model_inputs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">)</span> <span class="o">*</span> <span class="n">model_input_multiplier</span>
                 <span class="k">if</span> <span class="n">expanded_additional_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">expanded_additional_args</span> <span class="o">=</span> <span class="n">_expand_additional_forward_args</span><span class="p">(</span>
-                        <span class="n">additional_forward_args</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">)</span>
+                        <span class="n">additional_forward_args</span><span class="p">,</span> <span class="n">num_model_inputs</span>
                     <span class="p">)</span>
                 <span class="k">if</span> <span class="n">expanded_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">expanded_target</span> <span class="o">=</span> <span class="n">_expand_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">))</span>
+                    <span class="n">expanded_target</span> <span class="o">=</span> <span class="n">_expand_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">num_model_inputs</span><span class="p">)</span>
 
                 <span class="n">model_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_batch</span><span class="p">(</span>
                     <span class="n">curr_model_inputs</span><span class="p">,</span>
                     <span class="n">expanded_target</span><span class="p">,</span>
                     <span class="n">expanded_additional_args</span><span class="p">,</span>
                     <span class="n">device</span><span class="p">,</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">),</span>
+                    <span class="n">model_input_multiplier</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
@@ -518,15 +527,19 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">curr_model_inputs</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">num_model_inputs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">)</span> <span class="o">*</span> <span class="n">model_input_multiplier</span>
             <span class="n">expanded_additional_args</span> <span class="o">=</span> <span class="n">_expand_additional_forward_args</span><span class="p">(</span>
-                <span class="n">additional_forward_args</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">)</span>
+                <span class="n">additional_forward_args</span><span class="p">,</span> <span class="n">num_model_inputs</span>
             <span class="p">)</span>
-            <span class="n">expanded_target</span> <span class="o">=</span> <span class="n">_expand_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">))</span>
+            <span class="n">expanded_target</span> <span class="o">=</span> <span class="n">_expand_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">num_model_inputs</span><span class="p">)</span>
             <span class="n">model_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_batch</span><span class="p">(</span>
                 <span class="n">curr_model_inputs</span><span class="p">,</span>
                 <span class="n">expanded_target</span><span class="p">,</span>
                 <span class="n">expanded_additional_args</span><span class="p">,</span>
                 <span class="n">device</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">),</span>
+                <span class="n">model_input_multiplier</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
                 <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
@@ -602,6 +615,9 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">expanded_target</span><span class="p">:</span> <span class="n">TargetType</span><span class="p">,</span>
         <span class="n">expanded_additional_args</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+        <span class="n">num_interp_inputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">model_input_multiplier</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">model_out</span> <span class="o">=</span> <span class="n">_run_forward</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">forward_func</span><span class="p">,</span>
@@ -609,14 +625,36 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">expanded_target</span><span class="p">,</span>
             <span class="n">expanded_additional_args</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">expected_num_outputs</span> <span class="o">=</span> <span class="n">num_interp_inputs</span> <span class="o">*</span> <span class="n">model_input_multiplier</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_out</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
-            <span class="k">assert</span> <span class="n">model_out</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_model_inputs</span><span class="p">),</span> <span class="p">(</span>
+            <span class="k">assert</span> <span class="n">model_out</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="n">expected_num_outputs</span><span class="p">,</span> <span class="p">(</span>
                 <span class="s2">"Number of outputs is not appropriate, must return "</span>
                 <span class="s2">"one output per perturbed input"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_out</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">model_out</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aggregate_model_outputs</span><span class="p">(</span>
+                <span class="n">model_out</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+                <span class="n">num_interp_inputs</span><span class="p">,</span>
+                <span class="n">model_input_multiplier</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">expected_num_outputs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"Forward function must return a Tensor when each interpretable "</span>
+            <span class="s2">"sample expands to multiple model inputs."</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">model_out</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_model_input_multiplier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_aggregate_model_outputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model_out</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">num_interp_inputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">model_input_multiplier</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model_out</span>
 
 <div class="viewcode-block" id="LimeBase.has_convergence_delta">
 <a class="viewcode-back" href="../../../../lime.html#captum.attr.LimeBase.has_convergence_delta">[docs]</a>
@@ -1313,7 +1351,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">leading_dim_one</span><span class="o">=</span><span class="p">(</span><span class="n">bsz</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">coefs</span>
+            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">coefs</span><span class="p">)</span>
 
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
     <span class="k">def</span> <span class="nf">_convert_output_shape</span><span class="p">(</span>

@@ -34,12 +34,14 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="n">_reduce_list</span><span class="p">,</span> <span class="n">_run_forward</span>
 <span class="kn">from</span> <span class="nn">captum._utils.models.linear_model</span> <span class="kn">import</span> <span class="n">SkLearnLinearRegression</span>
 <span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">BaselineType</span><span class="p">,</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.lime</span> <span class="kn">import</span> <span class="n">construct_feature_mask</span><span class="p">,</span> <span class="n">Lime</span>
+<span class="kn">from</span> <span class="nn">captum.attr._core.lime</span> <span class="kn">import</span> <span class="n">construct_feature_mask</span><span class="p">,</span> <span class="n">Lime</span><span class="p">,</span> <span class="n">LimeBase</span>
+<span class="kn">from</span> <span class="nn">captum.attr._utils.batching</span> <span class="kn">import</span> <span class="n">_batch_example_iterator</span>
 <span class="kn">from</span> <span class="nn">captum.attr._utils.common</span> <span class="kn">import</span> <span class="n">_format_input_baseline</span>
 <span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
@@ -63,7 +65,8 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    In Captum, missing features are represented by the values provided in</span>
 <span class="sd">    `baselines`. This means Captum's KernelShap explains the model output</span>
 <span class="sd">    relative to the chosen baseline values, rather than sampling missing</span>
-<span class="sd">    features from a background distribution.</span>
+<span class="sd">    features from a background distribution. `BaselineKernelShap` is an alias</span>
+<span class="sd">    for this class that makes these baseline-substitution semantics explicit.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -416,6 +419,474 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="k">yield</span> <span class="p">(</span><span class="n">rand_vals</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span></div>
 </div>
+
+
+
+<span class="n">BaselineKernelShap</span> <span class="o">=</span> <span class="n">KernelShap</span>
+
+
+<div class="viewcode-block" id="RandomBaselineKernelShap">
+<a class="viewcode-back" href="../../../../kernel_shap.html#captum.attr.RandomBaselineKernelShap">[docs]</a>
+<span class="k">class</span> <span class="nc">RandomBaselineKernelShap</span><span class="p">(</span><span class="n">KernelShap</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Random Baseline Kernel SHAP is a perturbation-based method that computes</span>
+<span class="sd">    Random Baseline Shapley (RBShap) values using the Kernel SHAP weighted</span>
+<span class="sd">    linear surrogate. RBShap averages Baseline Shapley values over a</span>
+<span class="sd">    distribution of baselines. For a coalition of selected features `S`,</span>
+<span class="sd">    the value function is:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        v(S) = E_{b \sim D}[f(x_S; b_{\bar{S}})]</span>
+
+<span class="sd">    Captum's `KernelShap` / `BaselineKernelShap` uses one fixed baseline value</span>
+<span class="sd">    to represent missing features. `RandomBaselineKernelShap` instead uses a</span>
+<span class="sd">    baseline distribution and averages model evaluations over baseline samples</span>
+<span class="sd">    for each sampled coalition before fitting the same Kernel SHAP surrogate</span>
+<span class="sd">    model. This corresponds to the Random Baseline Shapley definition described</span>
+<span class="sd">    in "The Many Shapley Values for Model Explanation":</span>
+<span class="sd">    https://arxiv.org/abs/1908.08474</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">        Args:</span>
+
+<span class="sd">            forward_func (Callable): The forward function of the model or</span>
+<span class="sd">                        any modification of it.</span>
+<span class="sd">        """</span>
+        <span class="n">LimeBase</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">forward_func</span><span class="p">,</span>
+            <span class="n">interpretable_model</span><span class="o">=</span><span class="n">SkLearnLinearRegression</span><span class="p">(),</span>
+            <span class="n">similarity_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_shap_similarity_kernel</span><span class="p">,</span>
+            <span class="n">perturb_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_shap_perturb_generator</span><span class="p">,</span>
+            <span class="n">perturb_interpretable_space</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">from_interp_rep_transform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_baseline_from_interp_rep_transform</span><span class="p">,</span>
+            <span class="n">to_interp_rep_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inf_weight</span> <span class="o">=</span> <span class="mf">1000000.0</span>
+
+<div class="viewcode-block" id="RandomBaselineKernelShap.attribute">
+<a class="viewcode-back" href="../../../../kernel_shap.html#captum.attr.RandomBaselineKernelShap.attribute">[docs]</a>
+    <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+        <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">TargetType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">additional_forward_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+        <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">return_input_shape</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">n_baseline_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">        This method attributes the output of the model with given target index</span>
+<span class="sd">        (in case it is provided, otherwise it assumes that output is a</span>
+<span class="sd">        scalar) to the inputs of the model using Random Baseline Kernel SHAP.</span>
+<span class="sd">        It trains an interpretable weighted linear model using the Kernel SHAP</span>
+<span class="sd">        sampling distribution and returns the learned coefficients.</span>
+
+<span class="sd">        It is recommended to only provide a single example as input (tensors</span>
+<span class="sd">        with first dimension or batch size = 1). This is because LIME / KernelShap</span>
+<span class="sd">        is generally used for sample-based interpretability, training a separate</span>
+<span class="sd">        interpretable model to explain a model's prediction on each individual</span>
+<span class="sd">        example.</span>
+
+<span class="sd">        A batch of inputs can also be provided as inputs, similar to</span>
+<span class="sd">        other perturbation-based attribution methods. In this case, if forward_fn</span>
+<span class="sd">        returns a scalar per example, attributions will be computed for each</span>
+<span class="sd">        example independently, with a separate interpretable model trained for each</span>
+<span class="sd">        example. The same baseline distribution is used for each example.</span>
+
+<span class="sd">        The number of interpretable features is determined from the provided</span>
+<span class="sd">        feature mask, or if none is provided, from the default feature mask,</span>
+<span class="sd">        which considers each scalar input as a separate feature. It is</span>
+<span class="sd">        generally recommended to provide a feature mask which groups features</span>
+<span class="sd">        into a small number of interpretable features / components (e.g.</span>
+<span class="sd">        superpixels in images).</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            inputs (Tensor or tuple[Tensor, ...]): Input for which Random</span>
+<span class="sd">                        Baseline Kernel SHAP is computed. If forward_func takes</span>
+<span class="sd">                        a single tensor as input, a single input tensor should be</span>
+<span class="sd">                        provided. If forward_func takes multiple tensors as input,</span>
+<span class="sd">                        a tuple of input tensors should be provided. It is assumed</span>
+<span class="sd">                        that for all given input tensors, dimension 0 corresponds</span>
+<span class="sd">                        to the number of examples, and if multiple input tensors</span>
+<span class="sd">                        are provided, the examples must be aligned appropriately.</span>
+<span class="sd">            baselines (scalar, Tensor, tuple of scalar, or Tensor):</span>
+<span class="sd">                        Baselines define the reference distribution used to</span>
+<span class="sd">                        represent missing features. Tensor baselines should have</span>
+<span class="sd">                        first dimension equal to the number of baseline samples,</span>
+<span class="sd">                        and all remaining dimensions must match the corresponding</span>
+<span class="sd">                        input tensor's dimensions starting from dimension 1.</span>
+<span class="sd">                        If multiple input tensors are provided, tensor baselines</span>
+<span class="sd">                        may either share the same first dimension or have first</span>
+<span class="sd">                        dimension 1, in which case that baseline is broadcast</span>
+<span class="sd">                        across baseline samples. Scalar baselines are treated as</span>
+<span class="sd">                        a degenerate one-sample baseline distribution.</span>
+<span class="sd">            target (int, tuple, Tensor, or list, optional): Output indices for</span>
+<span class="sd">                        which surrogate model is trained</span>
+<span class="sd">                        (for classification cases,</span>
+<span class="sd">                        this is usually the target class).</span>
+<span class="sd">                        If the network returns a scalar value per example,</span>
+<span class="sd">                        no target index is necessary.</span>
+<span class="sd">                        For general 2D outputs, targets can be either:</span>
+
+<span class="sd">                        - a single integer or a tensor containing a single</span>
+<span class="sd">                          integer, which is applied to all input examples</span>
+
+<span class="sd">                        - a list of integers or a 1D tensor, with length matching</span>
+<span class="sd">                          the number of examples in inputs (dim 0). Each integer</span>
+<span class="sd">                          is applied as the target for the corresponding example.</span>
+
+<span class="sd">                        For outputs with &gt; 2 dimensions, targets can be either:</span>
+
+<span class="sd">                        - A single tuple, which contains #output_dims - 1</span>
+<span class="sd">                          elements. This target index is applied to all examples.</span>
+
+<span class="sd">                        - A list of tuples with length equal to the number of</span>
+<span class="sd">                          examples in inputs (dim 0), and each tuple containing</span>
+<span class="sd">                          #output_dims - 1 elements. Each tuple is applied as the</span>
+<span class="sd">                          target for the corresponding example.</span>
+
+<span class="sd">                        Default: None</span>
+<span class="sd">            additional_forward_args (Any, optional): If the forward function</span>
+<span class="sd">                        requires additional arguments other than the inputs for</span>
+<span class="sd">                        which attributions should not be computed, this argument</span>
+<span class="sd">                        can be provided. It must be either a single additional</span>
+<span class="sd">                        argument of a Tensor or arbitrary (non-tuple) type or a</span>
+<span class="sd">                        tuple containing multiple additional arguments including</span>
+<span class="sd">                        tensors or any arbitrary python types. These arguments</span>
+<span class="sd">                        are provided to forward_func in order following the</span>
+<span class="sd">                        arguments in inputs. For a tensor, the first dimension</span>
+<span class="sd">                        of the tensor must correspond to the number of examples.</span>
+<span class="sd">                        For all other types, the given argument is used for all</span>
+<span class="sd">                        forward evaluations. Note that attributions are not</span>
+<span class="sd">                        computed with respect to these arguments.</span>
+<span class="sd">                        Default: None</span>
+<span class="sd">            feature_mask (Tensor or tuple[Tensor, ...], optional):</span>
+<span class="sd">                        feature_mask defines a mask for the input, grouping</span>
+<span class="sd">                        features which correspond to the same interpretable</span>
+<span class="sd">                        feature. feature_mask should contain the same number of</span>
+<span class="sd">                        tensors as inputs. Each tensor should be the same size as</span>
+<span class="sd">                        the corresponding input or broadcastable to match the</span>
+<span class="sd">                        input tensor. Values across all tensors should be</span>
+<span class="sd">                        integers in the range 0 to num_interp_features - 1, and</span>
+<span class="sd">                        indices corresponding to the same feature should have the</span>
+<span class="sd">                        same value. Note that features are grouped across</span>
+<span class="sd">                        tensors, so if the same index is used in different</span>
+<span class="sd">                        tensors, those features are still grouped and added</span>
+<span class="sd">                        simultaneously. If None, then a feature mask is</span>
+<span class="sd">                        constructed which assigns each scalar within a tensor as</span>
+<span class="sd">                        a separate feature.</span>
+<span class="sd">                        Default: None</span>
+<span class="sd">            n_samples (int, optional): The number of sampled coalitions of the</span>
+<span class="sd">                        original model used to train the surrogate interpretable</span>
+<span class="sd">                        model.</span>
+<span class="sd">                        Default: 25</span>
+<span class="sd">            perturbations_per_eval (int, optional): Allows multiple sampled</span>
+<span class="sd">                        coalitions to be processed simultaneously in one call to</span>
+<span class="sd">                        forward_fn. Each forward pass will contain a maximum of</span>
+<span class="sd">                        perturbations_per_eval * #examples * #baseline_samples</span>
+<span class="sd">                        samples.</span>
+<span class="sd">                        Default: 1</span>
+<span class="sd">            return_input_shape (bool, optional): Determines whether the returned</span>
+<span class="sd">                        tensor(s) only contain the coefficients for each</span>
+<span class="sd">                        interpretable feature from the trained surrogate model,</span>
+<span class="sd">                        or whether the returned attributions match the input</span>
+<span class="sd">                        shape. When return_input_shape is True, the return type</span>
+<span class="sd">                        of attribute matches the input shape, with each element</span>
+<span class="sd">                        containing the coefficient of the corresponding</span>
+<span class="sd">                        interpretable feature. All elements with the same value</span>
+<span class="sd">                        in the feature mask will contain the same coefficient in</span>
+<span class="sd">                        the returned attributions. If return_input_shape is</span>
+<span class="sd">                        False, a 1D tensor is returned, containing only the</span>
+<span class="sd">                        coefficients of the trained interpretable model, with</span>
+<span class="sd">                        length num_interp_features.</span>
+<span class="sd">                        Default: True</span>
+<span class="sd">            show_progress (bool, optional): Displays the progress of computation.</span>
+<span class="sd">                        It will try to use tqdm if available for advanced</span>
+<span class="sd">                        features (e.g. time estimation). Otherwise, it will</span>
+<span class="sd">                        fallback to a simple output of progress.</span>
+<span class="sd">                        Default: False</span>
+<span class="sd">            n_baseline_samples (int, optional): The number of baseline samples</span>
+<span class="sd">                        to draw with replacement from the baseline distribution</span>
+<span class="sd">                        for each sampled coalition. If None, all provided</span>
+<span class="sd">                        baselines are used for each coalition, giving the exact</span>
+<span class="sd">                        average over the finite baseline distribution.</span>
+<span class="sd">                        Default: None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            *Tensor* or *tuple[Tensor, ...]* of **attributions**:</span>
+<span class="sd">            - **attributions** (*Tensor* or *tuple[Tensor, ...]*):</span>
+<span class="sd">                        The attributions with respect to each input feature.</span>
+<span class="sd">                        If return_input_shape = True, attributions will be the</span>
+<span class="sd">                        same size as the provided inputs, with each value</span>
+<span class="sd">                        providing the coefficient of the corresponding</span>
+<span class="sd">                        interpretable feature. If return_input_shape is False,</span>
+<span class="sd">                        a 1D tensor is returned, containing only the coefficients</span>
+<span class="sd">                        of the trained interpretable model, with length</span>
+<span class="sd">                        num_interp_features.</span>
+<span class="sd">        Examples::</span>
+<span class="sd">            &gt;&gt;&gt; # SimpleClassifier takes a single input tensor of size Nx4x4,</span>
+<span class="sd">            &gt;&gt;&gt; # and returns an Nx3 tensor of class probabilities.</span>
+<span class="sd">            &gt;&gt;&gt; net = SimpleClassifier()</span>
+
+<span class="sd">            &gt;&gt;&gt; # Generating random input with size 1 x 4 x 4 and a</span>
+<span class="sd">            &gt;&gt;&gt; # distribution of 10 baseline examples.</span>
+<span class="sd">            &gt;&gt;&gt; input = torch.randn(1, 4, 4)</span>
+<span class="sd">            &gt;&gt;&gt; baselines = torch.randn(10, 4, 4)</span>
+
+<span class="sd">            &gt;&gt;&gt; # Defining Random Baseline Kernel SHAP interpreter</span>
+<span class="sd">            &gt;&gt;&gt; rbks = RandomBaselineKernelShap(net)</span>
+<span class="sd">            &gt;&gt;&gt; attr = rbks.attribute(input, baselines, target=1, n_samples=200)</span>
+<span class="sd">        """</span>
+        <span class="n">formatted_inputs</span><span class="p">,</span> <span class="n">formatted_baselines</span> <span class="o">=</span> <span class="n">_format_input_baseline</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="p">,</span> <span class="n">baselines</span>
+        <span class="p">)</span>
+        <span class="n">num_baselines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_baseline_distribution</span><span class="p">(</span>
+            <span class="n">formatted_inputs</span><span class="p">,</span> <span class="n">formatted_baselines</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">n_baseline_samples</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_baseline_samples</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">n_baseline_samples</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">),</span> <span class="p">(</span>
+            <span class="s2">"n_baseline_samples must be None or a positive integer, "</span>
+            <span class="sa">f</span><span class="s2">"received </span><span class="si">{</span><span class="n">n_baseline_samples</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+        <span class="n">feature_mask</span><span class="p">,</span> <span class="n">num_interp_features</span> <span class="o">=</span> <span class="n">construct_feature_mask</span><span class="p">(</span>
+            <span class="n">feature_mask</span><span class="p">,</span> <span class="n">formatted_inputs</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">formatted_inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attribute_batch</span><span class="p">(</span>
+                <span class="n">inputs</span><span class="p">,</span>
+                <span class="n">formatted_inputs</span><span class="p">,</span>
+                <span class="n">formatted_baselines</span><span class="p">,</span>
+                <span class="n">target</span><span class="p">,</span>
+                <span class="n">additional_forward_args</span><span class="p">,</span>
+                <span class="n">feature_mask</span><span class="p">,</span>
+                <span class="n">n_samples</span><span class="p">,</span>
+                <span class="n">perturbations_per_eval</span><span class="p">,</span>
+                <span class="n">return_input_shape</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="p">,</span>
+                <span class="n">n_baseline_samples</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">num_features_list</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_interp_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">num_features_list</span> <span class="o">*</span> <span class="p">(</span><span class="n">num_interp_features</span> <span class="o">-</span> <span class="n">num_features_list</span><span class="p">)</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">((</span><span class="n">num_interp_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="n">denom</span>
+        <span class="n">probs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attribute_kwargs</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+            <span class="n">baselines</span><span class="o">=</span><span class="n">formatted_baselines</span><span class="p">,</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">additional_forward_args</span><span class="o">=</span><span class="n">additional_forward_args</span><span class="p">,</span>
+            <span class="n">feature_mask</span><span class="o">=</span><span class="n">feature_mask</span><span class="p">,</span>
+            <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+            <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
+            <span class="n">return_input_shape</span><span class="o">=</span><span class="n">return_input_shape</span><span class="p">,</span>
+            <span class="n">num_select_distribution</span><span class="o">=</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="p">),</span>
+            <span class="n">num_baselines</span><span class="o">=</span><span class="n">num_baselines</span><span class="p">,</span>
+            <span class="n">n_baseline_samples</span><span class="o">=</span><span class="n">n_baseline_samples</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_attribute_batch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+        <span class="n">formatted_inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">baselines</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">TargetType</span><span class="p">,</span>
+        <span class="n">additional_forward_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">object</span><span class="p">],</span>
+        <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">return_input_shape</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">n_baseline_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
+        <span class="n">bsz</span> <span class="o">=</span> <span class="n">formatted_inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">test_output</span> <span class="o">=</span> <span class="n">_run_forward</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">forward_func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">additional_forward_args</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test_output</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">test_output</span><span class="p">)</span> <span class="o">==</span> <span class="n">bsz</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"RandomBaselineKernelShap supports batched inputs only when "</span>
+            <span class="s2">"forward_func returns one scalar per example. For a single scalar "</span>
+            <span class="s2">"per input batch, compute attributions for one input batch at a time."</span>
+        <span class="p">)</span>
+
+        <span class="n">is_inputs_tuple</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
+        <span class="n">output_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="p">(</span>
+            <span class="n">curr_inps</span><span class="p">,</span>
+            <span class="n">curr_target</span><span class="p">,</span>
+            <span class="n">curr_additional_args</span><span class="p">,</span>
+            <span class="n">curr_feature_mask</span><span class="p">,</span>
+        <span class="p">)</span> <span class="ow">in</span> <span class="n">_batch_example_iterator</span><span class="p">(</span>
+            <span class="n">bsz</span><span class="p">,</span>
+            <span class="n">formatted_inputs</span><span class="p">,</span>
+            <span class="n">target</span><span class="p">,</span>
+            <span class="n">additional_forward_args</span><span class="p">,</span>
+            <span class="n">feature_mask</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="n">output_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span>
+                    <span class="n">curr_inps</span> <span class="k">if</span> <span class="n">is_inputs_tuple</span> <span class="k">else</span> <span class="n">curr_inps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">baselines</span><span class="o">=</span><span class="n">baselines</span><span class="p">,</span>
+                    <span class="n">target</span><span class="o">=</span><span class="n">curr_target</span><span class="p">,</span>
+                    <span class="n">additional_forward_args</span><span class="o">=</span><span class="n">curr_additional_args</span><span class="p">,</span>
+                    <span class="n">feature_mask</span><span class="o">=</span><span class="p">(</span>
+                        <span class="n">curr_feature_mask</span> <span class="k">if</span> <span class="n">is_inputs_tuple</span> <span class="k">else</span> <span class="n">curr_feature_mask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">),</span>
+                    <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
+                    <span class="n">return_input_shape</span><span class="o">=</span><span class="n">return_input_shape</span><span class="p">,</span>
+                    <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+                    <span class="n">n_baseline_samples</span><span class="o">=</span><span class="n">n_baseline_samples</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_reduce_list</span><span class="p">(</span><span class="n">output_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_baseline_distribution</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">baselines</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
+            <span class="n">baselines</span>
+        <span class="p">),</span> <span class="s2">"Must provide the same number of baseline entries as input tensors."</span>
+        <span class="n">baseline_counts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="nb">input</span><span class="p">,</span> <span class="n">baseline</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">baselines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">baseline</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="nb">input</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="n">baseline</span><span class="o">.</span><span class="n">dim</span><span class="p">(),</span> <span class="p">(</span>
+                    <span class="s2">"Baseline tensors must have the same number of dimensions "</span>
+                    <span class="s2">"as their corresponding input tensor. Found baseline: "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseline</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and input: </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span>
+                <span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">baseline</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="p">(</span>
+                    <span class="s2">"Baseline tensor dimensions after the first dimension must "</span>
+                    <span class="s2">"match the corresponding input tensor. Found baseline: "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">baseline</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and input: </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span>
+                <span class="p">)</span>
+                <span class="n">baseline_counts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">baseline</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">num_baselines</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">baseline_counts</span><span class="p">)</span> <span class="k">if</span> <span class="n">baseline_counts</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">baseline_counts</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">count</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_baselines</span><span class="p">),</span> <span class="p">(</span>
+                <span class="s2">"All baseline tensors must have the same first dimension, or "</span>
+                <span class="s2">"first dimension 1 so they can be broadcast across baseline "</span>
+                <span class="sa">f</span><span class="s2">"samples. Found counts: </span><span class="si">{</span><span class="n">baseline_counts</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">num_baselines</span>
+
+    <span class="k">def</span> <span class="nf">_get_model_input_multiplier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">n_baseline_samples</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"n_baseline_samples"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">n_baseline_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">n_baseline_samples</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"num_baselines"</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_aggregate_model_outputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model_out</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">num_interp_inputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">model_input_multiplier</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model_out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_interp_inputs</span><span class="p">,</span> <span class="n">model_input_multiplier</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">random_baseline_from_interp_rep_transform</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">curr_sample</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">original_inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="s2">"feature_mask"</span> <span class="ow">in</span> <span class="n">kwargs</span>
+        <span class="p">),</span> <span class="s2">"Must provide feature_mask to use Random Baseline Kernel SHAP"</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="s2">"baselines"</span> <span class="ow">in</span> <span class="n">kwargs</span>
+        <span class="p">),</span> <span class="s2">"Must provide baselines to use Random Baseline Kernel SHAP"</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_inputs</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">baseline_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_baseline_indices</span><span class="p">(</span><span class="n">original_inputs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replace_missing_with_random_baselines</span><span class="p">(</span>
+                <span class="n">curr_sample</span><span class="p">,</span>
+                <span class="n">original_inputs</span><span class="p">,</span>
+                <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"feature_mask"</span><span class="p">]),</span>
+                <span class="n">cast</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"baselines"</span><span class="p">]),</span>
+                <span class="n">baseline_indices</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">baseline_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_baseline_indices</span><span class="p">(</span><span class="n">original_inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">baselines</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"baselines"</span><span class="p">])</span>
+        <span class="n">feature_mask</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"feature_mask"</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+            <span class="nb">tuple</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_replace_missing_with_random_baselines</span><span class="p">(</span>
+                    <span class="n">curr_sample</span><span class="p">,</span>
+                    <span class="n">original_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">feature_mask</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">baselines</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">baseline_indices</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_mask</span><span class="p">))</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_sample_baseline_indices</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">num_baselines</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"num_baselines"</span><span class="p">])</span>
+        <span class="n">n_baseline_samples</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"n_baseline_samples"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">n_baseline_samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_baselines</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">num_baselines</span><span class="p">,</span> <span class="p">(</span><span class="n">n_baseline_samples</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_replace_missing_with_random_baselines</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">curr_sample</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">original_input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">baseline</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">baseline_indices</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">original_input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">),</span> <span class="s2">"RandomBaselineKernelShap expects one input example at a time."</span>
+        <span class="n">sample_count</span> <span class="o">=</span> <span class="n">baseline_indices</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="n">binary_mask</span> <span class="o">=</span> <span class="n">curr_sample</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">feature_mask</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+        <span class="n">expanded_input</span> <span class="o">=</span> <span class="n">original_input</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">sample_count</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">original_input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">baseline</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">baseline</span> <span class="o">=</span> <span class="n">baseline</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">original_input</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">original_input</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">baseline</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">selected_baselines</span> <span class="o">=</span> <span class="n">baseline</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">sample_count</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">baseline</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">selected_baselines</span> <span class="o">=</span> <span class="n">baseline</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">baseline_indices</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">selected_baselines</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">sample_count</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">original_input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+                <span class="n">baseline</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">original_input</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">original_input</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">binary_mask</span><span class="p">,</span> <span class="n">expanded_input</span><span class="p">,</span> <span class="n">selected_baselines</span><span class="p">)</span></div>
 
 </pre></div>
 </div>

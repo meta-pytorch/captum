@@ -262,6 +262,26 @@
     <td>Similar to Shapely value, but instead of considering all feature permutations it considers only #samples random permutations.</td>
   </tr>
   <tr>
+    <td><strong>KernelSHAP / BaselineKernelShap</strong></td>
+    <td>Perturbation </td>
+    <td>Any traditional or neural network model.</td>
+    <td>O(#examples * #features * #samples)</td>
+    <td>Forward</td>
+     <td>#examples * #samples</td>
+    <td>Yes (Single Baseline Per Input Example)</td>
+    <td>Uses the LIME framework with the Shapley kernel to estimate Baseline Shapley values. Missing features are replaced by the provided baseline values.</td>
+  </tr>
+  <tr>
+    <td><strong>RandomBaselineKernelShap</strong></td>
+    <td>Perturbation </td>
+    <td>Any traditional or neural network model.</td>
+    <td>O(#examples * #features * #samples * #baseline_samples)</td>
+    <td>Forward</td>
+     <td>#examples * #samples * #baseline_samples</td>
+    <td>Yes (Multiple Baselines Per Input Example)</td>
+    <td>Uses the same KernelSHAP surrogate as BaselineKernelShap, but averages each sampled coalition output over a baseline distribution before fitting the surrogate model.</td>
+  </tr>
+  <tr>
     <td><strong>NoiseTunnel</strong></td>
     <td> -  </td>
     <td>This can be used in combination with any above mentioned attribution algorithms</td>
