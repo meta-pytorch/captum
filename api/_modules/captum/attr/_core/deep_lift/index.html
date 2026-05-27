@@ -1113,7 +1113,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
     <span class="n">new_grad_inp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="nb">abs</span><span class="p">(</span><span class="n">delta_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">,</span> <span class="n">grad_input</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">unpool_grad_out_delta</span> <span class="o">/</span> <span class="n">delta_in</span>
+        <span class="nb">abs</span><span class="p">(</span><span class="n">delta_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">,</span> <span class="n">grad_input</span><span class="p">,</span> <span class="n">unpool_grad_out_delta</span> <span class="o">/</span> <span class="n">delta_in</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">new_grad_inp</span>
 
