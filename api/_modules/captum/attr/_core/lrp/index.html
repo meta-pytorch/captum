@@ -95,6 +95,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">        """</span>
         <span class="n">GradientAttribution</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_layers_with_added_rules</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_rules</span><span class="p">()</span>
 
     <span class="nd">@property</span>
@@ -234,6 +235,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_original_state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_layers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_layers_with_added_rules</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_attach_rules</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backward_handles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">RemovableHandle</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward_handles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">RemovableHandle</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -351,10 +353,12 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="ow">in</span> <span class="n">SUPPORTED_LAYERS_WITH_RULES</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">layer</span><span class="o">.</span><span class="n">activations</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># type: ignore</span>
                 <span class="n">layer</span><span class="o">.</span><span class="n">rule</span> <span class="o">=</span> <span class="n">SUPPORTED_LAYERS_WITH_RULES</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">)]()</span>  <span class="c1"># type: ignore</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_layers_with_added_rules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
                 <span class="n">layer</span><span class="o">.</span><span class="n">rule</span><span class="o">.</span><span class="n">relevance_input</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
                 <span class="n">layer</span><span class="o">.</span><span class="n">rule</span><span class="o">.</span><span class="n">relevance_output</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># type: ignore</span>
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="ow">in</span> <span class="n">SUPPORTED_NON_LINEAR_LAYERS</span><span class="p">:</span>
                 <span class="n">layer</span><span class="o">.</span><span class="n">rule</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_layers_with_added_rules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                     <span class="p">(</span>
@@ -446,7 +450,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">layer</span><span class="o">.</span><span class="n">rule</span><span class="o">.</span><span class="n">_handle_output_hook</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
 
     <span class="k">def</span> <span class="nf">_remove_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layers_with_added_rules</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="s2">"rule"</span><span class="p">):</span>
                 <span class="k">del</span> <span class="n">layer</span><span class="o">.</span><span class="n">rule</span>
 
