@@ -1063,7 +1063,7 @@ def maxpool(
         )
 
     new_grad_inp = torch.where(
-        abs(delta_in) < eps, grad_input[0], unpool_grad_out_delta / delta_in
+        abs(delta_in) < eps, grad_input, unpool_grad_out_delta / delta_in
     )
     return new_grad_inp
 

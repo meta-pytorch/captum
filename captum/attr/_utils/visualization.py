@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # pyre-strict
+import html
 import warnings
 from enum import Enum
 from typing import (
@@ -169,8 +170,27 @@ def _prepare_image(attr_visual: npt.NDArray) -> npt.NDArray:
     return np.clip(attr_visual.astype(int), 0, 255)
 
 
+def _prepare_image_for_display(original_image: npt.NDArray) -> npt.NDArray:
+    if np.issubdtype(original_image.dtype, np.floating):
+        min_value = np.min(original_image)
+        max_value = np.max(original_image)
+        if min_value < 0 or max_value > 1:
+            if min_value != max_value:
+                original_image = (original_image - min_value) / (max_value - min_value)
+            else:
+                original_image = np.zeros_like(original_image)
+        original_image = original_image * 255
+    return _prepare_image(original_image)
+
+
 def _normalize_scale(attr: npt.NDArray, scale_factor: float) -> npt.NDArray:
-    assert scale_factor != 0, "Cannot normalize by scale factor = 0"
+    if scale_factor == 0:
+        warnings.warn(
+            "No non-zero attribution values found for the selected sign; "
+            "returning an all-zero attribution visualization.",
+            stacklevel=2,
+        )
+        return np.zeros_like(attr)
     if abs(scale_factor) < 1e-5:
         warnings.warn(
             "Attempting to normalize by value approximately 0, visualized results"
@@ -477,8 +497,7 @@ def visualize_image_attr(
         plt_axis = plt_axis[0]
 
     if original_image is not None:
-        if np.max(original_image) <= 1.0:
-            original_image = _prepare_image(original_image * 255)
+        original_image = _prepare_image_for_display(original_image)
     elif (
         ImageVisualizationMethod[method].value
         != ImageVisualizationMethod.heat_map.value
@@ -1121,7 +1140,7 @@ def format_word_importances(
     assert len(words) <= len(importances)
     tags = ["<td>"]
     for word, importance in zip(words, importances[: len(words)]):
-        word = format_special_tokens(word)
+        word = html.escape(format_special_tokens(word))
         color = _get_color(importance)
         unwrapped_tag = '<mark style="background-color: {color}; opacity:1.0; \
                     line-height:1.75"><font color="black"> {word}\
@@ -1136,6 +1155,14 @@ def format_word_importances(
 def visualize_text(
     datarecords: Iterable[VisualizationDataRecord], legend: bool = True
 ) -> "HTML":  # In quotes because this type doesn't exist in standalone mode
+    r"""
+    Visualizes text attribution records and returns an IPython ``HTML`` object.
+
+    In notebooks this object is displayed inline. To persist the same rendering as
+    HTML, write ``html_obj.data`` from the returned object to an ``.html`` file.
+    Captum does not directly export this visualization as a raster image; use an
+    external HTML renderer or screenshot tool when an image file is required.
+    """
     assert HAS_IPYTHON, (
         "IPython must be available to visualize text. "
         "Please run 'pip install ipython'."

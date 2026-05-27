@@ -25,6 +25,11 @@ class KernelShap(Lime):
     More information regarding this method and proof of equivalence
     can be found in the original paper here:
     https://arxiv.org/abs/1705.07874
+
+    In Captum, missing features are represented by the values provided in
+    `baselines`. This means Captum's KernelShap explains the model output
+    relative to the chosen baseline values, rather than sampling missing
+    features from a background distribution.
     """
 
     def __init__(self, forward_func: Callable[..., Union[int, float, Tensor]]) -> None:
@@ -99,7 +104,10 @@ class KernelShap(Lime):
             baselines (scalar, Tensor, tuple of scalar, or Tensor, optional):
                         Baselines define the reference value which replaces each
                         feature when the corresponding interpretable feature
-                        is set to 0.
+                        is set to 0. Since missing features are replaced by
+                        these values, the returned attributions explain the
+                        model relative to the provided baselines rather than a
+                        background data distribution.
                         Baselines can be provided as:
 
                         - a single tensor, if inputs is a single tensor, with

@@ -6,7 +6,7 @@ from typing import TypeVar, Union
 
 import torch
 from captum._utils.typing import TargetType
-from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
+from captum.attr._core.deep_lift import DeepLift, DeepLiftShap, maxpool1d
 from captum.attr._core.integrated_gradients import IntegratedGradients
 from captum.testing.helpers.basic import assertAttributionComparision, BaseTest
 from captum.testing.helpers.basic_models import (
@@ -155,6 +155,29 @@ class Test(BaseTest):
         dl = DeepLift(model)
 
         self.softmax_classification(model, dl, input, baseline, torch.tensor(2))
+
+    def test_maxpool_uses_full_grad_input_for_equal_deltas(self) -> None:
+        module = torch.nn.MaxPool1d(kernel_size=2, stride=2)
+        inputs = torch.tensor(
+            [
+                [[1.0, 2.0, 3.0, 4.0]],
+                [[5.0, 6.0, 7.0, 8.0]],
+                [[1.0, 0.0, 9.0, 0.0]],
+                [[0.0, 6.0, 0.0, 8.0]],
+            ]
+        )
+        outputs = module(inputs)
+        module.input = inputs  # type: ignore[attr-defined]
+        grad_input = torch.arange(inputs.numel(), dtype=inputs.dtype).view_as(inputs)
+        grad_output = torch.ones_like(outputs)
+
+        multipliers = maxpool1d(module, inputs, outputs, grad_input, grad_output)
+
+        zero_delta_mask = (inputs[:2] - inputs[2:]).abs() < 1e-10
+        zero_delta_mask = torch.cat(2 * [zero_delta_mask])
+        self.assertTrue(
+            torch.equal(multipliers[zero_delta_mask], grad_input[zero_delta_mask])
+        )
 
     def softmax_classification(
         self,
