@@ -202,6 +202,19 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">attr_visual</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">_prepare_image_for_display</span><span class="p">(</span><span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">original_image</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+        <span class="n">min_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
+        <span class="n">max_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">min_value</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">max_value</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">min_value</span> <span class="o">!=</span> <span class="n">max_value</span><span class="p">:</span>
+                <span class="n">original_image</span> <span class="o">=</span> <span class="p">(</span><span class="n">original_image</span> <span class="o">-</span> <span class="n">min_value</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_value</span> <span class="o">-</span> <span class="n">min_value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">original_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
+        <span class="n">original_image</span> <span class="o">=</span> <span class="n">original_image</span> <span class="o">*</span> <span class="mi">255</span>
+    <span class="k">return</span> <span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
+
+
 <span class="k">def</span> <span class="nf">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">scale_factor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -518,8 +531,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">plt_axis</span> <span class="o">=</span> <span class="n">plt_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">original_image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
-            <span class="n">original_image</span> <span class="o">=</span> <span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="n">original_image</span> <span class="o">=</span> <span class="n">_prepare_image_for_display</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
     <span class="k">elif</span> <span class="p">(</span>
         <span class="n">ImageVisualizationMethod</span><span class="p">[</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
         <span class="o">!=</span> <span class="n">ImageVisualizationMethod</span><span class="o">.</span><span class="n">heat_map</span><span class="o">.</span><span class="n">value</span>
