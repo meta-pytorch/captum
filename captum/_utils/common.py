@@ -783,9 +783,12 @@ def _reduce_list(
     assert len(val_list) > 0, "Cannot reduce empty list!"
     if isinstance(val_list[0], torch.Tensor):
         first_device = cast(Tensor, val_list[0]).device
-        return red_func(
-            [elem.to(first_device) for elem in cast(List[Tensor], val_list)]
-        )
+        elems = [elem.to(first_device) for elem in cast(List[Tensor], val_list)]
+        # torch.cat cannot concatenate 0-dim tensors; unsqueeze so cat
+        # adds a leading dimension, matching torch.stack semantics.
+        if red_func is torch.cat and elems[0].dim() == 0:
+            elems = [e.unsqueeze(0) for e in elems]
+        return red_func(elems)
     elif isinstance(val_list[0], bool):
         # pyre-fixme[7]: Expected `TupleOrTensorOrBoolGeneric` but got `bool`.
         return any(val_list)

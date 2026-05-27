@@ -54,7 +54,7 @@ def apply_gradient_requirements(
         grad_required.append(input.requires_grad)
         inputs_dtype = input.dtype
         # Note: torch 1.2 doesn't support is_complex for dtype that's why we check
-        # on the existance of is_complex method.
+        # on the existence of is_complex method.
         if not inputs_dtype.is_floating_point and not (
             hasattr(inputs_dtype, "is_complex") and inputs_dtype.is_complex
         ):
@@ -317,9 +317,12 @@ def _forward_layer_distributed_eval(
                             eval_tsr.clone() for eval_tsr in eval_tsrs
                         ]
                     else:
-                        eval_tsrs_to_return = tuple(
-                            eval_tsr.clone() for eval_tsr in eval_tsrs
-                        )
+                        cloned = tuple(eval_tsr.clone() for eval_tsr in eval_tsrs)
+                        # Preserve namedtuple types (which are tuple subclasses)
+                        if type(eval_tsrs) is not tuple:
+                            eval_tsrs_to_return = type(eval_tsrs)(*cloned)
+                        else:
+                            eval_tsrs_to_return = cloned
                     return eval_tsrs_to_return
                 else:
                     saved_layer[original_module][eval_tsrs[0].device] = tuple(
@@ -748,21 +751,10 @@ def compute_layer_gradients_and_eval(
             **grad_kwargs or {},
         )
 
-        # When grad_kwargs sets ``allow_unused=True`` (e.g. layer attribution
-        # for multi-task models where some target layers are not connected to
-        # the selected output), ``torch.autograd.grad`` returns ``None`` for
-        # any input that did not contribute to the output. The mathematically
-        # correct gradient in that case is a zero tensor with the same shape
-        # as the layer output. Substitute zeros here so downstream consumers
-        # (e.g. ``_reduce_list``) keep their Tensor-only invariant intact.
-        if any(g is None for g in saved_grads):
-            saved_grads = tuple(
-                torch.zeros_like(layer_tensor) if grad is None else grad
-                for grad, layer_tensor in zip(saved_grads, grad_inputs)
-            )
+        has_allow_unused = (grad_kwargs or {}).get("allow_unused", False)
 
         offset = 0
-        all_grads: List[Tuple[Tensor, ...]] = []
+        all_grads: List[Optional[Tuple[Tensor, ...]]] = []
         for single_layer in all_layers:
             num_tensors = len(next(iter(saved_layer[single_layer].values())))
             curr_saved_grads = [
@@ -772,6 +764,27 @@ def compute_layer_gradients_and_eval(
                 )
             ]
             offset += len(key_list) * num_tensors
+
+            flat_grads = [g for grp in curr_saved_grads for g in grp]
+            if has_allow_unused and all(g is None for g in flat_grads):
+                all_grads.append(None)
+                continue
+
+            if any(g is None for g in flat_grads):
+                curr_saved_grads = [
+                    tuple(
+                        (
+                            torch.zeros_like(
+                                saved_layer[single_layer][key_list[dev_idx]][tensor_idx]
+                            )
+                            if g is None
+                            else g
+                        )
+                        for tensor_idx, g in enumerate(grp)
+                    )
+                    for dev_idx, grp in enumerate(curr_saved_grads)
+                ]
+
             if output_fn is not None:
                 curr_saved_grads = [
                     output_fn(curr_saved_grad) for curr_saved_grad in curr_saved_grads
@@ -782,10 +795,13 @@ def compute_layer_gradients_and_eval(
             # (torch.cat) since reducing on GPU first is slightly more
             # memory-efficient than moving individual tensors before reduction.
             if offload_to_cpu:
-                reduced = tuple(t.cpu() for t in reduced)
+                reduced = tuple(t.cpu() if t is not None else None for t in reduced)
             all_grads.append(reduced)
 
-        layer_grads: Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]
+        layer_grads: Union[
+            Optional[Tuple[Tensor, ...]],
+            List[Optional[Tuple[Tensor, ...]]],
+        ]
         layer_grads = all_grads
         if isinstance(layer, Module):
             layer_grads = all_grads[0]

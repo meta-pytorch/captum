@@ -85,7 +85,9 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
         additional_forward_args: Optional[object] = None,
         attribute_to_layer_input: bool = False,
         grad_kwargs: Optional[Dict[str, Any]] = None,
-    ) -> Union[Tensor, Tuple[Tensor, ...], List[Union[Tensor, Tuple[Tensor, ...]]]]:
+    ) -> Union[
+        Tensor, Tuple[Tensor, ...], List[Union[Tensor, Tuple[Tensor, ...], None]], None
+    ]:
         r"""
         Args:
 
@@ -145,8 +147,8 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
                         arguments for torch.autograd.grad.
                         Default: None
         Returns:
-            *Tensor* or *tuple[Tensor, ...]* or list of **attributions**:
-            - **attributions** (*Tensor*, *tuple[Tensor, ...]*, or *list*):
+            *Tensor* or *tuple[Tensor, ...]* or *None* or list of **attributions**:
+            - **attributions** (*Tensor*, *tuple[Tensor, ...]*, *None*, or *list*):
                         Product of gradient and activation for each
                         neuron in given layer output.
                         Attributions will always be the same size as the
@@ -154,9 +156,13 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
                         Attributions are returned in a tuple if
                         the layer inputs / outputs contain multiple tensors,
                         otherwise a single tensor is returned.
+                        If the layer is not differentiable with respect to
+                        the output, None is returned.
                         If multiple layers are provided, attributions
                         are returned as a list, each element corresponding to the
-                        activations of the corresponding layer.
+                        attributions of the corresponding layer. Individual
+                        elements may be None for layers that are not
+                        differentiable with respect to the output.
 
 
         Examples::
@@ -190,6 +196,8 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
             offload_to_cpu=self._memory_efficient,
         )
         if isinstance(self.layer, Module):
+            if layer_gradients is None:
+                return None
             return _format_output(
                 len(layer_evals) > 1,
                 self.multiply_gradient_acts(
@@ -202,22 +210,22 @@ class LayerGradientXActivation(LayerAttribution, GradientAttribution):
             for i in range(len(self.layer)):
                 grads_i = layer_gradients[i]
                 evals_i = layer_evals[i]
-                results.append(
-                    _format_output(
-                        len(evals_i) > 1,
-                        self.multiply_gradient_acts(grads_i, evals_i),
+                if grads_i is None or (
+                    isinstance(grads_i, tuple) and all(g is None for g in grads_i)
+                ):
+                    results.append(None)
+                else:
+                    results.append(
+                        _format_output(
+                            len(evals_i) > 1,
+                            self.multiply_gradient_acts(grads_i, evals_i),
+                        )
                     )
-                )
             return results
 
     def multiply_gradient_acts(
         self, gradients: Tuple[Tensor, ...], evals: Tuple[Tensor, ...]
     ) -> Tuple[Tensor, ...]:
-        return tuple(
-            (
-                single_gradient * single_eval
-                if self.multiplies_by_inputs
-                else single_gradient
-            )
-            for single_gradient, single_eval in zip(gradients, evals)
-        )
+        if not self.multiplies_by_inputs:
+            return gradients
+        return tuple(g * e for g, e in zip(gradients, evals))
