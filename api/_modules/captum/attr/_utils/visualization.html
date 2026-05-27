@@ -203,7 +203,13 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 <span class="k">def</span> <span class="nf">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">scale_factor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"Cannot normalize by scale factor = 0"</span>
+    <span class="k">if</span> <span class="n">scale_factor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"No non-zero attribution values found for the selected sign; "</span>
+            <span class="s2">"returning an all-zero attribution visualization."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">scale_factor</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s2">"Attempting to normalize by value approximately 0, visualized results"</span>

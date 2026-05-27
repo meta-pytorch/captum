@@ -752,7 +752,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">exp_set_lens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_set</span><span class="p">)</span> <span class="k">for</span> <span class="n">exp_set</span> <span class="ow">in</span> <span class="n">experimental_sets</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span>
         <span class="p">)</span>
-        <span class="n">exp_set_lens_arg_sort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">exp_set_lens</span><span class="p">)</span>
+        <span class="n">exp_set_lens_arg_sort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">exp_set_lens</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
 
         <span class="c1"># compute offsets using sorted lengths using their indices</span>
         <span class="n">exp_set_lens_sort</span> <span class="o">=</span> <span class="n">exp_set_lens</span><span class="p">[</span><span class="n">exp_set_lens_arg_sort</span><span class="p">]</span>
@@ -834,7 +834,13 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="p">)</span>
                 <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">return</span> <span class="n">scores</span></div>
+        <span class="c1"># Preserve the caller-provided experimental set order in the returned</span>
+        <span class="c1"># mapping, even though computation batches sets by concept count.</span>
+        <span class="n">ordered_scores</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">concepts_to_str</span><span class="p">(</span><span class="n">concepts</span><span class="p">):</span> <span class="n">scores</span><span class="p">[</span><span class="n">concepts_to_str</span><span class="p">(</span><span class="n">concepts</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">concepts</span> <span class="ow">in</span> <span class="n">experimental_sets</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">ordered_scores</span></div>
 
 
     <span class="k">def</span> <span class="nf">_tcav_sub_computation</span><span class="p">(</span>
