@@ -110,6 +110,35 @@ class Test(BaseTest):
         assertTensorAlmostEqual(self, attribs[:, 0], zeros, delta=0.05, mode="max")
         self.assertTrue((attribs[:, 1 : input_size[0]].abs() > 0).all())
 
+    def test_single_input_with_n_samples(self) -> None:
+        n_samples = 4
+
+        def forward_func(x: Tensor) -> Tensor:
+            return x.sum(dim=-1)
+
+        feature_importance = FeaturePermutation(forward_func=forward_func)
+        inp = torch.arange(20, dtype=torch.float).view(5, 4)
+
+        set_all_random_seeds(123)
+        attribs = feature_importance.attribute(inp, n_samples=n_samples)
+
+        set_all_random_seeds(123)
+        expected = torch.stack(
+            [feature_importance.attribute(inp) for _ in range(n_samples)]
+        ).mean(dim=0)
+
+        assertTensorAlmostEqual(self, attribs, expected, delta=1e-6, mode="max")
+
+    def test_n_samples_validation(self) -> None:
+        def forward_func(x: Tensor) -> Tensor:
+            return x.sum(dim=-1)
+
+        feature_importance = FeaturePermutation(forward_func=forward_func)
+        inp = torch.randn(2, 3)
+
+        with self.assertRaisesRegex(AssertionError, "n_samples"):
+            feature_importance.attribute(inp, n_samples=0)
+
     def test_simple_input_with_min_examples_in_group(self) -> None:
         def forward_func(x: Tensor) -> Tensor:
             return x.sum(dim=-1)

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 # pyre-strict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import torch
+from captum._utils.common import _format_output, _format_tensor_into_tuples
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.feature_ablation import FeatureAblation
 from captum.log import log_usage
@@ -108,6 +109,7 @@ class FeaturePermutation(FeatureAblation):
         additional_forward_args: Optional[object] = None,
         feature_mask: Union[None, TensorOrTupleOfTensorsGeneric] = None,
         perturbations_per_eval: int = 1,
+        n_samples: int = 1,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> TensorOrTupleOfTensorsGeneric:
@@ -199,6 +201,12 @@ class FeaturePermutation(FeatureAblation):
                             If the forward function returns a single scalar per batch,
                             perturbations_per_eval must be set to 1.
                             Default: 1
+                n_samples (int, optional): The number of independent
+                            permutation-attribution estimates to average. Each sample
+                            runs FeaturePermutation once, drawing a fresh random
+                            permutation for every feature group when using the default
+                            permutation function.
+                            Default: 1
                 show_progress (bool, optional): Displays the progress of computation.
                             It will try to use tqdm if available for advanced features
                             (e.g. time estimation). Otherwise, it will fallback to
@@ -262,6 +270,63 @@ class FeaturePermutation(FeatureAblation):
             >>> attr = feature_perm.attribute(input, target=1,
             >>>                               feature_mask=feature_mask)
         """
+        assert (
+            isinstance(n_samples, int) and n_samples >= 1
+        ), "n_samples must be an integer and at least 1."
+
+        attributions = self._attribute_single_sample(
+            inputs=inputs,
+            target=target,
+            additional_forward_args=additional_forward_args,
+            feature_mask=feature_mask,
+            perturbations_per_eval=perturbations_per_eval,
+            show_progress=show_progress,
+            **kwargs,
+        )
+
+        if n_samples == 1:
+            return attributions
+
+        is_attrib_tuple = isinstance(attributions, tuple)
+        formatted_attributions = _format_tensor_into_tuples(attributions)
+        for _ in range(n_samples - 1):
+            current_attributions = self._attribute_single_sample(
+                inputs=inputs,
+                target=target,
+                additional_forward_args=additional_forward_args,
+                feature_mask=feature_mask,
+                perturbations_per_eval=perturbations_per_eval,
+                show_progress=show_progress,
+                **kwargs,
+            )
+            formatted_current_attributions = _format_tensor_into_tuples(
+                current_attributions
+            )
+            formatted_attributions = tuple(
+                total + current
+                for total, current in zip(
+                    formatted_attributions, formatted_current_attributions
+                )
+            )
+
+        averaged_attributions = tuple(
+            attribution / n_samples for attribution in formatted_attributions
+        )
+        return cast(
+            TensorOrTupleOfTensorsGeneric,
+            _format_output(is_attrib_tuple, averaged_attributions),
+        )
+
+    def _attribute_single_sample(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        target: TargetType = None,
+        additional_forward_args: Optional[object] = None,
+        feature_mask: Union[None, TensorOrTupleOfTensorsGeneric] = None,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> TensorOrTupleOfTensorsGeneric:
         # Remove baselines from kwargs if provided so we don't specify this field
         # twice in the FeatureAblation.attribute call below.
         if isinstance(kwargs, dict) and "baselines" in kwargs:
