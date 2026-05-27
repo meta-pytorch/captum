@@ -3,6 +3,8 @@
 # pyre-strict
 
 import os
+import pickle
+import warnings
 from contextlib import AbstractContextManager, nullcontext
 from typing import Any, Dict, List, Optional
 
@@ -113,13 +115,28 @@ class CAV:
             "concept_ids": [c.id for c in self.concepts],
             "concept_names": [c.name for c in self.concepts],
             "layer": self.layer,
-            "stats": self.stats,
+            "stats": self._format_for_weights_only_load(self.stats),
         }
 
         cavs_path = CAV.assemble_save_path(
             self.save_path, self.model_id, self.concepts, self.layer
         )
         torch.save(save_dict, cavs_path)
+
+    @staticmethod
+    def _format_for_weights_only_load(value: Any) -> Any:
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, dict):
+            return {
+                key: CAV._format_for_weights_only_load(val)
+                for key, val in value.items()
+            }
+        if isinstance(value, (list, tuple)):
+            return [CAV._format_for_weights_only_load(val) for val in value]
+        return value
 
     @staticmethod
     def create_cav_dir_if_missing(save_path: str, model_id: str) -> None:
@@ -170,25 +187,44 @@ class CAV:
         if os.path.exists(cavs_path):
             ctx: AbstractContextManager[None, None]
             if hasattr(torch.serialization, "safe_globals"):
-                safe_globals = [
-                    np.core.multiarray._reconstruct,  # type: ignore[attr-defined]
-                    np.ndarray,
-                    np.dtype,
-                ]
-                if hasattr(np, "dtypes"):
-                    safe_globals.extend(
-                        [
-                            np.dtypes.UInt32DType,  # type: ignore
-                            np.dtypes.Int32DType,  # type: ignore
-                        ]
-                    )
+                safe_globals: List[Any] = [np.ndarray, np.dtype]
+                for numpy_core in (
+                    getattr(np, "core", None),
+                    getattr(np, "_core", None),
+                ):
+                    multiarray = getattr(numpy_core, "multiarray", None)
+                    reconstruct = getattr(multiarray, "_reconstruct", None)
+                    if reconstruct is not None and reconstruct not in safe_globals:
+                        safe_globals.append(reconstruct)
+                for dtype_name in (
+                    "float32",
+                    "float64",
+                    "int32",
+                    "int64",
+                    "uint32",
+                    "uint64",
+                ):
+                    dtype_cls = type(np.dtype(dtype_name))
+                    if dtype_cls not in safe_globals:
+                        safe_globals.append(dtype_cls)
                 ctx = torch.serialization.safe_globals(safe_globals)
             else:
                 # safe globals not in existence in this version of torch yet. Use a
                 # dummy context manager instead
                 ctx = nullcontext()
             with ctx:
-                save_dict = torch.load(cavs_path)
+                try:
+                    save_dict = torch.load(cavs_path, weights_only=True)
+                except pickle.UnpicklingError:
+                    if hasattr(torch.serialization, "safe_globals"):
+                        raise
+                    warnings.warn(
+                        "Unable to load CAV file with `weights_only=True` on this "
+                        "PyTorch version. Falling back to `weights_only=False` for "
+                        "backward compatibility with legacy CAV files.",
+                        stacklevel=2,
+                    )
+                    save_dict = torch.load(cavs_path, weights_only=False)
 
             concept_names = save_dict["concept_names"]
             concept_ids = save_dict["concept_ids"]

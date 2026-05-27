@@ -7,7 +7,7 @@ from typing import TypeVar, Union
 import torch
 import torch.nn.functional as F
 from captum._utils.typing import TargetType
-from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
+from captum.attr._core.deep_lift import DeepLift, DeepLiftShap, maxpool1d, softmax
 from captum.attr._core.integrated_gradients import IntegratedGradients
 from captum.testing.helpers.basic import assertAttributionComparision, BaseTest
 from captum.testing.helpers.basic_models import (
@@ -369,6 +369,54 @@ class Test(BaseTest):
                     delta
                 ),
             )
+
+    def test_maxpool_uses_full_grad_input_for_equal_deltas(self) -> None:
+        module = torch.nn.MaxPool1d(kernel_size=2, stride=2)
+        inputs = torch.tensor(
+            [
+                [[1.0, 2.0, 3.0, 4.0]],
+                [[5.0, 6.0, 7.0, 8.0]],
+                [[1.0, 0.0, 9.0, 0.0]],
+                [[0.0, 6.0, 0.0, 8.0]],
+            ]
+        )
+        outputs = module(inputs)
+        module.input = inputs  # type: ignore[attr-defined]
+        grad_input = torch.arange(inputs.numel(), dtype=inputs.dtype).view_as(inputs)
+        grad_output = torch.ones_like(outputs)
+
+        multipliers = maxpool1d(module, inputs, outputs, grad_input, grad_output)
+
+        zero_delta_mask = (inputs[:2] - inputs[2:]).abs() < 1e-10
+        zero_delta_mask = torch.cat(2 * [zero_delta_mask])
+        self.assertTrue(
+            torch.equal(multipliers[zero_delta_mask], grad_input[zero_delta_mask])
+        )
+
+    def test_softmax_uses_rescale_without_normalization(self) -> None:
+        module = torch.nn.Softmax(dim=1)
+        inputs = torch.tensor(
+            [
+                [1.0, 2.0, 3.0],
+                [3.0, 1.0, 0.0],
+                [0.5, 1.0, 1.5],
+                [1.0, 0.0, -1.0],
+            ]
+        )
+        outputs = module(inputs)
+        grad_input = torch.full_like(inputs, 0.25)
+        grad_output = torch.ones_like(outputs)
+
+        multipliers = softmax(module, inputs, outputs, grad_input, grad_output)
+
+        delta_in = inputs[:2] - inputs[2:]
+        delta_out = outputs[:2] - outputs[2:]
+        delta_in = torch.cat(2 * [delta_in])
+        delta_out = torch.cat(2 * [delta_out])
+        expected = torch.where(
+            delta_in.abs() < 1e-10, grad_input, grad_output * delta_out / delta_in
+        )
+        torch.testing.assert_close(multipliers, expected)
 
     def softmax_classification(
         self,

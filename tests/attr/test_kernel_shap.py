@@ -9,7 +9,11 @@ from typing import Any, Callable, List, Tuple, Union
 
 import torch
 from captum._utils.typing import BaselineType, TensorOrTupleOfTensorsGeneric
-from captum.attr._core.kernel_shap import KernelShap
+from captum.attr._core.kernel_shap import (
+    BaselineKernelShap,
+    KernelShap,
+    RandomBaselineKernelShap,
+)
 from captum.testing.helpers.basic import (
     assertTensorAlmostEqual,
     assertTensorTuplesAlmostEqual,
@@ -18,6 +22,7 @@ from captum.testing.helpers.basic import (
 )
 from captum.testing.helpers.basic_models import (
     BasicLinearModel,
+    BasicLinearModel2,
     BasicModel_MultiLayer,
     BasicModel_MultiLayer_MultiInput,
 )
@@ -48,6 +53,152 @@ class Test(BaseTest):
             n_samples=500,
             baselines=baseline,
             expected_coefs=[[40.0, 120.0, 80.0]],
+        )
+
+    def test_baseline_kernel_shap_alias(self) -> None:
+        self.assertIs(BaselineKernelShap, KernelShap)
+
+    def test_random_baseline_kernel_shap_linear(self) -> None:
+        weight = torch.tensor([[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]])
+        net = BasicLinearModel2(3, 2)
+        net.linear.weight = torch.nn.Parameter(weight)
+        inp = torch.tensor([[10.0, 20.0, 30.0]])
+        baselines = torch.tensor([[0.0, 0.0, 0.0], [2.0, 4.0, 6.0]])
+
+        rbks = RandomBaselineKernelShap(net)
+        attributions = rbks.attribute(
+            inp,
+            baselines,
+            target=0,
+            n_samples=500,
+            perturbations_per_eval=2,
+        )
+
+        assertTensorAlmostEqual(
+            self,
+            attributions,
+            [[9.0, 36.0, 81.0]],
+            delta=0.1,
+            mode="max",
+        )
+
+        attributions = rbks.attribute(
+            inp,
+            baselines,
+            target=0,
+            n_samples=500,
+            perturbations_per_eval=2,
+            return_input_shape=False,
+        )
+
+        assertTensorAlmostEqual(
+            self,
+            attributions,
+            [[9.0, 36.0, 81.0]],
+            delta=0.1,
+            mode="max",
+        )
+
+    def test_random_baseline_kernel_shap_matches_single_baseline(self) -> None:
+        net = BasicModel_MultiLayer()
+        inp = torch.tensor([[20.0, 50.0, 30.0]])
+        baseline = torch.tensor([[10.0, 20.0, 10.0]])
+
+        set_all_random_seeds(1234)
+        kernel_shap_attr = KernelShap(net).attribute(
+            inp,
+            baseline,
+            target=0,
+            n_samples=200,
+            perturbations_per_eval=2,
+        )
+
+        set_all_random_seeds(1234)
+        random_baseline_attr = RandomBaselineKernelShap(net).attribute(
+            inp,
+            baseline,
+            target=0,
+            n_samples=200,
+            perturbations_per_eval=2,
+        )
+
+        assertTensorAlmostEqual(
+            self,
+            random_baseline_attr,
+            kernel_shap_attr,
+            delta=0.01,
+            mode="max",
+        )
+
+        set_all_random_seeds(1234)
+        sampled_baseline_attr = RandomBaselineKernelShap(net).attribute(
+            inp,
+            torch.cat((baseline, baseline), dim=0),
+            target=0,
+            n_samples=200,
+            perturbations_per_eval=2,
+            n_baseline_samples=1,
+        )
+
+        assertTensorAlmostEqual(
+            self,
+            sampled_baseline_attr,
+            kernel_shap_attr,
+            delta=0.01,
+            mode="max",
+        )
+
+    def test_random_baseline_kernel_shap_batch_uses_distribution(
+        self,
+    ) -> None:
+        weight = torch.tensor([[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]])
+        net = BasicLinearModel2(3, 2)
+        net.linear.weight = torch.nn.Parameter(weight)
+        inp = torch.tensor([[10.0, 20.0, 30.0], [4.0, 6.0, 8.0]])
+        baselines = torch.tensor([[0.0, 0.0, 0.0], [2.0, 4.0, 6.0]])
+
+        rbks = RandomBaselineKernelShap(net)
+        attributions = rbks.attribute(
+            inp,
+            baselines,
+            target=0,
+            n_samples=500,
+            perturbations_per_eval=2,
+        )
+
+        assertTensorAlmostEqual(
+            self,
+            attributions,
+            [[9.0, 36.0, 81.0], [3.0, 8.0, 15.0]],
+            delta=0.1,
+            mode="max",
+        )
+
+    def test_random_baseline_kernel_shap_multi_input(self) -> None:
+        def model(input1: Tensor, input2: Tensor) -> Tensor:
+            return input1[:, 0] + 2.0 * input1[:, 1] + 3.0 * input2[:, 0]
+
+        inp1 = torch.tensor([[10.0, 20.0]])
+        inp2 = torch.tensor([[30.0]])
+        baselines = (
+            torch.tensor([[0.0, 0.0], [2.0, 4.0]]),
+            torch.tensor([[0.0], [6.0]]),
+        )
+
+        rbks = RandomBaselineKernelShap(model)
+        attributions = rbks.attribute(
+            (inp1, inp2),
+            baselines,
+            n_samples=500,
+            perturbations_per_eval=2,
+        )
+
+        assertTensorTuplesAlmostEqual(
+            self,
+            attributions,
+            ([[9.0, 36.0]], [[81.0]]),
+            delta=0.1,
+            mode="max",
         )
 
     def test_simple_kernel_shap(self) -> None:

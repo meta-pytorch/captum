@@ -11,7 +11,9 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
+    overload,
     Sequence,
     Tuple,
     Union,
@@ -170,8 +172,27 @@ def _prepare_image(attr_visual: npt.NDArray) -> npt.NDArray:
     return np.clip(attr_visual.astype(int), 0, 255)
 
 
+def _prepare_image_for_display(original_image: npt.NDArray) -> npt.NDArray:
+    if np.issubdtype(original_image.dtype, np.floating):
+        min_value = np.min(original_image)
+        max_value = np.max(original_image)
+        if min_value < 0 or max_value > 1:
+            if min_value != max_value:
+                original_image = (original_image - min_value) / (max_value - min_value)
+            else:
+                original_image = np.zeros_like(original_image)
+        original_image = original_image * 255
+    return _prepare_image(original_image)
+
+
 def _normalize_scale(attr: npt.NDArray, scale_factor: float) -> npt.NDArray:
-    assert scale_factor != 0, "Cannot normalize by scale factor = 0"
+    if scale_factor == 0:
+        warnings.warn(
+            "No non-zero attribution values found for the selected sign; "
+            "returning an all-zero attribution visualization.",
+            stacklevel=2,
+        )
+        return np.zeros_like(attr)
     if abs(scale_factor) < 1e-5:
         warnings.warn(
             "Attempting to normalize by value approximately 0, visualized results"
@@ -347,6 +368,18 @@ def _visualize_alpha_scaling(
     )
 
 
+def _get_image_attr_visualization_array(image: AxesImage) -> npt.NDArray:
+    image_array = np.asarray(image.get_array())
+
+    if image_array.ndim == 2:
+        return np.asarray(
+            image.to_rgba(image_array, alpha=image.get_alpha(), bytes=True)
+        )
+
+    return image_array.copy()
+
+
+@overload
 def visualize_image_attr(
     attr: npt.NDArray,
     original_image: Optional[npt.NDArray] = None,
@@ -360,7 +393,43 @@ def visualize_image_attr(
     title: Optional[str] = None,
     fig_size: Tuple[int, int] = (6, 6),
     use_pyplot: bool = True,
-) -> Tuple[Figure, Axes]:
+    return_numpy: Literal[False] = False,
+) -> Tuple[Figure, Axes]: ...
+
+
+@overload
+def visualize_image_attr(
+    attr: npt.NDArray,
+    original_image: Optional[npt.NDArray] = None,
+    method: str = "heat_map",
+    sign: str = "absolute_value",
+    plt_fig_axis: Optional[Tuple[Figure, Axes]] = None,
+    outlier_perc: Union[int, float] = 2,
+    cmap: Optional[Union[str, Colormap]] = None,
+    alpha_overlay: float = 0.5,
+    show_colorbar: bool = False,
+    title: Optional[str] = None,
+    fig_size: Tuple[int, int] = (6, 6),
+    use_pyplot: bool = True,
+    return_numpy: Literal[True] = True,
+) -> npt.NDArray: ...
+
+
+def visualize_image_attr(
+    attr: npt.NDArray,
+    original_image: Optional[npt.NDArray] = None,
+    method: str = "heat_map",
+    sign: str = "absolute_value",
+    plt_fig_axis: Optional[Tuple[Figure, Axes]] = None,
+    outlier_perc: Union[int, float] = 2,
+    cmap: Optional[Union[str, Colormap]] = None,
+    alpha_overlay: float = 0.5,
+    show_colorbar: bool = False,
+    title: Optional[str] = None,
+    fig_size: Tuple[int, int] = (6, 6),
+    use_pyplot: bool = True,
+    return_numpy: bool = False,
+) -> Union[Tuple[Figure, Axes], npt.NDArray]:
     r"""
     Visualizes attribution for a given image by normalizing attribution values
     of the desired sign (positive, negative, absolute value, or all) and displaying
@@ -449,9 +518,17 @@ def visualize_image_attr(
                     uses Matplotlib object oriented API and simply returns a
                     figure object without showing.
                     Default: True.
+        return_numpy (bool, optional): If true, returns the visualized image as
+                    a numpy array instead of the matplotlib figure and axis.
+                    Heatmap-based methods return an RGBA array after applying
+                    the colormap. Image-based methods return the image array
+                    passed to matplotlib. In all cases, the returned array has
+                    the attribution image height and width rather than the
+                    rendered figure canvas size.
+                    Default: False.
 
     Returns:
-        2-element tuple of **figure**, **axis**:
+        If return_numpy is False, a 2-element tuple of **figure**, **axis**:
         - **figure** (*matplotlib.pyplot.figure*):
                     Figure object on which visualization
                     is created. If plt_fig_axis argument is given, this is the
@@ -460,6 +537,9 @@ def visualize_image_attr(
                     Axis object on which visualization
                     is created. If plt_fig_axis argument is given, this is the
                     same axis provided.
+
+        If return_numpy is True, returns a numpy array containing the visualized
+                    image data.
 
     Examples::
 
@@ -478,8 +558,7 @@ def visualize_image_attr(
         plt_axis = plt_axis[0]
 
     if original_image is not None:
-        if np.max(original_image) <= 1.0:
-            original_image = _prepare_image(original_image * 255)
+        original_image = _prepare_image_for_display(original_image)
     elif (
         ImageVisualizationMethod[method].value
         != ImageVisualizationMethod.heat_map.value
@@ -547,8 +626,16 @@ def visualize_image_attr(
     if title:
         plt_axis.set_title(title)
 
+    visualization_array: Optional[npt.NDArray] = None
+    if return_numpy:
+        image = heat_map if heat_map is not None else plt_axis.images[-1]
+        visualization_array = _get_image_attr_visualization_array(image)
+
     if use_pyplot:
         plt.show()
+
+    if return_numpy:
+        return cast(npt.NDArray, visualization_array)
 
     return plt_fig, plt_axis
 

@@ -1849,12 +1849,7 @@ def softmax(
     grad_input_unnorm = torch.where(
         abs(delta_in) < eps, grad_input, grad_output * delta_out / delta_in
     )
-    # normalizing
-    n = grad_input.numel()
-
-    # updating only the first half
-    new_grad_inp = grad_input_unnorm - grad_input_unnorm.sum() * 1 / n
-    return new_grad_inp
+    return grad_input_unnorm
 
 
 def maxpool1d(
@@ -1979,7 +1974,7 @@ def maxpool(
         )
 
     new_grad_inp = torch.where(
-        abs(delta_in) < eps, grad_input[0], unpool_grad_out_delta / delta_in
+        abs(delta_in) < eps, grad_input, unpool_grad_out_delta / delta_in
     )
     return new_grad_inp
 
