@@ -558,7 +558,7 @@ Update path to the dataset here.</p>
     
     <span class="c1"># Create TitanicSimpleNNModel and load saved weights.</span>
     <span class="n">net</span> <span class="o">=</span> <span class="n">TitanicSimpleNNModel</span><span class="p">()</span>
-    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/titanic_model.pt'</span><span class="p">))</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/titanic_model.pt'</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
     
     <span class="c1"># Create sampler which divides dataset among processes.</span>
     <span class="n">sampler</span> <span class="o">=</span> <span class="n">DistributedSampler</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span><span class="n">num_replicas</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>

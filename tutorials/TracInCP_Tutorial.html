@@ -478,7 +478,7 @@ For this tutorial, we have saved the checkpoints from this training on AWS S3, a
 <div class="inner_cell">
 <div class="input_area">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">checkpoints_load_func</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="s2">"model_state_dict"</span><span class="p">])</span>
     <span class="k">return</span> <span class="mf">1.</span>
 </pre></div>

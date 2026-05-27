@@ -70,7 +70,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # In[ ]:
 
 
-saved_state = torch.load('models/2017-08-04_00.55.19.pth', map_location=device)
+saved_state = torch.load('models/2017-08-04_00.55.19.pth', map_location=device, weights_only=True)
 
 # reading vocabulary from saved model
 vocab = saved_state['vocab']

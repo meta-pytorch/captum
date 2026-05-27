@@ -468,7 +468,7 @@ This variable is positively correlated with the house value. The higher the aver
     <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_path</span><span class="p">):</span>
         <span class="c1"># load model</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">'Loading pre-trained model from: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model_path</span><span class="p">))</span>
-        <span class="n">model_obj</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">))</span>
+        <span class="n">model_obj</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>    
         <span class="c1"># train model</span>
         <span class="n">train</span><span class="p">(</span><span class="n">model_obj</span><span class="p">)</span>

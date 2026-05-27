@@ -100,7 +100,7 @@ def get_prediction(model, input, normalize_im=False):
 # In[6]:
 
 
-net.load_state_dict(torch.load('models/cifar_torchvision.pt'))
+net.load_state_dict(torch.load('models/cifar_torchvision.pt', weights_only=True))
 
 # Now we are ready for the central part of this tutorial - generating adversarial examples with FGSM and PGD from Captum and then applying robustness metrics to better understand model vulnerabilities and the decision boundary. 
 # 

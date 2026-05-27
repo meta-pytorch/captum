@@ -137,7 +137,7 @@ net = TitanicSimpleNNModel()
 USE_PRETRAINED_MODEL = True
 
 if USE_PRETRAINED_MODEL:
-    net.load_state_dict(torch.load('models/titanic_model.pt'))
+    net.load_state_dict(torch.load('models/titanic_model.pt', weights_only=True))
     print("Model Loaded!")
     input_tensor = torch.from_numpy(train_features).type(torch.FloatTensor)
     label_tensor = torch.from_numpy(train_labels)

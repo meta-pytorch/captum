@@ -251,7 +251,7 @@ def run(rank, size):
     
     # Create TitanicSimpleNNModel and load saved weights.
     net = TitanicSimpleNNModel()
-    net.load_state_dict(torch.load('models/titanic_model.pt'))
+    net.load_state_dict(torch.load('models/titanic_model.pt', weights_only=True))
     
     # Create sampler which divides dataset among processes.
     sampler = DistributedSampler(dataset,num_replicas=size, rank=rank, shuffle=False)

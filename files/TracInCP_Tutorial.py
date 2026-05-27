@@ -240,7 +240,7 @@ correct_dataset_checkpoint_paths = glob.glob(os.path.join(correct_dataset_checkp
 
 
 def checkpoints_load_func(net, path):
-    weights = torch.load(path)
+    weights = torch.load(path, weights_only=True)
     net.load_state_dict(weights["model_state_dict"])
     return 1.
 

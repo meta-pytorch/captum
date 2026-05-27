@@ -118,8 +118,8 @@ dlrm = dlrm.to(device)
 # In[8]:
 
 
-S_T_Z_test_above_0999 = torch.load('data/dlrm/X_S_T_test_above_0999')
-S_T_Z_test = torch.load('data/dlrm/X_S_T_test')
+S_T_Z_test_above_0999 = torch.load('data/dlrm/X_S_T_test_above_0999', weights_only=True)
+S_T_Z_test = torch.load('data/dlrm/X_S_T_test', weights_only=True)
 
 # Redefining forward pass for the DLRM model so that it accepts sparse embeddings instead of feature indices and offsets. This is done this way because `apply_emb` cannot be easily replaced by model hooks. https://github.com/facebookresearch/dlrm/blob/52b77f80a24303294a02c86b574529cdc420aac5/dlrm_s_pytorch.py#L276.
 

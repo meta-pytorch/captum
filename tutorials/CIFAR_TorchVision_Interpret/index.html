@@ -245,7 +245,7 @@ In order to avoid training the model every time from scratch, we save a pretrain
 
 <span class="k">if</span> <span class="n">USE_PRETRAINED_MODEL</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">"Using existing trained model"</span><span class="p">)</span>
-    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/cifar_torchvision.pt'</span><span class="p">))</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/cifar_torchvision.pt'</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>  <span class="c1"># loop over the dataset multiple times</span>
 

@@ -465,7 +465,7 @@ def train_model(train_loader, val_loader):
     torch.save(model, CHECKPOINT)
     return model
         
-eb_model = torch.load(CHECKPOINT) if USE_PRETRAINED else train_model(train_loader, val_loader)
+eb_model = torch.load(CHECKPOINT, weights_only=False) if USE_PRETRAINED else train_model(train_loader, val_loader)
 
 # Now, let us take the following sports news and test how our model performs.
 

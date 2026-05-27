@@ -222,7 +222,7 @@ def train_load_save_model(model_obj, model_path):
     if path.isfile(model_path):
         # load model
         print('Loading pre-trained model from: {}'.format(model_path))
-        model_obj.load_state_dict(torch.load(model_path))
+        model_obj.load_state_dict(torch.load(model_path, weights_only=True))
     else:    
         # train model
         train(model_obj)

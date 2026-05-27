@@ -112,7 +112,7 @@ USE_PRETRAINED_MODEL = True
 
 if USE_PRETRAINED_MODEL:
     print("Using existing trained model")
-    net.load_state_dict(torch.load('models/cifar_torchvision.pt'))
+    net.load_state_dict(torch.load('models/cifar_torchvision.pt', weights_only=True))
 else:
     for epoch in range(5):  # loop over the dataset multiple times
 

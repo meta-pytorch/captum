@@ -234,7 +234,7 @@ class CNN(nn.Module):
 # In[13]:
 
 
-model = torch.load('models/imdb-model-cnn-large.pt')
+model = torch.load('models/imdb-model-cnn-large.pt', weights_only=False)
 model.eval()
 
 # # Compute TCAV Scores

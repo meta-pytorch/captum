@@ -313,7 +313,7 @@ Download complete.
 <span class="n">USE_PRETRAINED_MODEL</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="k">if</span> <span class="n">USE_PRETRAINED_MODEL</span><span class="p">:</span>
-    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/titanic_model.pt'</span><span class="p">))</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'models/titanic_model.pt'</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">"Model Loaded!"</span><span class="p">)</span>
     <span class="n">input_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_features</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span>
     <span class="n">label_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_labels</span><span class="p">)</span>
