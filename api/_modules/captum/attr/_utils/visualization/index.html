@@ -43,7 +43,9 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Dict</span><span class="p">,</span>
     <span class="n">Iterable</span><span class="p">,</span>
     <span class="n">List</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
     <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">overload</span><span class="p">,</span>
     <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">Tuple</span><span class="p">,</span>
     <span class="n">Union</span><span class="p">,</span>
@@ -398,6 +400,53 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">_get_image_attr_visualization_array</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">AxesImage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+    <span class="n">image_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">get_array</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">image_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">image</span><span class="o">.</span><span class="n">to_rgba</span><span class="p">(</span><span class="n">image_array</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">get_alpha</span><span class="p">(),</span> <span class="nb">bytes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">image_array</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"heat_map"</span><span class="p">,</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"absolute_value"</span><span class="p">,</span>
+    <span class="n">plt_fig_axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">outlier_perc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">show_colorbar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_numpy</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">]:</span> <span class="o">...</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
+    <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"heat_map"</span><span class="p">,</span>
+    <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"absolute_value"</span><span class="p">,</span>
+    <span class="n">plt_fig_axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">outlier_perc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha_overlay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">show_colorbar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_numpy</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">True</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span> <span class="o">...</span>
+
+
 <div class="viewcode-block" id="visualize_image_attr">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_image_attr">[docs]</a>
 <span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
@@ -413,7 +462,8 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
     <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">]:</span>
+    <span class="n">return_numpy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Axes</span><span class="p">],</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Visualizes attribution for a given image by normalizing attribution values</span>
 <span class="sd">    of the desired sign (positive, negative, absolute value, or all) and displaying</span>
@@ -502,9 +552,17 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                    uses Matplotlib object oriented API and simply returns a</span>
 <span class="sd">                    figure object without showing.</span>
 <span class="sd">                    Default: True.</span>
+<span class="sd">        return_numpy (bool, optional): If true, returns the visualized image as</span>
+<span class="sd">                    a numpy array instead of the matplotlib figure and axis.</span>
+<span class="sd">                    Heatmap-based methods return an RGBA array after applying</span>
+<span class="sd">                    the colormap. Image-based methods return the image array</span>
+<span class="sd">                    passed to matplotlib. In all cases, the returned array has</span>
+<span class="sd">                    the attribution image height and width rather than the</span>
+<span class="sd">                    rendered figure canvas size.</span>
+<span class="sd">                    Default: False.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        2-element tuple of **figure**, **axis**:</span>
+<span class="sd">        If return_numpy is False, a 2-element tuple of **figure**, **axis**:</span>
 <span class="sd">        - **figure** (*matplotlib.pyplot.figure*):</span>
 <span class="sd">                    Figure object on which visualization</span>
 <span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
@@ -513,6 +571,9 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                    Axis object on which visualization</span>
 <span class="sd">                    is created. If plt_fig_axis argument is given, this is the</span>
 <span class="sd">                    same axis provided.</span>
+
+<span class="sd">        If return_numpy is True, returns a numpy array containing the visualized</span>
+<span class="sd">                    image data.</span>
 
 <span class="sd">    Examples::</span>
 
@@ -599,8 +660,16 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
         <span class="n">plt_axis</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
 
+    <span class="n">visualization_array</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">return_numpy</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">heat_map</span> <span class="k">if</span> <span class="n">heat_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">visualization_array</span> <span class="o">=</span> <span class="n">_get_image_attr_visualization_array</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">use_pyplot</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">return_numpy</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">visualization_array</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">plt_fig</span><span class="p">,</span> <span class="n">plt_axis</span></div>
 
