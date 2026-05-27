@@ -983,12 +983,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">grad_input_unnorm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="nb">abs</span><span class="p">(</span><span class="n">delta_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">,</span> <span class="n">grad_input</span><span class="p">,</span> <span class="n">grad_output</span> <span class="o">*</span> <span class="n">delta_out</span> <span class="o">/</span> <span class="n">delta_in</span>
     <span class="p">)</span>
-    <span class="c1"># normalizing</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">grad_input</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
-
-    <span class="c1"># updating only the first half</span>
-    <span class="n">new_grad_inp</span> <span class="o">=</span> <span class="n">grad_input_unnorm</span> <span class="o">-</span> <span class="n">grad_input_unnorm</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n</span>
-    <span class="k">return</span> <span class="n">new_grad_inp</span>
+    <span class="k">return</span> <span class="n">grad_input_unnorm</span>
 
 
 <span class="k">def</span> <span class="nf">maxpool1d</span><span class="p">(</span>
