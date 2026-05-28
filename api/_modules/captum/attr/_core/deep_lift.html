@@ -35,7 +35,18 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># pyre-strict</span>
 <span class="kn">import</span> <span class="nn">typing</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
@@ -69,7 +80,911 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">torch.overrides</span> <span class="kn">import</span> <span class="n">TorchFunctionMode</span>
 <span class="kn">from</span> <span class="nn">torch.utils.hooks</span> <span class="kn">import</span> <span class="n">RemovableHandle</span>
+
+
+<span class="k">def</span> <span class="nf">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="c1"># DeepLift runs one combined forward with actual inputs followed by</span>
+    <span class="c1"># baselines along batch dimension 0. Functional-op rules are valid only</span>
+    <span class="c1"># for tensors that participate in that paired actual / reference batch.</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="nb">input</span><span class="o">.</span><span class="n">requires_grad</span>
+        <span class="ow">and</span> <span class="nb">input</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_can_apply_deeplift_binary_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">input</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_is_square_power</span><span class="p">(</span><span class="n">power</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">power</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">2</span>
+
+
+<span class="k">def</span> <span class="nf">_is_number_or_none</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_forward_deeplift_unary_tensor_op</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"exp"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"square"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">input</span> <span class="o">*</span> <span class="nb">input</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"relu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"leaky_relu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">leaky_relu</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">negative_slope</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"sigmoid"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"tanh"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"softplus"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span>
+            <span class="n">beta</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"elu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">elu</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"selu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">selu</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"gelu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">gelu</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">approximate</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"rsqrt"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">rsqrt</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"clamp"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span>
+            <span class="nb">min</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="nb">max</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">options</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor unary op."</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_gradient_deeplift_unary_tensor_op</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"exp"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">output</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"square"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">input</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"relu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">input</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"leaky_relu"</span><span class="p">:</span>
+        <span class="n">negative_slope</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">input</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="nb">input</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">negative_slope</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"sigmoid"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">output</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">output</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"tanh"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">output</span> <span class="o">*</span> <span class="n">output</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"softplus"</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">input</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="nb">input</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="nb">input</span> <span class="o">*</span> <span class="n">beta</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"elu"</span><span class="p">:</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">input</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="nb">input</span><span class="p">),</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">input</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"selu"</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0507009873554805</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.6732632423543772</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">input</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">scale</span><span class="p">),</span>
+            <span class="n">scale</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">input</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"gelu"</span><span class="p">:</span>
+        <span class="n">approximate</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">approximate</span> <span class="o">==</span> <span class="s2">"tanh"</span><span class="p">:</span>
+            <span class="n">inner</span> <span class="o">=</span> <span class="mf">0.7978845608028654</span> <span class="o">*</span> <span class="p">(</span><span class="nb">input</span> <span class="o">+</span> <span class="mf">0.044715</span> <span class="o">*</span> <span class="nb">input</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+            <span class="n">tanh_inner</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">inner</span><span class="p">)</span>
+            <span class="n">inner_grad</span> <span class="o">=</span> <span class="mf">0.7978845608028654</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="mf">0.044715</span> <span class="o">*</span> <span class="nb">input</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">tanh_inner</span><span class="p">)</span>
+                <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="nb">input</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">tanh_inner</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">inner_grad</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">erf</span><span class="p">(</span><span class="nb">input</span> <span class="o">/</span> <span class="mf">1.4142135623730951</span><span class="p">))</span>
+            <span class="o">+</span> <span class="nb">input</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="nb">input</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="mf">0.3989422804014327</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"rsqrt"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="nb">input</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"clamp"</span><span class="p">:</span>
+        <span class="n">min_value</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">max_value</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">options</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">min_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">input</span> <span class="o">&lt;</span> <span class="n">min_value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">grad</span><span class="p">),</span> <span class="n">grad</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">input</span> <span class="o">&gt;</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">grad</span><span class="p">),</span> <span class="n">grad</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">grad</span>
+    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor unary op."</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_run_deeplift_max_pool</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">pool_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">kernel_size</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">dilation</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">ceil_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">pool_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max_pool1d</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">stride</span><span class="p">,</span>
+            <span class="n">padding</span><span class="p">,</span>
+            <span class="n">dilation</span><span class="p">,</span>
+            <span class="n">ceil_mode</span><span class="p">,</span>
+            <span class="n">return_indices</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">pool_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max_pool2d</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">stride</span><span class="p">,</span>
+            <span class="n">padding</span><span class="p">,</span>
+            <span class="n">dilation</span><span class="p">,</span>
+            <span class="n">ceil_mode</span><span class="p">,</span>
+            <span class="n">return_indices</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">pool_dim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max_pool3d</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">stride</span><span class="p">,</span>
+            <span class="n">padding</span><span class="p">,</span>
+            <span class="n">dilation</span><span class="p">,</span>
+            <span class="n">ceil_mode</span><span class="p">,</span>
+            <span class="n">return_indices</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor max-pool op."</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_run_deeplift_max_unpool</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">indices</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">pool_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">kernel_size</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">output_size</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">pool_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max_unpool1d</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pool_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max_unpool2d</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pool_dim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max_unpool3d</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor max-pool op."</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorUnaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    DeepLift Rescale rule for functional one-input tensor ops.</span>
+
+<span class="sd">    Module hooks do not see calls like ``torch.exp(x)`` or ``x.pow(2)``, so this</span>
+<span class="sd">    autograd function replaces their backward multipliers with</span>
+<span class="sd">    ``delta_out / delta_in`` while preserving the original forward value.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">_forward_deeplift_unary_tensor_op</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">op_name</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">=</span> <span class="n">op_name</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">output</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="n">delta_in</span><span class="p">,</span> <span class="n">delta_out</span> <span class="o">=</span> <span class="n">_compute_diffs</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
+        <span class="n">grad_input</span> <span class="o">=</span> <span class="n">grad_output</span> <span class="o">*</span> <span class="n">_gradient_deeplift_unary_tensor_op</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">options</span>
+        <span class="p">)</span>
+        <span class="n">new_grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_input</span><span class="p">,</span>
+            <span class="n">grad_output</span> <span class="o">*</span> <span class="n">delta_out</span> <span class="o">/</span> <span class="n">delta_in</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorBinaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    DeepLift rule for functional two-input tensor ops where both inputs vary.</span>
+
+<span class="sd">    For ops such as multiplication and division, plain gradients do not satisfy</span>
+<span class="sd">    completeness when both operands differ from their baselines. This uses the</span>
+<span class="sd">    same symmetric contribution split as SHAP's DeepExplainer op handlers.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"mul"</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span> <span class="o">*</span> <span class="n">other</span>
+            <span class="k">elif</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"div"</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span> <span class="o">/</span> <span class="n">other</span>
+            <span class="k">elif</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"minimum"</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"maximum"</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor binary op."</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">=</span> <span class="n">op_name</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">other_shape</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">output</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">other</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">broadcast_tensors</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+        <span class="n">input_actual</span><span class="p">,</span> <span class="n">input_ref</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">other_actual</span><span class="p">,</span> <span class="n">other_ref</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">output_actual</span><span class="p">,</span> <span class="n">output_ref</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">delta_input</span> <span class="o">=</span> <span class="n">input_actual</span> <span class="o">-</span> <span class="n">input_ref</span>
+        <span class="n">delta_other</span> <span class="o">=</span> <span class="n">other_actual</span> <span class="o">-</span> <span class="n">other_ref</span>
+
+        <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">==</span> <span class="s2">"mul"</span><span class="p">:</span>
+            <span class="n">cross_input_actual</span> <span class="o">=</span> <span class="n">input_actual</span> <span class="o">*</span> <span class="n">other_ref</span>
+            <span class="n">cross_other_actual</span> <span class="o">=</span> <span class="n">input_ref</span> <span class="o">*</span> <span class="n">other_actual</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="n">other</span>
+            <span class="n">grad_other</span> <span class="o">=</span> <span class="nb">input</span>
+        <span class="k">elif</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">==</span> <span class="s2">"div"</span><span class="p">:</span>
+            <span class="n">cross_input_actual</span> <span class="o">=</span> <span class="n">input_actual</span> <span class="o">/</span> <span class="n">other_ref</span>
+            <span class="n">cross_other_actual</span> <span class="o">=</span> <span class="n">input_ref</span> <span class="o">/</span> <span class="n">other_actual</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">other</span>
+            <span class="n">grad_other</span> <span class="o">=</span> <span class="o">-</span><span class="nb">input</span> <span class="o">/</span> <span class="p">(</span><span class="n">other</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">==</span> <span class="s2">"minimum"</span><span class="p">:</span>
+            <span class="n">cross_input_actual</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">input_actual</span><span class="p">,</span> <span class="n">other_ref</span><span class="p">)</span>
+            <span class="n">cross_other_actual</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">input_ref</span><span class="p">,</span> <span class="n">other_actual</span><span class="p">)</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="p">(</span><span class="nb">input</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">grad_other</span> <span class="o">=</span> <span class="p">(</span><span class="n">other</span> <span class="o">&lt;</span> <span class="nb">input</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">==</span> <span class="s2">"maximum"</span><span class="p">:</span>
+            <span class="n">cross_input_actual</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">input_actual</span><span class="p">,</span> <span class="n">other_ref</span><span class="p">)</span>
+            <span class="n">cross_other_actual</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">input_ref</span><span class="p">,</span> <span class="n">other_actual</span><span class="p">)</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="p">(</span><span class="nb">input</span> <span class="o">&gt;=</span> <span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">grad_other</span> <span class="o">=</span> <span class="p">(</span><span class="n">other</span> <span class="o">&gt;</span> <span class="nb">input</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor binary op."</span><span class="p">)</span>
+
+        <span class="n">input_contrib</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Tensor</span><span class="p">,</span>
+            <span class="mf">0.5</span>
+            <span class="o">*</span> <span class="p">(</span><span class="n">output_actual</span> <span class="o">-</span> <span class="n">cross_other_actual</span> <span class="o">+</span> <span class="n">cross_input_actual</span> <span class="o">-</span> <span class="n">output_ref</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">other_contrib</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Tensor</span><span class="p">,</span>
+            <span class="mf">0.5</span>
+            <span class="o">*</span> <span class="p">(</span><span class="n">output_actual</span> <span class="o">-</span> <span class="n">cross_input_actual</span> <span class="o">+</span> <span class="n">cross_other_actual</span> <span class="o">-</span> <span class="n">output_ref</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="n">delta_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">delta_input</span><span class="p">,</span> <span class="n">delta_input</span><span class="p">])</span>
+        <span class="n">delta_other</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">delta_other</span><span class="p">,</span> <span class="n">delta_other</span><span class="p">])</span>
+        <span class="n">input_contrib</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">input_contrib</span><span class="p">,</span> <span class="n">input_contrib</span><span class="p">])</span>
+        <span class="n">other_contrib</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">other_contrib</span><span class="p">,</span> <span class="n">other_contrib</span><span class="p">])</span>
+
+        <span class="n">input_multiplier</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_input</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_input</span><span class="p">,</span>
+            <span class="n">input_contrib</span> <span class="o">/</span> <span class="n">delta_input</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">other_multiplier</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_other</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_other</span><span class="p">,</span>
+            <span class="n">other_contrib</span> <span class="o">/</span> <span class="n">delta_other</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">input_grad</span> <span class="o">=</span> <span class="p">(</span><span class="n">grad_output</span> <span class="o">*</span> <span class="n">input_multiplier</span><span class="p">)</span><span class="o">.</span><span class="n">sum_to_size</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span><span class="p">)</span>
+        <span class="n">other_grad</span> <span class="o">=</span> <span class="p">(</span><span class="n">grad_output</span> <span class="o">*</span> <span class="n">other_multiplier</span><span class="p">)</span><span class="o">.</span><span class="n">sum_to_size</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">other_shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">input_grad</span><span class="p">,</span> <span class="n">other_grad</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorSingleInputBinaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    DeepLift rule for binary nonlinear ops where only one tensor input varies.</span>
+
+<span class="sd">    Elementwise min/max with a constant threshold is nonlinear in the varying</span>
+<span class="sd">    input, so the plain PyTorch gradient can violate completeness across a</span>
+<span class="sd">    reference crossing. This applies the same Rescale multiplier used for unary</span>
+<span class="sd">    nonlinearities to the varying side of the binary op.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">input_is_left</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"minimum"</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"maximum"</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor binary op."</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">=</span> <span class="n">op_name</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">input_is_left</span> <span class="o">=</span> <span class="n">input_is_left</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">output</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">other</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">broadcast_tensors</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">==</span> <span class="s2">"minimum"</span><span class="p">:</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="p">(</span><span class="nb">input</span> <span class="o">&lt;=</span> <span class="n">other</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">input_is_left</span> <span class="k">else</span> <span class="nb">input</span> <span class="o">&lt;</span> <span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span> <span class="o">==</span> <span class="s2">"maximum"</span><span class="p">:</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="p">(</span><span class="nb">input</span> <span class="o">&gt;=</span> <span class="n">other</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">input_is_left</span> <span class="k">else</span> <span class="nb">input</span> <span class="o">&gt;</span> <span class="n">other</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor binary op."</span><span class="p">)</span>
+
+        <span class="n">delta_in</span><span class="p">,</span> <span class="n">delta_out</span> <span class="o">=</span> <span class="n">_compute_diffs</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="n">new_grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_output</span> <span class="o">*</span> <span class="n">grad_input</span><span class="p">,</span>
+            <span class="n">grad_output</span> <span class="o">*</span> <span class="n">delta_out</span> <span class="o">/</span> <span class="n">delta_in</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_grad_input</span><span class="o">.</span><span class="n">sum_to_size</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorMatmulOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    DeepLift rule for matrix multiplication when both operands vary.</span>
+
+<span class="sd">    This is the matmul analogue of the symmetric two-input rule: each operand</span>
+<span class="sd">    receives the linear multiplier induced by the average of the other operand's</span>
+<span class="sd">    actual and reference values.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">other_shape</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">other</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="n">input_actual</span><span class="p">,</span> <span class="n">input_ref</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">other_actual</span><span class="p">,</span> <span class="n">other_ref</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">average_input_half</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">input_actual</span> <span class="o">+</span> <span class="n">input_ref</span><span class="p">))</span>
+        <span class="n">average_other_half</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">other_actual</span> <span class="o">+</span> <span class="n">other_ref</span><span class="p">))</span>
+        <span class="n">average_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">average_input_half</span><span class="p">,</span> <span class="n">average_input_half</span><span class="p">])</span>
+        <span class="n">average_other</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">average_other_half</span><span class="p">,</span> <span class="n">average_other_half</span><span class="p">])</span>
+        <span class="n">input_grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">grad_output</span><span class="p">,</span> <span class="n">average_other</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum_to_size</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span><span class="p">)</span>
+        <span class="n">other_grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">average_input</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">grad_output</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum_to_size</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">other_shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">input_grad</span><span class="p">,</span> <span class="n">other_grad</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorMaxReductionOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    DeepLift rule for max reductions over a non-batch dimension.</span>
+
+<span class="sd">    This mirrors the max-pool rule: compare actual/reference max outputs,</span>
+<span class="sd">    route the resulting output differences to the winning input positions, and</span>
+<span class="sd">    divide by the input differences to obtain multipliers.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">keepdim</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">keepdim</span> <span class="o">=</span> <span class="n">keepdim</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">output</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">indices</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">output</span> <span class="k">if</span> <span class="n">keepdim</span> <span class="k">else</span> <span class="n">output</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">keepdim</span> <span class="k">else</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="n">input_actual</span><span class="p">,</span> <span class="n">input_ref</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">output_actual</span><span class="p">,</span> <span class="n">output_ref</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">cross_max</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">output_actual</span><span class="p">,</span> <span class="n">output_ref</span><span class="p">)</span>
+        <span class="n">output_diffs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">cross_max</span> <span class="o">-</span> <span class="n">output_ref</span><span class="p">,</span> <span class="n">output_actual</span> <span class="o">-</span> <span class="n">cross_max</span><span class="p">])</span>
+        <span class="n">max_positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span><span class="o">.</span><span class="n">scatter_add</span><span class="p">(</span>
+            <span class="n">dim</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">grad_output</span> <span class="o">*</span> <span class="n">output_diffs</span>
+        <span class="p">)</span>
+        <span class="n">max_positions_actual</span><span class="p">,</span> <span class="n">max_positions_ref</span> <span class="o">=</span> <span class="n">max_positions</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">max_positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">[</span><span class="n">max_positions_actual</span> <span class="o">+</span> <span class="n">max_positions_ref</span><span class="p">])</span>
+
+        <span class="n">delta_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">[</span><span class="n">input_actual</span> <span class="o">-</span> <span class="n">input_ref</span><span class="p">])</span>
+        <span class="n">grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span><span class="o">.</span><span class="n">scatter_add</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">)</span>
+        <span class="n">new_grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_input</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_input</span><span class="p">,</span>
+            <span class="n">max_positions</span> <span class="o">/</span> <span class="n">delta_input</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorMaxPoolOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    DeepLift rule for functional max-pool operations.</span>
+
+<span class="sd">    ``nn.MaxPool*`` modules already use the same routing rule through module</span>
+<span class="sd">    hooks. Functional max-pool calls need a private autograd wrapper because</span>
+<span class="sd">    they do not create a module boundary for Captum to hook.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">pool_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">stride</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">padding</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">dilation</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">ceil_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">return_indices</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">_run_deeplift_max_pool</span><span class="p">(</span>
+                <span class="nb">input</span><span class="p">,</span>
+                <span class="n">pool_dim</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="p">,</span>
+                <span class="n">stride</span><span class="p">,</span>
+                <span class="n">padding</span><span class="p">,</span>
+                <span class="n">dilation</span><span class="p">,</span>
+                <span class="n">ceil_mode</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">pool_dim</span> <span class="o">=</span> <span class="n">pool_dim</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">kernel_size</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="n">padding</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">return_indices</span> <span class="o">=</span> <span class="n">return_indices</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">output</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">indices</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">return_indices</span><span class="p">:</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">mark_non_differentiable</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">indices</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">grad_indices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="n">Tensor</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">input_actual</span><span class="p">,</span> <span class="n">input_ref</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">output_actual</span><span class="p">,</span> <span class="n">output_ref</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">delta_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">[</span><span class="n">input_actual</span> <span class="o">-</span> <span class="n">input_ref</span><span class="p">])</span>
+            <span class="n">cross_max</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">output_actual</span><span class="p">,</span> <span class="n">output_ref</span><span class="p">)</span>
+            <span class="n">output_diffs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">cross_max</span> <span class="o">-</span> <span class="n">output_ref</span><span class="p">,</span> <span class="n">output_actual</span> <span class="o">-</span> <span class="n">cross_max</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">output_size</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span><span class="p">))</span>
+            <span class="n">unpool_delta</span><span class="p">,</span> <span class="n">unpool_ref_delta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span>
+                <span class="n">_run_deeplift_max_unpool</span><span class="p">(</span>
+                    <span class="n">grad_output</span> <span class="o">*</span> <span class="n">output_diffs</span><span class="p">,</span>
+                    <span class="n">indices</span><span class="p">,</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="n">pool_dim</span><span class="p">,</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                    <span class="n">output_size</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">unpool_delta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">[</span><span class="n">unpool_delta</span> <span class="o">+</span> <span class="n">unpool_ref_delta</span><span class="p">])</span>
+            <span class="n">grad_input</span> <span class="o">=</span> <span class="n">_run_deeplift_max_unpool</span><span class="p">(</span>
+                <span class="n">grad_output</span><span class="p">,</span>
+                <span class="n">indices</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">pool_dim</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                <span class="n">output_size</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">new_grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_input</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_input</span><span class="p">,</span>
+            <span class="n">unpool_delta</span> <span class="o">/</span> <span class="n">delta_input</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorSoftmaxShift</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Rescale the numerically stable softmax shift back to the original input.</span>
+
+<span class="sd">    Functional softmax is decomposed into shifted input, exp, sum, and division</span>
+<span class="sd">    so the existing unary / binary rules can handle it. This op accounts for</span>
+<span class="sd">    the data-dependent max subtraction introduced for stability.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">output</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="n">delta_in</span><span class="p">,</span> <span class="n">delta_out</span> <span class="o">=</span> <span class="n">_compute_diffs</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
+        <span class="n">new_grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">delta_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">grad_output</span><span class="p">,</span>
+            <span class="n">grad_output</span> <span class="o">*</span> <span class="n">delta_out</span> <span class="o">/</span> <span class="n">delta_in</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">_DeepLiftTensorOpMode</span><span class="p">(</span><span class="n">TorchFunctionMode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Intercepts selected functional tensor ops during DeepLift's model forward.</span>
+
+<span class="sd">    Captum's historical DeepLift support is module-hook based. This mode adds</span>
+<span class="sd">    equivalent private handling for common functional ops that have no</span>
+<span class="sd">    ``nn.Module`` boundary, while leaving unrelated tensor operations unchanged.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+
+    <span class="k">def</span> <span class="nf">__torch_function__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
+        <span class="n">types</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="nb">object</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"exp"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"exp"</span><span class="p">,</span> <span class="p">())</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"square"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"square"</span><span class="p">,</span> <span class="p">())</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"pow"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="ow">and</span> <span class="n">_is_square_power</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"square"</span><span class="p">,</span> <span class="p">())</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span>
+            <span class="ow">in</span> <span class="p">(</span>
+                <span class="s2">"relu"</span><span class="p">,</span>
+                <span class="s2">"sigmoid"</span><span class="p">,</span>
+                <span class="s2">"tanh"</span><span class="p">,</span>
+                <span class="s2">"selu"</span><span class="p">,</span>
+                <span class="s2">"rsqrt"</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="p">())</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"leaky_relu"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">negative_slope</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">"negative_slope"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.01</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">negative_slope</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"leaky_relu"</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">negative_slope</span><span class="p">),)</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"softplus"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"beta"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"threshold"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+                    <span class="s2">"softplus"</span><span class="p">,</span>
+                    <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)),</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"elu"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"elu"</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">alpha</span><span class="p">),)</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"gelu"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">approximate</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"approximate"</span><span class="p">,</span> <span class="s2">"none"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">approximate</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"gelu"</span><span class="p">,</span> <span class="p">(</span><span class="n">approximate</span><span class="p">,)</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"clamp"</span><span class="p">,</span> <span class="s2">"clip"</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">min_value</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">max_value</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"max"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_is_number_or_none</span><span class="p">(</span><span class="n">min_value</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_is_number_or_none</span><span class="p">(</span><span class="n">max_value</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+                    <span class="s2">"clamp"</span><span class="p">,</span>
+                    <span class="p">(</span>
+                        <span class="kc">None</span> <span class="k">if</span> <span class="n">min_value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_value</span><span class="p">)),</span>
+                        <span class="kc">None</span> <span class="k">if</span> <span class="n">max_value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">max_value</span><span class="p">)),</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"mul"</span><span class="p">,</span> <span class="s2">"div"</span><span class="p">,</span> <span class="s2">"truediv"</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_binary_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorBinaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+                <span class="s2">"mul"</span> <span class="k">if</span> <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"mul"</span> <span class="k">else</span> <span class="s2">"div"</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"minimum"</span><span class="p">,</span> <span class="s2">"maximum"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_binary_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorBinaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+                <span class="s2">"minimum"</span> <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"minimum"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"maximum"</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"minimum"</span><span class="p">,</span> <span class="s2">"maximum"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">op_name</span> <span class="o">=</span> <span class="s2">"minimum"</span> <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"minimum"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"maximum"</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorSingleInputBinaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">op_name</span><span class="p">,</span> <span class="kc">True</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorSingleInputBinaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">op_name</span><span class="p">,</span> <span class="kc">False</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"matmul"</span><span class="p">,</span> <span class="s2">"mm"</span><span class="p">,</span> <span class="s2">"bmm"</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_binary_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="ow">and</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">2</span>
+            <span class="ow">and</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">2</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">_DeepLiftTensorMatmulOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"amax"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dim"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">keepdim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"keepdim"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keepdim</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="n">input_dim</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+                <span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">input_dim</span> <span class="o">+</span> <span class="n">dim</span>
+                <span class="k">if</span> <span class="n">dim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">_DeepLiftTensorMaxReductionOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                        <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span>
+                    <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"max"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dim"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">keepdim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"keepdim"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keepdim</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="nb">input</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">input_dim</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+                <span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">input_dim</span> <span class="o">+</span> <span class="n">dim</span>
+                <span class="k">if</span> <span class="n">dim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">values</span> <span class="o">=</span> <span class="n">_DeepLiftTensorMaxReductionOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                        <span class="nb">input</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span>
+                    <span class="p">)</span>
+                    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
+                        <span class="n">_</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="n">keepdim</span><span class="p">)</span>
+                    <span class="c1"># pyre-fixme[16]: `torch.return_types` has no attribute `max`.</span>
+                    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">return_types</span><span class="o">.</span><span class="n">max</span><span class="p">((</span><span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span>
+            <span class="ow">in</span> <span class="p">(</span>
+                <span class="s2">"max_pool1d"</span><span class="p">,</span>
+                <span class="s2">"max_pool1d_with_indices"</span><span class="p">,</span>
+                <span class="s2">"max_pool2d"</span><span class="p">,</span>
+                <span class="s2">"max_pool2d_with_indices"</span><span class="p">,</span>
+                <span class="s2">"max_pool3d"</span><span class="p">,</span>
+                <span class="s2">"max_pool3d_with_indices"</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">pool_dim</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="s2">"1d"</span> <span class="ow">in</span> <span class="n">func_name</span> <span class="k">else</span> <span class="mi">2</span> <span class="k">if</span> <span class="s2">"2d"</span> <span class="ow">in</span> <span class="n">func_name</span> <span class="k">else</span> <span class="mi">3</span>
+            <span class="n">kernel_size</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"kernel_size"</span><span class="p">)</span>
+            <span class="n">stride</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"stride"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"padding"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">dilation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dilation"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">ceil_mode</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ceil_mode"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">return_indices</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">"return_indices"</span><span class="p">,</span>
+                <span class="n">args</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span> <span class="k">else</span> <span class="n">func_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_with_indices"</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">kernel_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ceil_mode</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_indices</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">_DeepLiftTensorMaxPoolOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span>
+                    <span class="n">pool_dim</span><span class="p">,</span>
+                    <span class="n">kernel_size</span><span class="p">,</span>
+                    <span class="n">stride</span><span class="p">,</span>
+                    <span class="n">padding</span><span class="p">,</span>
+                    <span class="n">dilation</span><span class="p">,</span>
+                    <span class="n">ceil_mode</span><span class="p">,</span>
+                    <span class="n">return_indices</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">func_name</span> <span class="o">==</span> <span class="s2">"softmax"</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dim"</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="nb">input</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">input_dim</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+                <span class="n">normalized_dim</span> <span class="o">=</span> <span class="n">dim</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">input_dim</span> <span class="o">+</span> <span class="n">dim</span>
+                <span class="k">if</span> <span class="n">normalized_dim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">dtype</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dtype"</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
+                        <span class="nb">input</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+                    <span class="n">shifted_input</span> <span class="o">=</span> <span class="n">_DeepLiftTensorSoftmaxShift</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                        <span class="nb">input</span><span class="p">,</span> <span class="n">normalized_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span>
+                    <span class="p">)</span>
+                    <span class="n">exp_input</span> <span class="o">=</span> <span class="n">_DeepLiftTensorUnaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                        <span class="n">shifted_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"exp"</span><span class="p">,</span> <span class="p">()</span>
+                    <span class="p">)</span>
+                    <span class="n">exp_sum</span> <span class="o">=</span> <span class="n">exp_input</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">normalized_dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">_DeepLiftTensorBinaryOp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                        <span class="n">exp_input</span><span class="p">,</span> <span class="n">exp_sum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="s2">"div"</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="DeepLift">
@@ -416,10 +1331,11 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">additional_forward_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="k">def</span> <span class="nf">forward_fn</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-            <span class="n">model_out</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-                <span class="n">Tensor</span><span class="p">,</span>
-                <span class="n">_run_forward</span><span class="p">(</span><span class="n">forward_func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">additional_forward_args</span><span class="p">),</span>
-            <span class="p">)</span>
+            <span class="k">with</span> <span class="n">_DeepLiftTensorOpMode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">):</span>
+                <span class="n">model_out</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">Tensor</span><span class="p">,</span>
+                    <span class="n">_run_forward</span><span class="p">(</span><span class="n">forward_func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">additional_forward_args</span><span class="p">),</span>
+                <span class="p">)</span>
             <span class="k">return</span> <span class="n">_select_targets</span><span class="p">(</span>
                 <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">model_out</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">model_out</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])),</span>
                 <span class="n">target</span><span class="p">,</span>
@@ -1132,6 +2048,8 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">:</span> <span class="n">nonlinear</span><span class="p">,</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">:</span> <span class="n">nonlinear</span><span class="p">,</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">:</span> <span class="n">nonlinear</span><span class="p">,</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">SELU</span><span class="p">:</span> <span class="n">nonlinear</span><span class="p">,</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">GELU</span><span class="p">:</span> <span class="n">nonlinear</span><span class="p">,</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool1d</span><span class="p">:</span> <span class="n">maxpool1d</span><span class="p">,</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">:</span> <span class="n">maxpool2d</span><span class="p">,</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool3d</span><span class="p">:</span> <span class="n">maxpool3d</span><span class="p">,</span>
