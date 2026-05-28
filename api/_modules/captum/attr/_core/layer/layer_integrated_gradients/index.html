@@ -172,7 +172,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># scatter method does not have a precise enough return type in its</span>
                 <span class="c1"># stub, so suppress the type warning.</span>
-                <span class="n">scattered_inputs</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span>  <span class="c1"># type:ignore</span>
+                <span class="n">scattered_inputs</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
                     <span class="c1"># pyre-fixme[6]: For 1st argument expected `Tensor` but got</span>
                     <span class="c1">#  `Union[Tensor, typing.Tuple[Tensor, ...]]`.</span>
                     <span class="n">inputs</span><span class="p">,</span>
@@ -203,13 +203,34 @@ src="/_sphinx/documentation_options.js"></script>
                     <span class="p">)</span>
 
                     <span class="k">if</span> <span class="n">is_layer_tuple</span><span class="p">:</span>
+                        <span class="n">replacement_outputs</span> <span class="o">=</span> <span class="n">scattered_inputs_dict</span><span class="p">[</span><span class="n">device</span><span class="p">][</span>
+                            <span class="n">num_outputs_cumsum</span><span class="p">[</span><span class="n">layer_idx</span><span class="p">]</span> <span class="p">:</span> <span class="n">num_outputs_cumsum</span><span class="p">[</span>
+                                <span class="n">layer_idx</span> <span class="o">+</span> <span class="mi">1</span>
+                            <span class="p">]</span>
+                        <span class="p">]</span>
+                        <span class="k">if</span> <span class="n">hook_outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                            <span class="n">hook_outputs</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                        <span class="p">):</span>
+                            <span class="n">replacement_output_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">replacement_outputs</span><span class="p">)</span>
+                            <span class="n">replaced_outputs</span> <span class="o">=</span> <span class="p">[</span>
+                                <span class="p">(</span>
+                                    <span class="nb">next</span><span class="p">(</span><span class="n">replacement_output_iter</span><span class="p">)</span>
+                                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hook_output</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">)</span>
+                                    <span class="k">else</span> <span class="n">hook_output</span>
+                                <span class="p">)</span>
+                                <span class="k">for</span> <span class="n">hook_output</span> <span class="ow">in</span> <span class="n">hook_outputs</span>
+                            <span class="p">]</span>
+                            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+                                <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
+                                <span class="p">(</span>
+                                    <span class="nb">tuple</span><span class="p">(</span><span class="n">replaced_outputs</span><span class="p">)</span>
+                                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hook_outputs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
+                                    <span class="k">else</span> <span class="n">replaced_outputs</span>
+                                <span class="p">),</span>
+                            <span class="p">)</span>
                         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
                             <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
-                            <span class="n">scattered_inputs_dict</span><span class="p">[</span><span class="n">device</span><span class="p">][</span>
-                                <span class="n">num_outputs_cumsum</span><span class="p">[</span><span class="n">layer_idx</span><span class="p">]</span> <span class="p">:</span> <span class="n">num_outputs_cumsum</span><span class="p">[</span>
-                                    <span class="n">layer_idx</span> <span class="o">+</span> <span class="mi">1</span>
-                                <span class="p">]</span>
-                            <span class="p">],</span>
+                            <span class="n">replacement_outputs</span><span class="p">,</span>
                         <span class="p">)</span>
 
                     <span class="k">return</span> <span class="n">scattered_inputs_dict</span><span class="p">[</span><span class="n">device</span><span class="p">][</span><span class="n">num_outputs_cumsum</span><span class="p">[</span><span class="n">layer_idx</span><span class="p">]]</span>
