@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import typing
 import warnings
@@ -884,8 +889,8 @@ class _DeepLiftTensorOpMode(TorchFunctionMode):
                     )
                     with torch._C.DisableTorchFunction():
                         _, indices = torch.max(input, dim=dim, keepdim=keepdim)
-                    # pyre-fixme[16]: `torch.return_types` has no attribute `max`.
-                    return torch.return_types.max((values, indices))
+                    max_return_type: Any = torch.return_types
+                    return max_return_type.max((values, indices))
 
         if (
             func_name
