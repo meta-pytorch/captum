@@ -38,9 +38,10 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="n">_format_output</span><span class="p">,</span> <span class="n">_format_tensor_into_tuples</span>
 <span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">BaselineType</span><span class="p">,</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
 <span class="kn">from</span> <span class="nn">captum.attr._core.feature_ablation</span> <span class="kn">import</span> <span class="n">FeatureAblation</span>
 <span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
@@ -149,6 +150,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">additional_forward_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
@@ -240,6 +242,12 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                            If the forward function returns a single scalar per batch,</span>
 <span class="sd">                            perturbations_per_eval must be set to 1.</span>
 <span class="sd">                            Default: 1</span>
+<span class="sd">                n_samples (int, optional): The number of independent</span>
+<span class="sd">                            permutation-attribution estimates to average. Each sample</span>
+<span class="sd">                            runs FeaturePermutation once, drawing a fresh random</span>
+<span class="sd">                            permutation for every feature group when using the default</span>
+<span class="sd">                            permutation function.</span>
+<span class="sd">                            Default: 1</span>
 <span class="sd">                show_progress (bool, optional): Displays the progress of computation.</span>
 <span class="sd">                            It will try to use tqdm if available for advanced features</span>
 <span class="sd">                            (e.g. time estimation). Otherwise, it will fallback to</span>
@@ -303,6 +311,64 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">            &gt;&gt;&gt; attr = feature_perm.attribute(input, target=1,</span>
 <span class="sd">            &gt;&gt;&gt;                               feature_mask=feature_mask)</span>
 <span class="sd">        """</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">n_samples</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+        <span class="p">),</span> <span class="s2">"n_samples must be an integer and at least 1."</span>
+
+        <span class="n">attributions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attribute_single_sample</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">additional_forward_args</span><span class="o">=</span><span class="n">additional_forward_args</span><span class="p">,</span>
+            <span class="n">feature_mask</span><span class="o">=</span><span class="n">feature_mask</span><span class="p">,</span>
+            <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">attributions</span>
+
+        <span class="n">is_attrib_tuple</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributions</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
+        <span class="n">formatted_attributions</span> <span class="o">=</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span><span class="n">attributions</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">current_attributions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attribute_single_sample</span><span class="p">(</span>
+                <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                <span class="n">additional_forward_args</span><span class="o">=</span><span class="n">additional_forward_args</span><span class="p">,</span>
+                <span class="n">feature_mask</span><span class="o">=</span><span class="n">feature_mask</span><span class="p">,</span>
+                <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">formatted_current_attributions</span> <span class="o">=</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span>
+                <span class="n">current_attributions</span>
+            <span class="p">)</span>
+            <span class="n">formatted_attributions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="n">total</span> <span class="o">+</span> <span class="n">current</span>
+                <span class="k">for</span> <span class="n">total</span><span class="p">,</span> <span class="n">current</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">formatted_attributions</span><span class="p">,</span> <span class="n">formatted_current_attributions</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">averaged_attributions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">attribution</span> <span class="o">/</span> <span class="n">n_samples</span> <span class="k">for</span> <span class="n">attribution</span> <span class="ow">in</span> <span class="n">formatted_attributions</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+            <span class="n">_format_output</span><span class="p">(</span><span class="n">is_attrib_tuple</span><span class="p">,</span> <span class="n">averaged_attributions</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_attribute_single_sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">TargetType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">additional_forward_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
         <span class="c1"># Remove baselines from kwargs if provided so we don't specify this field</span>
         <span class="c1"># twice in the FeatureAblation.attribute call below.</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"baselines"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
@@ -317,8 +383,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-        <span class="p">)</span></div>
-
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="FeaturePermutation.attribute_future">
 <a class="viewcode-back" href="../../../../feature_permutation.html#captum.attr.FeaturePermutation.attribute_future">[docs]</a>
