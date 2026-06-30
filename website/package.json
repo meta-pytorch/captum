@@ -12,6 +12,7 @@
     "docusaurus": "^1.14.7"
   },
   "resolutions": {
+    "@babel/core": "7.29.7",
     "url-parse": ">=1.5.7",
     "tar": ">=7.5.8",
     "send": ">=0.19.0",
