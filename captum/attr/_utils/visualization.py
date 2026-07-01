@@ -1094,7 +1094,7 @@ def visualize_timeseries_attr(
     else:
         raise AssertionError("Invalid visualization method: {}".format(method))
 
-    plt.xlim([x_values[0], x_values[-1]])
+    plt.xlim((float(x_values[0]), float(x_values[-1])))
 
     if show_colorbar:
         axis_separator = make_axes_locatable(plt_axis_list[-1])
