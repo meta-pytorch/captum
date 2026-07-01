@@ -248,7 +248,8 @@ class LLMAttributionResult:
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 val = data[i, j]
-                color = "black" if 0.2 < im.norm(val) < 0.8 else "white"
+                norm_val = cast(float, im.norm(val))
+                color = "black" if 0.2 < norm_val < 0.8 else "white"
                 im.axes.text(
                     j,
                     i,
