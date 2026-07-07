@@ -1134,7 +1134,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Invalid visualization method: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
 
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="n">x_values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x_values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
 
     <span class="k">if</span> <span class="n">show_colorbar</span><span class="p">:</span>
         <span class="n">axis_separator</span> <span class="o">=</span> <span class="n">make_axes_locatable</span><span class="p">(</span><span class="n">plt_axis_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
