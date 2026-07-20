@@ -1008,6 +1008,7 @@ class FeatureAblation(PerturbationAttribution):
 
             ablated_out_fut: Future[Tuple[List[Tensor], List[Tensor]]] = eval_futs.then(
                 lambda eval_futs, current_inputs=current_inputs, current_mask=current_masks, i=i: self._eval_fut_to_ablated_out_fut_cross_tensor(  # type: ignore # noqa: E501 line too long
+                    # pyrefly: ignore [bad-argument-type]
                     eval_futs=eval_futs,
                     current_inputs=current_inputs,
                     current_mask=current_mask,

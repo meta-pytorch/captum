@@ -69,6 +69,7 @@ class SamplePerturb:
         return mask * inp
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_attack_comparator_basic(self) -> None:
         model = BasicModel()

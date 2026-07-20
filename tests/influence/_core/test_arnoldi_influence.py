@@ -39,6 +39,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestArnoldiInfluence(BaseTest):
     @parameterized.expand(
         [
@@ -450,6 +451,7 @@ class TestArnoldiInfluence(BaseTest):
         checkpoints can be different, and is specified using the `model_type` argument.
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,

@@ -15,6 +15,7 @@ from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestBinaryConcreteStochasticGates(BaseTest):
     testing_device: str = "cpu"
 

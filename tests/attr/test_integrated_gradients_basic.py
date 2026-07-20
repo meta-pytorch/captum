@@ -30,6 +30,7 @@ from captum.testing.helpers.basic_models import (
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_multivariable_vanilla(self) -> None:
         self._assert_multi_variable("vanilla", "riemann_right")

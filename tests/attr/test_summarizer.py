@@ -11,6 +11,7 @@ from captum.attr import CommonStats, Summarizer
 from captum.testing.helpers import BaseTest
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_single_input(self) -> None:
         size = (2, 3)
@@ -24,6 +25,7 @@ class Test(BaseTest):
         self.assertTrue(isinstance(summ, dict))
 
         for k in summ:
+            # pyrefly: ignore [missing-attribute]
             self.assertTrue(summ[k].size() == size)
 
     def test_multi_input(self) -> None:
@@ -39,9 +41,13 @@ class Test(BaseTest):
         summ = summarizer.summary
         self.assertIsNotNone(summ)
         self.assertTrue(len(summ) == 2)
+        # pyrefly: ignore [bad-index]
         self.assertTrue(isinstance(summ[0], dict))
+        # pyrefly: ignore [bad-index]
         self.assertTrue(isinstance(summ[1], dict))
 
         for k in summ[0]:
+            # pyrefly: ignore [missing-attribute]
             self.assertTrue(summ[0][k].size() == size1)
+            # pyrefly: ignore [missing-attribute]
             self.assertTrue(summ[1][k].size() == size2)

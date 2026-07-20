@@ -17,6 +17,7 @@ from captum.testing.helpers.basic_models import BasicModelWithSparseInputs
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def construct_future_forward(
         self, original_forward: Callable[..., Tensor]

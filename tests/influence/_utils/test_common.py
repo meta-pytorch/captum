@@ -13,6 +13,7 @@ from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestCommon(BaseTest):
     def setUp(self) -> None:
         super().setUp()

@@ -212,6 +212,7 @@ def _forward_layer_eval(
     attribute_to_layer_input: bool = False,
     grad_enabled: bool = False,
 ) -> Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]:
+    # pyrefly: ignore [no-matching-overload]
     return _forward_layer_eval_with_neuron_grads(
         forward_fn,
         inputs,

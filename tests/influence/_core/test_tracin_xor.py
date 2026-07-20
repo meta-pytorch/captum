@@ -26,6 +26,7 @@ from captum.testing.helpers.influence.common import (
 from parameterized import parameterized
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInXOR(BaseTest):
 
     # TODO: Move test setup to use setUp and tearDown method overrides.

@@ -20,6 +20,7 @@ from captum.testing.helpers.basic import assertTensorAlmostEqual
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_tuple_splice_range(self) -> None:
         test_tuple = (

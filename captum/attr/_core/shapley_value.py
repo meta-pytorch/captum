@@ -352,6 +352,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             )
 
             if show_progress:
+                # pyrefly: ignore [unbound-name]
                 attr_progress.update()
 
             agg_output_mode = _find_output_mode_and_verify(
@@ -518,6 +519,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             )
 
             if show_progress:
+                # pyrefly: ignore [unbound-name]
                 attr_progress.update()
 
             prev_result_tuple: Future[
@@ -593,7 +595,11 @@ class ShapleyValueSampling(PerturbationAttribution):
 
                     prev_result_tuple = eval_futs.then(
                         lambda evals=eval_futs, masks=current_masks: self._eval_fut_to_prev_results_tuple(  # type: ignore # noqa: E501 line too long
-                            evals, num_examples, inputs_tuple, masks
+                            # pyrefly: ignore [bad-argument-type]
+                            evals,
+                            num_examples,
+                            inputs_tuple,
+                            masks,
                         )
                     )
 
@@ -605,7 +611,10 @@ class ShapleyValueSampling(PerturbationAttribution):
             formatted_attr: Future[Union[Tensor, tuple[Tensor, ...]]] = (
                 prev_result_tuple.then(
                     lambda inp=prev_result_tuple: self._prev_result_tuple_to_formatted_attr(  # type: ignore # noqa: E501 line too long
-                        inp, iter_count, is_inputs_tuple
+                        # pyrefly: ignore [bad-argument-type]
+                        inp,
+                        iter_count,
+                        is_inputs_tuple,
                     )
                 )
             )
@@ -1042,6 +1051,7 @@ class ShapleyValues(ShapleyValueSampling):
                         feature importance across all examples in the batch.
         """
         ShapleyValueSampling.__init__(self, forward_func)
+        # pyrefly: ignore [bad-assignment, bad-override-param-name]
         self.permutation_generator = _all_perm_generator
 
     @log_usage(part_of_slo=True)

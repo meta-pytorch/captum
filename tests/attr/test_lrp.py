@@ -67,6 +67,7 @@ def _get_simple_model2(inplace: bool = False) -> Tuple[Module, Tensor]:
     return model, input
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def _assert_lrp_supports_module(self, module: Module, inputs: Tensor) -> None:
         class SingleModuleModel(nn.Module):

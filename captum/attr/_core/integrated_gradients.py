@@ -309,12 +309,16 @@ class IntegratedGradients(GradientAttribution):
             return (
                 cast(
                     TensorOrTupleOfTensorsGeneric,
+                    # pyrefly: ignore [no-matching-overload]
                     _format_output(is_inputs_tuple, attributions),
                 ),
                 delta,
             )
         return cast(
-            TensorOrTupleOfTensorsGeneric, _format_output(is_inputs_tuple, attributions)
+            # pyrefly: ignore [no-matching-overload]
+            TensorOrTupleOfTensorsGeneric,
+            # pyrefly: ignore [no-matching-overload]
+            _format_output(is_inputs_tuple, attributions),
         )
 
     def attribute_future(self) -> None:

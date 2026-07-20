@@ -21,6 +21,7 @@ from torch import Tensor
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_basic_multilayer(self) -> None:
         model = BasicModel_MultiLayer(inplace=True)

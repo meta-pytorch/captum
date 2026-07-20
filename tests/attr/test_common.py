@@ -13,6 +13,7 @@ from captum.attr._utils.common import _validate_input, _validate_noise_tunnel_ty
 from captum.testing.helpers import BaseTest
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_validate_input(self) -> None:
         with self.assertRaises(AssertionError) as err:

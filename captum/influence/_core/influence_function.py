@@ -588,6 +588,7 @@ def _compute_dataset_func(
     # names of each param in `params`.
     # Both are needed for calling `_flatten_forward_factory`
     _unflatten_params = _unflatten_params_factory(
+        # pyrefly: ignore [bad-argument-type]
         tuple([param.shape for param in params])
     )
     param_names = _params_to_names(params, model)
@@ -956,6 +957,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
             device=torch.device("cpu") if projection_on_cpu else self.model_device
         )
 
+    # pyrefly: ignore [bad-override]
     def compute_intermediate_quantities(
         self,
         inputs_dataset: Union[Tuple[Any, ...], DataLoader],
@@ -1026,6 +1028,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         inputs_dataset = _format_inputs_dataset(inputs_dataset)
 
         if show_progress:
+            # pyrefly: ignore [bad-assignment]
             inputs_dataset = _progress_bar_constructor(
                 self, inputs_dataset, "inputs_dataset", "intermediate quantities"
             )
@@ -1075,6 +1078,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         # sum, depending on `aggregate`
         return _get_dataset_embeddings_intermediate_quantities_influence_function(
             get_batch_embeddings,
+            # pyrefly: ignore [bad-argument-type]
             inputs_dataset,
             aggregate,
         )

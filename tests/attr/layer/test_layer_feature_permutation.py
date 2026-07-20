@@ -13,6 +13,7 @@ from captum.testing.helpers.basic_models import BasicModel_MultiLayer
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestLayerFeaturePermutation(BaseTest):
     def test_single_input(self) -> None:
         net = BasicModel_MultiLayer()

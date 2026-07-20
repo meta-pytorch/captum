@@ -49,6 +49,7 @@ class LayerLRP(LRP, LayerAttribution):
     Ancona et al. [https://openreview.net/forum?id=Sy21R9JAW].
     """
 
+    # pyrefly: ignore [bad-override-mutable-attribute]
     device_ids: List[int]
     verbose: bool
     layers: List[Module]
@@ -79,6 +80,7 @@ class LayerLRP(LRP, LayerAttribution):
             self.device_ids = cast(List[int], self.model.device_ids)
 
     @typing.overload  # type: ignore
+    # pyrefly: ignore [inconsistent-overload]
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
@@ -94,6 +96,7 @@ class LayerLRP(LRP, LayerAttribution):
     ]: ...
 
     @typing.overload
+    # pyrefly: ignore [inconsistent-overload]
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

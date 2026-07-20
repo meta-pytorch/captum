@@ -29,6 +29,7 @@ from captum.testing.helpers.basic_models import (
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_relu_neuron_deeplift(self) -> None:
         model = ReLULinearModel(inplace=True)

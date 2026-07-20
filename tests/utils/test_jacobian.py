@@ -21,6 +21,7 @@ from captum.testing.helpers.basic_models import (
 )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_jacobian_scores_single_scalar(self) -> None:
         model = BasicLinearModel2(5, 1)

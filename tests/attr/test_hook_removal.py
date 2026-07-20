@@ -179,5 +179,6 @@ class HookRemovalMeta(type):
         return hook_removal_test_assert
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestHookRemoval(BaseTest, metaclass=HookRemovalMeta):
     pass

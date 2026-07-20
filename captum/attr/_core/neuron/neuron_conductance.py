@@ -337,7 +337,10 @@ class NeuronConductance(NeuronAttribution, GradientAttribution):
                 grad_kwargs=grad_kwargs,
             )
         return cast(
-            TensorOrTupleOfTensorsGeneric, _format_output(is_inputs_tuple, attrs)
+            # pyrefly: ignore [no-matching-overload]
+            TensorOrTupleOfTensorsGeneric,
+            # pyrefly: ignore [no-matching-overload]
+            _format_output(is_inputs_tuple, attrs),
         )
 
     def _attribute(

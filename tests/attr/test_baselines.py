@@ -12,6 +12,7 @@ from captum.attr._utils.baselines import ProductBaselines
 from captum.testing.helpers import BaseTest
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestProductBaselines(BaseTest):
     def test_list(self) -> None:
         baseline_values = [

@@ -36,6 +36,7 @@ class DummyTokenizer:
         self.unk_idx = len(vocab_list) + 1
 
     @overload
+    # pyrefly: ignore [inconsistent-overload-default]
     def encode(
         self, text: str, add_special_tokens: bool = ..., return_tensors: None = ...
     ) -> List[int]: ...
@@ -105,6 +106,7 @@ class DummyTokenizer:
         raise NotImplementedError
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTextTemplateInput(BaseTest):
     @parameterized.expand(
         [
@@ -201,6 +203,7 @@ class TestTextTemplateInput(BaseTest):
         )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTextSegmentInput(BaseTest):
     def test_word_segmentation(self) -> None:
         text = "The quick brown fox"
@@ -391,6 +394,7 @@ class TestTextSegmentInput(BaseTest):
         self.assertEqual(seg_inp.to_model_input(perturbed), "X X c d")
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTextTokenInput(BaseTest):
     def test_input(self) -> None:
         tokenizer = DummyTokenizer(["a", "b", "c"])
@@ -453,6 +457,7 @@ class TestTextTokenInput(BaseTest):
         )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestImageMaskInput(BaseTest):
     def _create_test_image(
         self,

@@ -489,6 +489,7 @@ class LimeBase(PerturbationAttribution):
                 )
 
                 if show_progress:
+                    # pyrefly: ignore [unbound-name]
                     attr_progress.update()
 
                 outputs.append(model_out)
@@ -511,6 +512,7 @@ class LimeBase(PerturbationAttribution):
                 **kwargs,
             )
             if show_progress:
+                # pyrefly: ignore [unbound-name]
                 attr_progress.update()
             outputs.append(model_out)
 
@@ -649,8 +651,12 @@ def default_from_interp_rep_transform(
     if isinstance(feature_mask, Tensor):
         binary_mask = curr_sample[0][feature_mask].bool()
         return (
+            # pyrefly: ignore [missing-attribute]
             binary_mask.to(original_inputs.dtype) * original_inputs
-            + (~binary_mask).to(original_inputs.dtype) * kwargs["baselines"]
+            + (~binary_mask).to(
+                original_inputs.dtype  # pyrefly: ignore [missing-attribute]
+            )  # pyrefly: ignore [missing-attribute]
+            * kwargs["baselines"]  # pyrefly: ignore [missing-attribute]
         )
     else:
         binary_mask = tuple(
@@ -1264,6 +1270,7 @@ class Lime(LimeBase):
                         else:
                             output_list.append(coefs.reshape(1, -1))  # type: ignore
 
+                    # pyrefly: ignore [bad-return, bad-specialization]
                     return _reduce_list(output_list)
                 else:
                     raise AssertionError(

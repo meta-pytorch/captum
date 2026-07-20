@@ -83,6 +83,7 @@ class AV:
             # pyre-fixme[4]: Attribute must be annotated.
             self.files = AV.sort_files(files)
 
+        # pyrefly: ignore [bad-override-param-name]
         def __getitem__(self, idx: int) -> Union[Tensor, Tuple[Tensor, ...]]:
             assert idx < len(self.files), "Layer index is out of bounds!"
             fl = self.files[idx]

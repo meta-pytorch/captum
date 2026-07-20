@@ -661,6 +661,7 @@ class ArnoldiInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         # by the scalar.
         return [_parameter_multiply(v, l) for (v, l) in zip(vs, ls)]
 
+    # pyrefly: ignore [bad-override]
     def compute_intermediate_quantities(
         self,
         inputs_dataset: Union[Tuple[Tensor, ...], DataLoader],
@@ -737,6 +738,7 @@ class ArnoldiInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         inputs_dataset = _format_inputs_dataset(inputs_dataset)
 
         if show_progress:
+            # pyrefly: ignore [bad-assignment]
             inputs_dataset = _progress_bar_constructor(
                 self, inputs_dataset, "inputs_dataset", "intermediate quantities"
             )
@@ -811,6 +813,7 @@ class ArnoldiInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         # sum, depending on `aggregate`
         return _get_dataset_embeddings_intermediate_quantities_influence_function(
             get_batch_embeddings,
+            # pyrefly: ignore [bad-argument-type]
             inputs_dataset,
             aggregate,
         )

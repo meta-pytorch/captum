@@ -23,6 +23,7 @@ from parameterized import parameterized
 from torch.utils.data import DataLoader
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInShowProgress(BaseTest):
     """
     This tests that the progress bar correctly shows a "100%" message at some point in
@@ -121,6 +122,7 @@ class TestTracInShowProgress(BaseTest):
 
                 batch_size = 5
 
+                # pyrefly: ignore [bad-unpacking]
                 (
                     net,
                     train_dataset,

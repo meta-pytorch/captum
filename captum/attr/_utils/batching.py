@@ -175,6 +175,7 @@ def _batched_generator(
     else:
         for current_total in range(0, num_examples, internal_batch_size):
             with torch.autograd.set_grad_enabled(True):
+                # pyrefly: ignore [no-matching-overload]
                 inputs_splice = _tuple_splice_range(
                     # pyre-fixme[6]: For 1st argument expected `None` but got
                     #  `TensorOrTupleOfTensorsGeneric`.

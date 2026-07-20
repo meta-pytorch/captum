@@ -603,6 +603,7 @@ class BaseLLMAttribution(Attribution, ABC):
         self.model: nn.Module = cast(nn.Module, self.forward_func)
 
         self.tokenizer: TokenizerLike = tokenizer
+        # pyrefly: ignore [read-only]
         self.device: torch.device = (
             cast(torch.device, self.model.device)
             if hasattr(self.model, "device")
@@ -907,6 +908,7 @@ class LLMAttribution(BaseLLMAttribution):
             log_prob_list.append(log_probs[0][target_token].detach())
 
             model_inp["input_ids"] = torch.cat(
+                # pyrefly: ignore [bad-argument-type]
                 (
                     model_inp["input_ids"],
                     torch.tensor([[target_token]]).to(self.device),

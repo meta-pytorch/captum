@@ -30,6 +30,7 @@ from captum.testing.helpers.basic_models import (
 from packaging import version
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_apply_gradient_reqs(self) -> None:
         initial_grads = [False, True, False]

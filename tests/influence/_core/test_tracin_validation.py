@@ -19,6 +19,7 @@ from captum.testing.helpers.influence.common import (
 from parameterized import parameterized
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracinValidator(BaseTest):
 
     param_list = [
@@ -49,6 +50,7 @@ class TestTracinValidator(BaseTest):
         influence methods required `inputs_dataset`.
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -74,6 +76,7 @@ class TestTracinValidator(BaseTest):
         with a valid `final_fc_layer`.
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -106,6 +109,7 @@ class TestTracinValidator(BaseTest):
         """
         with tempfile.TemporaryDirectory() as invalid_tmpdir:
             with tempfile.TemporaryDirectory() as tmpdir:
+                # pyrefly: ignore [bad-unpacking]
                 (
                     net,
                     train_dataset,

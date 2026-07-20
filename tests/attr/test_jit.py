@@ -182,6 +182,7 @@ class JITMeta(type):
             ):
                 formatted_inputs = _format_tensor_into_tuples(args["inputs"])
                 additional_args: Tuple[Any, ...] = (
+                    # pyrefly: ignore [bad-assignment]
                     _format_additional_forward_args(args["additional_forward_args"])
                     if "additional_forward_args" in args
                     and args["additional_forward_args"] is not None

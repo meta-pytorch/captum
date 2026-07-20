@@ -51,6 +51,7 @@ def _get_simple_model2(inplace: bool = False) -> Tuple[Any, Tensor]:
     return model, input
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_lrp_creator(self) -> None:
         model, _ = _get_basic_config()

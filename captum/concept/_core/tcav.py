@@ -79,6 +79,7 @@ class LabelledDataset(Dataset):
                 right = mid
         return -1
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, i: int) -> Tuple[Union[Tensor, Tuple[Tensor, ...]], Tensor]:
         """
         Returns a batch of activation vectors, as well as a batch of labels

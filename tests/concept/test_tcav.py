@@ -701,6 +701,7 @@ def remove_pkls(path: str) -> None:
         os.remove(pkl_file)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     r"""
     Class for testing the TCAV class through a sequence of operations:
@@ -915,6 +916,7 @@ class Test(BaseTest):
         def forward_hook_wrapper(expected_act: Tensor) -> int:
             # pyre-fixme[2]: Parameter `module` must have a type other than `Any`.
             def forward_hook(module: Any, inp: Tensor, out=None) -> None:
+                # pyrefly: ignore [bad-argument-type, missing-attribute]
                 out = torch.reshape(out, (out.shape[0], -1))
                 self.assertEqual(out.detach().shape[1:], expected_act.shape[1:])
 

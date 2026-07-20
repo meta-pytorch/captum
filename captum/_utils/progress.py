@@ -36,6 +36,7 @@ class BaseProgress(Protocol):
     Note: This protocol is based on the tqdm type stubs.
     """
 
+    # pyrefly: ignore [not-a-type]
     def __enter__(self) -> Self: ...
 
     def __exit__(
@@ -126,6 +127,7 @@ class NullProgress(IterableProgress[IterableType], Progress):
         for it in iterable:
             yield it
 
+    # pyrefly: ignore [not-a-type]
     def __enter__(self) -> Self:
         return self
 
@@ -174,6 +176,7 @@ def progress(
     mininterval: float = 0.5,
     **kwargs: object,
 ) -> Union[Progress, IterableProgress[IterableType]]:
+    # pyrefly: ignore [bad-return, no-matching-overload]
     return tqdm(
         iterable,
         desc=desc,

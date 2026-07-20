@@ -46,6 +46,7 @@ gpu_settings_list = (
 )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestNaiveInfluence(BaseTest):
     def setUp(self) -> None:
         super().setUp()
@@ -139,6 +140,7 @@ class TestNaiveInfluence(BaseTest):
         error loss.
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,

@@ -18,6 +18,7 @@ from captum.testing.helpers.basic_models import (
 from torch.nn import CrossEntropyLoss
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_attack_nontargeted(self) -> None:
         model = BasicModel()

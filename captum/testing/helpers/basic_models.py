@@ -413,6 +413,7 @@ class BasicModel_GradientLayerAttribution(nn.Module):
 
         self.dict_output = dict_output
         # Linear 0 is simply identity transform
+        # pyrefly: ignore [invalid-type-var]
         self.unsupported_layer_output = unsupported_layer_output
         self.linear0 = nn.Linear(3, 3)
         self.linear0.weight = nn.Parameter(torch.eye(3))

@@ -33,6 +33,7 @@ from parameterized import parameterized
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInRegression(BaseTest):
     def _test_tracin_regression_setup(
         self, tmpdir: str, features: int, use_gpu: bool = False

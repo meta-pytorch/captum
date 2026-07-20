@@ -30,10 +30,12 @@ class RangeDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, idx):
         return self.samples[idx]
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_exists_without_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

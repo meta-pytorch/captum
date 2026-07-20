@@ -250,6 +250,7 @@ class InternalInfluence(LayerAttribution, GradientAttribution):
                 grad_kwargs=grad_kwargs,
             )
 
+        # pyrefly: ignore [bad-return]
         return attrs
 
     def _attribute(

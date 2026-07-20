@@ -773,6 +773,7 @@ class RandomBaselineKernelShap(KernelShap):
         ), "Must provide baselines to use Random Baseline Kernel SHAP"
         if isinstance(original_inputs, Tensor):
             baseline_indices = self._sample_baseline_indices(original_inputs, **kwargs)
+            # pyrefly: ignore [bad-return]
             return self._replace_missing_with_random_baselines(
                 curr_sample,
                 original_inputs,

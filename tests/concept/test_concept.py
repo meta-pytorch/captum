@@ -43,6 +43,7 @@ class CustomIterableDataset(IterableDataset):
         return mapped_itr
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_create_concepts_from_images(self) -> None:
         def get_tensor_from_filename(filename):

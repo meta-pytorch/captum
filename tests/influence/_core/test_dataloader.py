@@ -26,6 +26,7 @@ from parameterized import parameterized
 from torch.utils.data import DataLoader
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInDataLoader(BaseTest):
     """
     This tests that the influence score computed when a Dataset is fed to the
@@ -84,6 +85,7 @@ class TestTracInDataLoader(BaseTest):
 
             batch_size = 5
 
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,

@@ -21,6 +21,7 @@ from captum.testing.helpers.evaluate_linear_model import evaluate
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestLinearModel(BaseTest):
     MAX_POINTS: int = 3
 

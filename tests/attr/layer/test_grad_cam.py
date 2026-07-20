@@ -24,6 +24,7 @@ from torch import Tensor
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_simple_input_non_conv(self) -> None:
         net = BasicModel_MultiLayer()

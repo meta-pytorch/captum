@@ -67,6 +67,7 @@ def _perturb_func(
     return perturbed_input1, input2 + perturb_ratio(input2)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_basic_sensitivity_max_single(self) -> None:
         model = BasicModel2()

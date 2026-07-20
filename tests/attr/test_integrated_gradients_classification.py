@@ -19,6 +19,7 @@ from captum.testing.helpers.classification_models import SigmoidModel, SoftmaxMo
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_sigmoid_classification_vanilla(self) -> None:
         self._assert_sigmoid_classification("vanilla", "riemann_right")

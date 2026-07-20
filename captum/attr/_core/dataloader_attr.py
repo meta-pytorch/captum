@@ -368,6 +368,7 @@ class DataLoaderAttribution(Attribution):
             inputs_tuple = _format_tensor_into_tuples(inputs)
 
         if input_roles:
+            # pyrefly: ignore [unbound-name]
             assert len(input_roles) == len(inputs_tuple), (
                 "input_roles must have the same size as the return of the dataloader,",
                 f"length of input_roles is {len(input_roles)} ",
@@ -380,6 +381,7 @@ class DataLoaderAttribution(Attribution):
             )
         else:
             # by default, assume every element in the dataloader needs attribution
+            # pyrefly: ignore [unbound-name]
             input_roles = tuple(InputRole.need_attr for _ in inputs_tuple)
 
         attr_inputs = tuple(

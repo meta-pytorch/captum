@@ -25,6 +25,7 @@ from captum.testing.helpers.basic_models import BasicLinearModel, BasicModel2
 from captum.testing.helpers.classification_models import SoftmaxModel
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
 
     # This test reproduces some of the test cases from the original implementation

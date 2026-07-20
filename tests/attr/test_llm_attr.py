@@ -256,6 +256,7 @@ class DummyLLM(nn.Module):
         for forward_in_tokens in [True, False]
     ],
 )
+# pyrefly: ignore [invalid-inheritance]
 class TestLLMAttr(BaseTest):
     device: str = "cpu"
     use_cached_outputs: bool = False
@@ -576,6 +577,7 @@ class TestLLMAttr(BaseTest):
 @parameterized_class(
     ("device",), [("cpu",), ("cuda",)] if torch.cuda.is_available() else [("cpu",)]
 )
+# pyrefly: ignore [invalid-inheritance]
 class TestLLMGradAttr(BaseTest):
     device: str = "cpu"
 
@@ -737,6 +739,7 @@ class TestLLMGradAttr(BaseTest):
         self.assertEqual(res.output_tokens, ["m", "n", "o", "p", "q"])
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestVLLMProvider(BaseTest):
     """Test suite for VLLMProvider class."""
 
@@ -1138,6 +1141,7 @@ class DummyRemoteLLMProvider(RemoteLLMProvider):
 @parameterized_class(
     ("device",), [("cpu",), ("cuda",)] if torch.cuda.is_available() else [("cpu",)]
 )
+# pyrefly: ignore [invalid-inheritance]
 class TestRemoteLLMAttr(BaseTest):
     device: str = "cpu"
 

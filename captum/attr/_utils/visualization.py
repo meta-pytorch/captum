@@ -49,6 +49,7 @@ def draw_mask_border(
     ax: Axes,
     mask: npt.NDArray[np.bool_],
     border_width: int = 1,
+    # pyrefly: ignore [bad-specialization]
     border_color: Union[str, npt.NDArray[np.floating[Any]]] = "black",
 ) -> None:
     """
@@ -302,6 +303,7 @@ def _visualize_original_image(
     ), "Original image expected for original_image method."
     if len(original_image.shape) > 2 and original_image.shape[2] == 1:
         original_image = np.squeeze(original_image, axis=2)
+    # pyrefly: ignore [bad-argument-type]
     plt_axis.imshow(original_image)
 
 
@@ -313,6 +315,7 @@ def _visualize_heat_map(
     vmax: float,
     **kwargs: Any,
 ) -> AxesImage:
+    # pyrefly: ignore [bad-argument-type]
     heat_map = plt_axis.imshow(norm_attr, cmap=cmap, vmin=vmin, vmax=vmax)
     return heat_map
 
@@ -332,7 +335,12 @@ def _visualize_blended_heat_map(
     ), "Original Image expected for blended_heat_map method."
     plt_axis.imshow(np.mean(original_image, axis=2), cmap="gray")
     heat_map = plt_axis.imshow(
-        norm_attr, cmap=cmap, vmin=vmin, vmax=vmax, alpha=alpha_overlay
+        # pyrefly: ignore [bad-argument-type]
+        norm_attr,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        alpha=alpha_overlay,
     )
     return heat_map
 
@@ -348,6 +356,7 @@ def _visualize_masked_image(
         "Cannot display masked image with both positive and negative "
         "attributions, choose a different sign option."
     )
+    # pyrefly: ignore [bad-argument-type]
     plt_axis.imshow(_prepare_image(original_image * np.expand_dims(norm_attr, 2)))
 
 

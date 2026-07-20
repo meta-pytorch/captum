@@ -28,6 +28,7 @@ from parameterized import parameterized
 from torch.utils.data import DataLoader
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInIntermediateQuantities(BaseTest):
     @parameterized.expand(
         [
@@ -50,6 +51,7 @@ class TestTracInIntermediateQuantities(BaseTest):
         summing
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -110,6 +112,7 @@ class TestTracInIntermediateQuantities(BaseTest):
         when the batches are collated into a single batch
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -121,6 +124,7 @@ class TestTracInIntermediateQuantities(BaseTest):
 
             # create a single batch representing the entire dataset
             single_batch = next(
+                # pyrefly: ignore [bad-argument-type]
                 iter(DataLoader(train_dataset, batch_size=len(train_dataset)))
             )
 
@@ -217,6 +221,7 @@ class TestTracInIntermediateQuantities(BaseTest):
         same method, both ways should give the same result by definition.
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -309,6 +314,7 @@ class TestTracInIntermediateQuantities(BaseTest):
         See inline comments for "at most" caveat
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,

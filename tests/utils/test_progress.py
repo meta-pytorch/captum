@@ -15,6 +15,7 @@ from captum._utils.progress import NullProgress, progress
 from captum.testing.helpers import BaseTest
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     @unittest.mock.patch("sys.stderr", new_callable=io.StringIO)
     def test_nullprogress(self, mock_stderr) -> None:

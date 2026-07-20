@@ -30,6 +30,7 @@ from captum.testing.helpers.basic_models import (
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_improper_window_shape(self) -> None:
         net = BasicModel_ConvNet_One_Conv()

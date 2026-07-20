@@ -39,6 +39,7 @@ from captum.testing.helpers.basic_models import (
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     r"""
     The following conversion tests are underlying assumptions
@@ -910,6 +911,7 @@ class Test(BaseTest):
                 assertTensorAlmostEqual(self, attributions, expected_ablation)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestParseForwardOutput(BaseTest):
 
     def test_parse_forward_out_tensor_passthrough(self) -> None:
@@ -940,6 +942,7 @@ class TestParseForwardOutput(BaseTest):
             _parse_forward_out(None)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestFormatResult(BaseTest):
 
     def test_format_result_single_tensor_no_weights(self) -> None:
@@ -1028,6 +1031,7 @@ class TestFormatResult(BaseTest):
         )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestCheckOutputShapeValid(BaseTest):
     def test_valid_output_shape_scaling(self) -> None:
         inputs = (torch.randn(4, 3),)
@@ -1092,6 +1096,7 @@ class TestCheckOutputShapeValid(BaseTest):
             )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestShouldSkipInputsAndWarn(BaseTest):
     def test_skip_when_batch_size_less_than_min_examples(self) -> None:
         current_feature_idxs = [0, 1]

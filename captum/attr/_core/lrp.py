@@ -293,6 +293,7 @@ class LRP(GradientAttribution):
                 )
         else:
             summed_attr = _sum_rows(attributions)
+        # pyrefly: ignore [unbound-name]
         return output.flatten() - summed_attr.flatten()
 
     def _get_layers(self, model: Module) -> None:

@@ -687,6 +687,7 @@ class LayerDeepLiftShap(LayerDeepLift, DeepLiftShap):
                 self, inp_bsz, base_bsz, attributions
             )
         if return_convergence_delta:
+            # pyrefly: ignore [unbound-name]
             return attributions, delta
         else:
             return cast(

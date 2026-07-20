@@ -331,6 +331,7 @@ class _DatasetFromList(Dataset):
     def __init__(self, _l: List[Any]) -> None:
         self._l = _l
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, i: int) -> Any:
         return self._l[i]
 
@@ -636,7 +637,9 @@ def _influence_batch_intermediate_quantities_influence_function(
     `IntermediateQuantitiesInfluenceFunction`
     """
     return torch.matmul(
+        # pyrefly: ignore [bad-argument-type]
         influence_inst.compute_intermediate_quantities(test_batch),
+        # pyrefly: ignore [missing-attribute]
         influence_inst.compute_intermediate_quantities(train_batch).T,
     )
 
@@ -670,7 +673,9 @@ def _influence_helper_intermediate_quantities_influence_function(
     return torch.cat(
         [
             torch.matmul(
+                # pyrefly: ignore [bad-argument-type]
                 inputs_intermediate_quantities,
+                # pyrefly: ignore [missing-attribute]
                 influence_inst.compute_intermediate_quantities(batch).T,
             )
             for batch in train_dataloader
@@ -701,6 +706,7 @@ def _self_influence_helper_intermediate_quantities_influence_function(
     inputs_dataset = _format_inputs_dataset(inputs_dataset)
 
     if show_progress:
+        # pyrefly: ignore [bad-assignment]
         inputs_dataset = _progress_bar_constructor(
             influence_inst, inputs_dataset, "inputs_dataset", "self influence scores"
         )
@@ -708,6 +714,7 @@ def _self_influence_helper_intermediate_quantities_influence_function(
     return torch.cat(
         [
             torch.sum(
+                # pyrefly: ignore [unsupported-operation]
                 influence_inst.compute_intermediate_quantities(
                     batch,
                     show_progress=False,
@@ -715,6 +722,7 @@ def _self_influence_helper_intermediate_quantities_influence_function(
                 ** 2,
                 dim=1,
             )
+            # pyrefly: ignore [not-iterable]
             for batch in inputs_dataset
         ]
     )

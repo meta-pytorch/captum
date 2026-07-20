@@ -26,6 +26,7 @@ from captum.testing.helpers.basic_models import BasicModel_ConvNet_One_Conv
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_simple_input_conv_gb(self) -> None:
         net = BasicModel_ConvNet_One_Conv()

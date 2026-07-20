@@ -116,6 +116,7 @@ def _global_perturb_func1(
     return (pert1, pert2), (torch.zeros(input1.shape), torch.zeros(input2.shape))
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_basic_infidelity_single(self) -> None:
         input1 = torch.tensor([3.0])
@@ -439,6 +440,7 @@ class Test(BaseTest):
         else:
             attrs = ig.attribute(inputs)  # type: ignore[has-type]
 
+        # pyrefly: ignore [bad-specialization]
         return self.infidelity_assert(
             model,
             attrs,
