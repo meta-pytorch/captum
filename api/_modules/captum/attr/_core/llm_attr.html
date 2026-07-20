@@ -647,6 +647,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_func</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span> <span class="o">=</span> <span class="n">tokenizer</span>
+        <span class="c1"># pyrefly: ignore [read-only]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">cast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">"device"</span><span class="p">)</span>
@@ -953,6 +954,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">log_prob_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log_probs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">target_token</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
 
             <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
                 <span class="p">(</span>
                     <span class="n">model_inp</span><span class="p">[</span><span class="s2">"input_ids"</span><span class="p">],</span>
                     <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="n">target_token</span><span class="p">]])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>

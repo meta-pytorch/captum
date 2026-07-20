@@ -525,6 +525,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                    <span class="c1"># pyrefly: ignore [unbound-name]</span>
                     <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 
                 <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_out</span><span class="p">)</span>
@@ -547,6 +548,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unbound-name]</span>
                 <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
             <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_out</span><span class="p">)</span>
 
@@ -693,8 +695,12 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_mask</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
         <span class="n">binary_mask</span> <span class="o">=</span> <span class="n">curr_sample</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">feature_mask</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">(</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="n">binary_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_inputs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">*</span> <span class="n">original_inputs</span>
-            <span class="o">+</span> <span class="p">(</span><span class="o">~</span><span class="n">binary_mask</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_inputs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">*</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"baselines"</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">(</span><span class="o">~</span><span class="n">binary_mask</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="n">original_inputs</span><span class="o">.</span><span class="n">dtype</span>  <span class="c1"># pyrefly: ignore [missing-attribute]</span>
+            <span class="p">)</span>  <span class="c1"># pyrefly: ignore [missing-attribute]</span>
+            <span class="o">*</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"baselines"</span><span class="p">]</span>  <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">binary_mask</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
@@ -1319,6 +1325,7 @@ src="/_sphinx/documentation_options.js"></script>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">output_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coefs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
 
+                    <span class="c1"># pyrefly: ignore [bad-return, bad-specialization]</span>
                     <span class="k">return</span> <span class="n">_reduce_list</span><span class="p">(</span><span class="n">output_list</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>

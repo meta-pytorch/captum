@@ -83,6 +83,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    Ancona et al. [https://openreview.net/forum?id=Sy21R9JAW].</span>
 <span class="sd">    """</span>
 
+    <span class="c1"># pyrefly: ignore [bad-override-mutable-attribute]</span>
     <span class="n">device_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Module</span><span class="p">]</span>
@@ -113,6 +114,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="bp">self</span><span class="o">.</span><span class="n">device_ids</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device_ids</span><span class="p">)</span>
 
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>  <span class="c1"># type: ignore</span>
+    <span class="c1"># pyrefly: ignore [inconsistent-overload]</span>
     <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
@@ -128,6 +130,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">]:</span> <span class="o">...</span>
 
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
+    <span class="c1"># pyrefly: ignore [inconsistent-overload]</span>
     <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>

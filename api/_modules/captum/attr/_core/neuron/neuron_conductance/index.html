@@ -373,7 +373,10 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">grad_kwargs</span><span class="o">=</span><span class="n">grad_kwargs</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
-            <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">_format_output</span><span class="p">(</span><span class="n">is_inputs_tuple</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+            <span class="c1"># pyrefly: ignore [no-matching-overload]</span>
+            <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
+            <span class="c1"># pyrefly: ignore [no-matching-overload]</span>
+            <span class="n">_format_output</span><span class="p">(</span><span class="n">is_inputs_tuple</span><span class="p">,</span> <span class="n">attrs</span><span class="p">),</span>
         <span class="p">)</span></div>
 
 

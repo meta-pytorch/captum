@@ -81,6 +81,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">],</span>
     <span class="n">border_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="c1"># pyrefly: ignore [bad-specialization]</span>
     <span class="n">border_color</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="s2">"black"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
@@ -334,6 +335,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">),</span> <span class="s2">"Original image expected for original_image method."</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">original_image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">original_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">original_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">original_image</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
     <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
 
 
@@ -345,6 +347,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">vmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AxesImage</span><span class="p">:</span>
+    <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
     <span class="n">heat_map</span> <span class="o">=</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">heat_map</span>
 
@@ -364,7 +367,12 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">),</span> <span class="s2">"Original Image expected for blended_heat_map method."</span>
     <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">original_image</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">)</span>
     <span class="n">heat_map</span> <span class="o">=</span> <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
-        <span class="n">norm_attr</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_overlay</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
+        <span class="n">norm_attr</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+        <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span>
+        <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_overlay</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">heat_map</span>
 
@@ -380,6 +388,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="s2">"Cannot display masked image with both positive and negative "</span>
         <span class="s2">"attributions, choose a different sign option."</span>
     <span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
     <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
 
 

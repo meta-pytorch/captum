@@ -140,6 +140,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="n">to_override_grads</span> <span class="o">=</span> <span class="n">grad_output</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_relu_grad_output</span> <span class="k">else</span> <span class="n">grad_input</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">to_override_grads</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
                 <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">to_override_grad</span><span class="p">)</span> <span class="k">for</span> <span class="n">to_override_grad</span> <span class="ow">in</span> <span class="n">to_override_grads</span>  <span class="c1"># type: ignore # noqa: E501 line too long</span>
             <span class="p">)</span>

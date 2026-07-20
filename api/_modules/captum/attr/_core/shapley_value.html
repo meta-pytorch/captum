@@ -388,6 +388,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unbound-name]</span>
                 <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 
             <span class="n">agg_output_mode</span> <span class="o">=</span> <span class="n">_find_output_mode_and_verify</span><span class="p">(</span>
@@ -557,6 +558,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unbound-name]</span>
                 <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 
             <span class="n">prev_result_tuple</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span>
@@ -632,7 +634,11 @@ src="/_sphinx/documentation_options.js"></script>
 
                     <span class="n">prev_result_tuple</span> <span class="o">=</span> <span class="n">eval_futs</span><span class="o">.</span><span class="n">then</span><span class="p">(</span>
                         <span class="k">lambda</span> <span class="n">evals</span><span class="o">=</span><span class="n">eval_futs</span><span class="p">,</span> <span class="n">masks</span><span class="o">=</span><span class="n">current_masks</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_fut_to_prev_results_tuple</span><span class="p">(</span>  <span class="c1"># type: ignore # noqa: E501 line too long</span>
-                            <span class="n">evals</span><span class="p">,</span> <span class="n">num_examples</span><span class="p">,</span> <span class="n">inputs_tuple</span><span class="p">,</span> <span class="n">masks</span>
+                            <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
+                            <span class="n">evals</span><span class="p">,</span>
+                            <span class="n">num_examples</span><span class="p">,</span>
+                            <span class="n">inputs_tuple</span><span class="p">,</span>
+                            <span class="n">masks</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
 
@@ -644,7 +650,10 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">formatted_attr</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">prev_result_tuple</span><span class="o">.</span><span class="n">then</span><span class="p">(</span>
                     <span class="k">lambda</span> <span class="n">inp</span><span class="o">=</span><span class="n">prev_result_tuple</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_result_tuple_to_formatted_attr</span><span class="p">(</span>  <span class="c1"># type: ignore # noqa: E501 line too long</span>
-                        <span class="n">inp</span><span class="p">,</span> <span class="n">iter_count</span><span class="p">,</span> <span class="n">is_inputs_tuple</span>
+                        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
+                        <span class="n">inp</span><span class="p">,</span>
+                        <span class="n">iter_count</span><span class="p">,</span>
+                        <span class="n">is_inputs_tuple</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
             <span class="p">)</span>
@@ -1085,6 +1094,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                        feature importance across all examples in the batch.</span>
 <span class="sd">        """</span>
         <span class="n">ShapleyValueSampling</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [bad-assignment, bad-override-param-name]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">permutation_generator</span> <span class="o">=</span> <span class="n">_all_perm_generator</span>
 
 <div class="viewcode-block" id="ShapleyValues.attribute">
