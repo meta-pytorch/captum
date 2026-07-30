@@ -567,8 +567,6 @@ def _forward_layer_eval_with_neuron_grads(
 
 
 @typing.overload
-# pyre-fixme[43]: The implementation of `compute_layer_gradients_and_eval` does not
-#  accept all possible arguments of overload defined on line `486`.
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -589,8 +587,6 @@ def compute_layer_gradients_and_eval(
 
 
 @typing.overload
-# pyre-fixme[43]: The implementation of `compute_layer_gradients_and_eval` does not
-#  accept all possible arguments of overload defined on line `502`.
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -609,8 +605,6 @@ def compute_layer_gradients_and_eval(
 
 
 @typing.overload
-# pyre-fixme[43]: The implementation of `compute_layer_gradients_and_eval` does not
-#  accept all possible arguments of overload defined on line `517`.
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -631,7 +625,7 @@ def compute_layer_gradients_and_eval(
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
-    layer: ModuleOrModuleList,
+    layer: Module | list[Module],
     inputs: Union[Tensor, Tuple[Tensor, ...]],
     target_ind: TargetType = None,
     additional_forward_args: Optional[object] = None,
@@ -699,6 +693,8 @@ def compute_layer_gradients_and_eval(
         - **evals**:
             Target layer output for given input.
     """
+    all_layers: List[Module] = [layer] if isinstance(layer, Module) else layer
+
     with torch.autograd.set_grad_enabled(True):
         # saved_layer is a dictionary mapping device to a tuple of
         # layer evaluations on that device.
@@ -706,7 +702,7 @@ def compute_layer_gradients_and_eval(
         saved_layer, output = _forward_layer_distributed_eval(
             forward_fn,
             inputs,
-            layer,
+            all_layers,
             target_ind=target_ind,
             additional_forward_args=additional_forward_args,
             attribute_to_layer_input=attribute_to_layer_input,
@@ -740,11 +736,6 @@ def compute_layer_gradients_and_eval(
             if offload_to_cpu:
                 layer_out = tuple(t.detach().cpu() for t in layer_out)
             return layer_out
-
-        # pyre-fixme[9]: all_layers has type `List[Module]`; used as
-        #  `Union[List[Variable[ModuleOrModuleList <: [Module, List[Module]]]],
-        #  Variable[ModuleOrModuleList <: [Module, List[Module]]]]`.
-        all_layers: List[Module] = [layer] if isinstance(layer, Module) else layer
 
         # Build all_outputs before backward pass. _get_layer_output detaches
         # and moves tensors to CPU when offload_to_cpu is set, so these copies
