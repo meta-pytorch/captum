@@ -497,8 +497,7 @@ def _forward_layer_eval_with_neuron_grads(
 
 
 def _forward_layer_eval_with_neuron_grads(
-    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    forward_fn: Callable,
+    forward_fn: Callable[..., object],
     inputs: Union[Tensor, Tuple[Tensor, ...]],
     layer: ModuleOrModuleList,
     additional_forward_args: Optional[object] = None,
