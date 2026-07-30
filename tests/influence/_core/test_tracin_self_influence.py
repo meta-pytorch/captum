@@ -216,14 +216,14 @@ class TestTracInSelfInfluence(BaseTest):
             # this test is only relevant for implementations of `TracInCPBase`, as
             # implementations of `InfluenceFunctionBase` do not use checkpoints.
             if isinstance(tracin, TracInCPBase):
-                self_tracin_scores_by_checkpoints = tracin.self_influence(  # type: ignore
+                self_scores_by_checkpoints = tracin.self_influence(  # type: ignore
                     DataLoader(train_dataset, batch_size=batch_size),
                     # pyrefly: ignore [unexpected-keyword]
                     outer_loop_by_checkpoints=True,
                 )
                 assertTensorAlmostEqual(
                     self,
-                    self_tracin_scores_by_checkpoints,
+                    self_scores_by_checkpoints,
                     self_tracin_scores,
                     delta=0.01,
                     mode="max",
