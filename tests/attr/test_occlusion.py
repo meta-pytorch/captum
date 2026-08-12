@@ -223,6 +223,25 @@ class Test(BaseTest):
             sliding_window_shapes=((3,), (1,)),
         )
 
+    def test_multi_input_mask_placeholders_keep_input_device(self) -> None:
+        device = torch.device("meta")
+        inp1 = torch.empty((1, 3), device=device)
+        inp2 = torch.empty((1, 3), device=device)
+
+        def forward_func(input1: Tensor, input2: Tensor) -> Tensor:
+            return (input1 + input2).sum(dim=1)
+
+        attributions = Occlusion(forward_func).attribute(
+            (inp1, inp2),
+            sliding_window_shapes=((1,), (1,)),
+            perturbations_per_eval=2,
+        )
+
+        self.assertEqual(attributions[0].device, device)
+        self.assertEqual(attributions[1].device, device)
+        self.assertEqual(attributions[0].shape, inp1.shape)
+        self.assertEqual(attributions[1].shape, inp2.shape)
+
     def test_multi_input_ablation_with_baselines(self) -> None:
         net = BasicModel_MultiLayer_MultiInput()
         inp1 = torch.tensor([[23.0, 100.0, 0.0], [20.0, 50.0, 30.0]])

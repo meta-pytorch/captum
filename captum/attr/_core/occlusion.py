@@ -392,7 +392,10 @@ class Occlusion(FeatureAblation):
 
                 if feature_idx_to_tensor_idx[feature_idx][0] != i:
                     tensor_mask.append(
-                        torch.zeros((1,) + tuple(input_tensor.shape[1:]))
+                        torch.zeros(
+                            (1,) + tuple(input_tensor.shape[1:]),
+                            device=input_tensor.device,
+                        )
                     )
                     continue
                 ablated_feature_num = feature_idx - accumulated_shift_count_prods[i]
