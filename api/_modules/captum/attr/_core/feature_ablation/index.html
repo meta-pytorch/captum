@@ -338,6 +338,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">run_forward_on_skip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
@@ -458,6 +459,20 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                        It will try to use tqdm if available for advanced features</span>
 <span class="sd">                        (e.g. time estimation). Otherwise, it will fallback to</span>
 <span class="sd">                        a simple output of progress.</span>
+<span class="sd">                        Default: False</span>
+<span class="sd">            run_forward_on_skip (bool, optional): When True, a feature group that</span>
+<span class="sd">                        would otherwise be skipped (e.g. because a per-rank batch</span>
+<span class="sd">                        is smaller than ``min_examples_per_batch_grouped``), or</span>
+<span class="sd">                        whose ablated/permuted inputs cannot be constructed on this</span>
+<span class="sd">                        rank (e.g. a custom perm_func raises on a degenerate batch),</span>
+<span class="sd">                        still triggers a model forward on the unablated inputs whose</span>
+<span class="sd">                        result is discarded. This keeps distributed sharded models</span>
+<span class="sd">                        issuing the same number of forwards (and thus the same</span>
+<span class="sd">                        collectives, e.g. all-to-all) across ranks, so NCCL stays</span>
+<span class="sd">                        in lockstep even when per-rank batch shapes diverge. The</span>
+<span class="sd">                        affected group's attribution stays zero, so the numerical</span>
+<span class="sd">                        result is identical to skipping. Default False keeps</span>
+<span class="sd">                        single-process / OSS behavior unchanged.</span>
 <span class="sd">                        Default: False</span>
 <span class="sd">            **kwargs (Any, optional): Any additional arguments used by child</span>
 <span class="sd">                        classes of FeatureAblation (such as Occlusion) to construct</span>
@@ -592,6 +607,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">weights</span><span class="p">,</span>
                 <span class="n">attrib_type</span><span class="p">,</span>
                 <span class="n">perturbations_per_eval</span><span class="p">,</span>
+                <span class="n">run_forward_on_skip</span><span class="o">=</span><span class="n">run_forward_on_skip</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
 
@@ -620,6 +636,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">weights</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
         <span class="n">attrib_type</span><span class="p">:</span> <span class="n">dtype</span><span class="p">,</span>
         <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">run_forward_on_skip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]:</span>
         <span class="n">feature_idx_to_tensor_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_idx_to_tensor_idx</span><span class="p">(</span>
@@ -656,11 +673,19 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">perturbations_per_eval</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_feature_idxs</span><span class="p">)</span>
             <span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_skip_inputs_and_warn</span><span class="p">(</span>
+            <span class="n">should_skip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_skip_inputs_and_warn</span><span class="p">(</span>
                 <span class="n">current_feature_idxs</span><span class="p">,</span>
                 <span class="n">feature_idx_to_tensor_idx</span><span class="p">,</span>
                 <span class="n">formatted_inputs</span><span class="p">,</span>
-            <span class="p">):</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">should_skip</span> <span class="ow">and</span> <span class="n">run_forward_on_skip</span><span class="p">:</span>
+                <span class="n">_run_forward</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">forward_func</span><span class="p">,</span>
+                    <span class="n">formatted_inputs</span><span class="p">,</span>
+                    <span class="n">target</span><span class="p">,</span>
+                    <span class="n">formatted_additional_forward_args</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">should_skip</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="c1"># Store appropriate inputs and additional args based on batch size.</span>

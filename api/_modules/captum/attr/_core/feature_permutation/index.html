@@ -152,6 +152,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">run_forward_on_skip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
@@ -253,6 +254,17 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                            (e.g. time estimation). Otherwise, it will fallback to</span>
 <span class="sd">                            a simple output of progress.</span>
 <span class="sd">                            Default: False</span>
+<span class="sd">                run_forward_on_skip (bool, optional): When True, a feature group</span>
+<span class="sd">                            that would otherwise be skipped (e.g. because a</span>
+<span class="sd">                            per-rank batch is smaller than</span>
+<span class="sd">                            ``min_examples_per_batch_grouped``) still triggers a</span>
+<span class="sd">                            model forward whose result is discarded, so distributed</span>
+<span class="sd">                            sharded models keep their collectives (e.g. all-to-all)</span>
+<span class="sd">                            in lockstep across ranks. The skipped group's</span>
+<span class="sd">                            attribution stays zero. See</span>
+<span class="sd">                            :func:`FeatureAblation.attribute` for details. Default</span>
+<span class="sd">                            False keeps single-process / OSS behavior unchanged.</span>
+<span class="sd">                            Default: False</span>
 <span class="sd">                **kwargs (Any, optional): Any additional arguments used by child</span>
 <span class="sd">                            classes of :class:`.FeatureAblation` (such as</span>
 <span class="sd">                            :class:`.Occlusion`) to construct ablations. These</span>
@@ -322,6 +334,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">feature_mask</span><span class="o">=</span><span class="n">feature_mask</span><span class="p">,</span>
             <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="n">run_forward_on_skip</span><span class="o">=</span><span class="n">run_forward_on_skip</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -338,6 +351,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">feature_mask</span><span class="o">=</span><span class="n">feature_mask</span><span class="p">,</span>
                 <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
                 <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+                <span class="n">run_forward_on_skip</span><span class="o">=</span><span class="n">run_forward_on_skip</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">formatted_current_attributions</span> <span class="o">=</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span>
@@ -367,6 +381,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">run_forward_on_skip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">:</span>
         <span class="c1"># Remove baselines from kwargs if provided so we don't specify this field</span>
@@ -382,6 +397,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">feature_mask</span><span class="o">=</span><span class="n">feature_mask</span><span class="p">,</span>
             <span class="n">perturbations_per_eval</span><span class="o">=</span><span class="n">perturbations_per_eval</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="n">run_forward_on_skip</span><span class="o">=</span><span class="n">run_forward_on_skip</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
