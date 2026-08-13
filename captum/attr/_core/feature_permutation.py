@@ -116,6 +116,7 @@ class FeaturePermutation(FeatureAblation):
         perturbations_per_eval: int = 1,
         n_samples: int = 1,
         show_progress: bool = False,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> TensorOrTupleOfTensorsGeneric:
         r"""
@@ -217,6 +218,17 @@ class FeaturePermutation(FeatureAblation):
                             (e.g. time estimation). Otherwise, it will fallback to
                             a simple output of progress.
                             Default: False
+                run_forward_on_skip (bool, optional): When True, a feature group
+                            that would otherwise be skipped (e.g. because a
+                            per-rank batch is smaller than
+                            ``min_examples_per_batch_grouped``) still triggers a
+                            model forward whose result is discarded, so distributed
+                            sharded models keep their collectives (e.g. all-to-all)
+                            in lockstep across ranks. The skipped group's
+                            attribution stays zero. See
+                            :func:`FeatureAblation.attribute` for details. Default
+                            False keeps single-process / OSS behavior unchanged.
+                            Default: False
                 **kwargs (Any, optional): Any additional arguments used by child
                             classes of :class:`.FeatureAblation` (such as
                             :class:`.Occlusion`) to construct ablations. These
@@ -286,6 +298,7 @@ class FeaturePermutation(FeatureAblation):
             feature_mask=feature_mask,
             perturbations_per_eval=perturbations_per_eval,
             show_progress=show_progress,
+            run_forward_on_skip=run_forward_on_skip,
             **kwargs,
         )
 
@@ -302,6 +315,7 @@ class FeaturePermutation(FeatureAblation):
                 feature_mask=feature_mask,
                 perturbations_per_eval=perturbations_per_eval,
                 show_progress=show_progress,
+                run_forward_on_skip=run_forward_on_skip,
                 **kwargs,
             )
             formatted_current_attributions = _format_tensor_into_tuples(
@@ -330,6 +344,7 @@ class FeaturePermutation(FeatureAblation):
         feature_mask: Union[None, TensorOrTupleOfTensorsGeneric] = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> TensorOrTupleOfTensorsGeneric:
         # Remove baselines from kwargs if provided so we don't specify this field
@@ -345,6 +360,7 @@ class FeaturePermutation(FeatureAblation):
             feature_mask=feature_mask,
             perturbations_per_eval=perturbations_per_eval,
             show_progress=show_progress,
+            run_forward_on_skip=run_forward_on_skip,
             **kwargs,
         )
 

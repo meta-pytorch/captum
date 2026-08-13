@@ -302,6 +302,7 @@ class FeatureAblation(PerturbationAttribution):
         feature_mask: Union[None, Tensor, Tuple[Tensor, ...]] = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> TensorOrTupleOfTensorsGeneric:
         r"""
@@ -422,6 +423,20 @@ class FeatureAblation(PerturbationAttribution):
                         It will try to use tqdm if available for advanced features
                         (e.g. time estimation). Otherwise, it will fallback to
                         a simple output of progress.
+                        Default: False
+            run_forward_on_skip (bool, optional): When True, a feature group that
+                        would otherwise be skipped (e.g. because a per-rank batch
+                        is smaller than ``min_examples_per_batch_grouped``), or
+                        whose ablated/permuted inputs cannot be constructed on this
+                        rank (e.g. a custom perm_func raises on a degenerate batch),
+                        still triggers a model forward on the unablated inputs whose
+                        result is discarded. This keeps distributed sharded models
+                        issuing the same number of forwards (and thus the same
+                        collectives, e.g. all-to-all) across ranks, so NCCL stays
+                        in lockstep even when per-rank batch shapes diverge. The
+                        affected group's attribution stays zero, so the numerical
+                        result is identical to skipping. Default False keeps
+                        single-process / OSS behavior unchanged.
                         Default: False
             **kwargs (Any, optional): Any additional arguments used by child
                         classes of FeatureAblation (such as Occlusion) to construct
@@ -556,6 +571,7 @@ class FeatureAblation(PerturbationAttribution):
                 weights,
                 attrib_type,
                 perturbations_per_eval,
+                run_forward_on_skip=run_forward_on_skip,
                 **kwargs,
             )
 
@@ -583,6 +599,7 @@ class FeatureAblation(PerturbationAttribution):
         weights: List[Tensor],
         attrib_type: dtype,
         perturbations_per_eval: int,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> Tuple[List[Tensor], List[Tensor]]:
         feature_idx_to_tensor_idx = self._get_feature_idx_to_tensor_idx(
@@ -619,11 +636,19 @@ class FeatureAblation(PerturbationAttribution):
                 perturbations_per_eval, len(current_feature_idxs)
             )
 
-            if self._should_skip_inputs_and_warn(
+            should_skip = self._should_skip_inputs_and_warn(
                 current_feature_idxs,
                 feature_idx_to_tensor_idx,
                 formatted_inputs,
-            ):
+            )
+            if should_skip and run_forward_on_skip:
+                _run_forward(
+                    self.forward_func,
+                    formatted_inputs,
+                    target,
+                    formatted_additional_forward_args,
+                )
+            if should_skip:
                 continue
 
             # Store appropriate inputs and additional args based on batch size.

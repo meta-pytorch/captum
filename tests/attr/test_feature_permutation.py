@@ -192,6 +192,80 @@ class Test(BaseTest):
         with self.assertRaises(AssertionError):
             feature_importance.attribute(inp, feature_mask=mask)
 
+    def _deterministic_perm(self, x: Tensor, feature_mask: Tensor) -> Tensor:
+        # Deterministic stand-in for the default random permutation so the
+        # forward-count invariant below does not depend on an RNG seed.
+        return (x.flip(0) * feature_mask.to(dtype=x.dtype)) + (
+            x * feature_mask.bitwise_not().to(dtype=x.dtype)
+        )
+
+    def test_run_forward_on_skip_keeps_forward_count_in_lockstep(self) -> None:
+        # Regression test for the distributed NCCL-desync fix: when a per-rank
+        # batch is uneven, a rank-local skip drops a model forward, offsetting the
+        # shard PG's collective count. run_forward_on_skip=True must keep the
+        # forward count identical to the no-skip case so every rank stays in
+        # lockstep, while the skipped group's attribution stays zero.
+        def make_counting_forward() -> Tuple[Callable[..., Tensor], List[int]]:
+            calls: list[int] = [0]
+
+            def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
+                calls[0] += 1
+                return x2.sum(dim=-1)
+
+            return forward_func, calls
+
+        # Feature group 0 lives only in x1; groups 1 and 2 live only in x2.
+        mask = (
+            torch.tensor([[0, 0]]),
+            torch.tensor([[1, 2]]),
+        )
+
+        # Baseline: every tensor has batch size >= 2, so no group is skipped.
+        # 1 initial eval + 3 group forwards = 4 forwards.
+        no_skip_forward, no_skip_calls = make_counting_forward()
+        no_skip_attr = FeaturePermutation(
+            forward_func=no_skip_forward, perm_func=self._deterministic_perm
+        )
+        no_skip_attr.attribute(
+            (
+                torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+                torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+            ),
+            feature_mask=mask,
+        )
+        self.assertEqual(no_skip_calls[0], 4)
+
+        # x1 now has batch size 1, so group 0 fires the min-examples skip
+        # (_min_examples_per_batch_grouped defaults to 2 for FeaturePermutation).
+        uneven_inp = (
+            torch.tensor([[1.0, 2.0]]),
+            torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+        )
+
+        # With run_forward_on_skip=True, the skipped group still issues a forward,
+        # matching the no-skip count exactly (lockstep).
+        skip_on_forward, skip_on_calls = make_counting_forward()
+        skip_on_attr = FeaturePermutation(
+            forward_func=skip_on_forward, perm_func=self._deterministic_perm
+        )
+        attribs = skip_on_attr.attribute(
+            uneven_inp, feature_mask=mask, run_forward_on_skip=True
+        )
+        self.assertEqual(skip_on_calls[0], no_skip_calls[0])
+        # The skipped group (feature 0, in x1) keeps its zero-initialized attribution.
+        assertTensorAlmostEqual(
+            self, attribs[0], torch.zeros_like(attribs[0]), delta=0.0
+        )
+
+        # Default behavior (run_forward_on_skip=False) drops the skipped group's
+        # forward, which is exactly the desync this flag fixes.
+        skip_off_forward, skip_off_calls = make_counting_forward()
+        skip_off_attr = FeaturePermutation(
+            forward_func=skip_off_forward, perm_func=self._deterministic_perm
+        )
+        skip_off_attr.attribute(uneven_inp, feature_mask=mask)
+        self.assertEqual(skip_off_calls[0], no_skip_calls[0] - 1)
+
     def test_single_input_with_future(
         self,
     ) -> None:
