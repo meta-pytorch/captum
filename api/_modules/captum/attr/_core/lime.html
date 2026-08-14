@@ -1318,7 +1318,6 @@ src="/_sphinx/documentation_options.js"></script>
                                     <span class="n">curr_inps</span><span class="p">,</span>
                                     <span class="n">curr_feature_mask</span><span class="p">,</span>
                                     <span class="n">coefs</span><span class="p">,</span>
-                                    <span class="n">num_interp_features</span><span class="p">,</span>
                                     <span class="n">is_inputs_tuple</span><span class="p">,</span>
                                 <span class="p">)</span>
                             <span class="p">)</span>
@@ -1358,7 +1357,6 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">formatted_inputs</span><span class="p">,</span>
                 <span class="n">feature_mask</span><span class="p">,</span>
                 <span class="n">coefs</span><span class="p">,</span>
-                <span class="n">num_interp_features</span><span class="p">,</span>
                 <span class="n">is_inputs_tuple</span><span class="p">,</span>
                 <span class="n">leading_dim_one</span><span class="o">=</span><span class="p">(</span><span class="n">bsz</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">),</span>
             <span class="p">)</span>
@@ -1371,7 +1369,6 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">formatted_inp</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">coefs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
-        <span class="n">num_interp_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">is_inputs_tuple</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
         <span class="n">leading_dim_one</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span> <span class="o">...</span>
@@ -1382,7 +1379,6 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">formatted_inp</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">coefs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
-        <span class="n">num_interp_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">is_inputs_tuple</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
         <span class="n">leading_dim_one</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
@@ -1393,7 +1389,6 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">formatted_inp</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">coefs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
-        <span class="n">num_interp_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">is_inputs_tuple</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">leading_dim_one</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span> <span class="o">...</span>
@@ -1403,21 +1398,17 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">formatted_inp</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">coefs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
-        <span class="n">num_interp_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">is_inputs_tuple</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">leading_dim_one</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
-        <span class="n">coefs</span> <span class="o">=</span> <span class="n">coefs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">coefs</span> <span class="o">=</span> <span class="n">coefs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
         <span class="n">attr</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">single_inp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">single_inp</span> <span class="ow">in</span> <span class="n">formatted_inp</span>
         <span class="p">]</span>
-        <span class="k">for</span> <span class="n">tensor_ind</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">formatted_inp</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">single_feature</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_interp_features</span><span class="p">):</span>
-                <span class="n">attr</span><span class="p">[</span><span class="n">tensor_ind</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
-                    <span class="n">coefs</span><span class="p">[</span><span class="n">single_feature</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                    <span class="o">*</span> <span class="p">(</span><span class="n">feature_mask</span><span class="p">[</span><span class="n">tensor_ind</span><span class="p">]</span> <span class="o">==</span> <span class="n">single_feature</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">single_attr</span><span class="p">,</span> <span class="n">single_mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">feature_mask</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">coefs</span> <span class="o">=</span> <span class="n">coefs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">single_attr</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">single_attr</span> <span class="o">+=</span> <span class="n">coefs</span><span class="p">[</span><span class="n">single_mask</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">leading_dim_one</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">attr</span><span class="p">)):</span>
                 <span class="n">attr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
