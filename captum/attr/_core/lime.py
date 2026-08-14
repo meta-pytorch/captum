@@ -1263,7 +1263,6 @@ class Lime(LimeBase):
                                     curr_inps,
                                     curr_feature_mask,
                                     coefs,
-                                    num_interp_features,
                                     is_inputs_tuple,
                                 )
                             )
@@ -1303,7 +1302,6 @@ class Lime(LimeBase):
                 formatted_inputs,
                 feature_mask,
                 coefs,
-                num_interp_features,
                 is_inputs_tuple,
                 leading_dim_one=(bsz > 1),
             )
@@ -1316,7 +1314,6 @@ class Lime(LimeBase):
         formatted_inp: Tuple[Tensor, ...],
         feature_mask: Tuple[Tensor, ...],
         coefs: Tensor,
-        num_interp_features: int,
         is_inputs_tuple: Literal[True],
         leading_dim_one: bool = False,
     ) -> Tuple[Tensor, ...]: ...
@@ -1327,7 +1324,6 @@ class Lime(LimeBase):
         formatted_inp: Tuple[Tensor, ...],
         feature_mask: Tuple[Tensor, ...],
         coefs: Tensor,
-        num_interp_features: int,
         is_inputs_tuple: Literal[False],
         leading_dim_one: bool = False,
     ) -> Tensor: ...
@@ -1338,7 +1334,6 @@ class Lime(LimeBase):
         formatted_inp: Tuple[Tensor, ...],
         feature_mask: Tuple[Tensor, ...],
         coefs: Tensor,
-        num_interp_features: int,
         is_inputs_tuple: bool,
         leading_dim_one: bool = False,
     ) -> Union[Tensor, Tuple[Tensor, ...]]: ...
@@ -1348,21 +1343,17 @@ class Lime(LimeBase):
         formatted_inp: Tuple[Tensor, ...],
         feature_mask: Tuple[Tensor, ...],
         coefs: Tensor,
-        num_interp_features: int,
         is_inputs_tuple: bool,
         leading_dim_one: bool = False,
     ) -> Union[Tensor, Tuple[Tensor, ...]]:
-        coefs = coefs.flatten()
+        coefs = coefs.flatten().to(dtype=torch.float)
         attr = [
             torch.zeros_like(single_inp, dtype=torch.float)
             for single_inp in formatted_inp
         ]
-        for tensor_ind in range(len(formatted_inp)):
-            for single_feature in range(num_interp_features):
-                attr[tensor_ind] += (
-                    coefs[single_feature].item()
-                    * (feature_mask[tensor_ind] == single_feature).float()
-                )
+        for single_attr, single_mask in zip(attr, feature_mask, strict=True):
+            coefs = coefs.to(device=single_attr.device)
+            single_attr += coefs[single_mask]
         if leading_dim_one:
             for i in range(len(attr)):
                 attr[i] = attr[i][0:1]
