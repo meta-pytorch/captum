@@ -953,14 +953,13 @@ def _compute_jacobian_sample_wise_grads_per_batch(
     )
 
 
-# pyre-fixme[3]: Return type must be annotated.
 def _compute_batch_loss_influence_function_base(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     loss_fn: Optional[Union[Module, Callable]],
     input: Any,
     target: Any,
     reduction_type: str,
-):
+) -> Tensor:
     """
     In implementations of `InfluenceFunctionBase`, we need to compute the total loss
     for a batch given `loss_fn`, whose reduction can either be 'none', 'sum', or
