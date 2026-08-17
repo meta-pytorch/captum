@@ -6,7 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-from typing import Callable, cast, Generic, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, cast, Generic, List, Optional, Tuple, Type, Union
 
 import torch
 import torch.nn.functional as F
@@ -353,6 +353,10 @@ class PerturbationAttribution(Attribution):
     that we want to interpret or the model itself.
     """
 
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        cls._raise_if_runs_with_grad()
+
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     def __init__(self, forward_func: Callable) -> None:
         r"""
@@ -367,6 +371,35 @@ class PerturbationAttribution(Attribution):
     @property
     def multiplies_by_inputs(self) -> bool:
         return True
+
+    @staticmethod
+    def _is_decorated_with_no_grad(method: object) -> bool:
+        # torch.no_grad()(fn) closes over the context manager itself, so the
+        # decorator is identified by the object rather than by any name torch
+        # may change.
+        while method is not None:
+            for cell in getattr(method, "__closure__", None) or ():
+                try:
+                    closed_over = cell.cell_contents
+                except ValueError:
+                    continue
+                if isinstance(
+                    getattr(closed_over, "__self__", closed_over), torch.no_grad
+                ):
+                    return True
+            method = getattr(method, "__wrapped__", None)
+        return False
+
+    @classmethod
+    def _raise_if_runs_with_grad(cls) -> None:
+        method = cls.__dict__.get("attribute")
+        if method is None or cls._is_decorated_with_no_grad(method):
+            return
+        raise TypeError(
+            f"{cls.__module__}.{cls.__qualname__}.attribute should be decorated "
+            "with @torch.no_grad() to avoid wasting memory on an autograd graph "
+            "that perturbation attribution never differentiates."
+        )
 
 
 # mypy false positive "Free type variable expected in Generic[...]" but

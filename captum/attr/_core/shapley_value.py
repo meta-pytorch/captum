@@ -128,6 +128,7 @@ class ShapleyValueSampling(PerturbationAttribution):
         self.permutation_generator = _perm_generator
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
@@ -1055,6 +1056,7 @@ class ShapleyValues(ShapleyValueSampling):
         self.permutation_generator = _all_perm_generator
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

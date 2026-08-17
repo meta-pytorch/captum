@@ -66,6 +66,7 @@ class NeuronFeatureAblation(NeuronAttribution, PerturbationAttribution):
         PerturbationAttribution.__init__(self, forward_func)
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

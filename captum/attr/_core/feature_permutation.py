@@ -107,6 +107,7 @@ class FeaturePermutation(FeatureAblation):
     # suppressing error caused by the child class not having a matching
     # signature to the parent
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(  # type: ignore
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

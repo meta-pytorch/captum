@@ -53,6 +53,7 @@ class Occlusion(FeatureAblation):
         self.use_weights = True
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(  # type: ignore
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

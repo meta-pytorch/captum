@@ -293,6 +293,7 @@ class FeatureAblation(PerturbationAttribution):
         self._min_examples_per_batch_grouped: Optional[int] = None
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

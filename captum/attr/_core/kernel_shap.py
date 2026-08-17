@@ -57,6 +57,7 @@ class KernelShap(Lime):
         self.inf_weight = 1000000.0
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(  # type: ignore
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
@@ -426,6 +427,7 @@ class RandomBaselineKernelShap(KernelShap):
         self.inf_weight = 1000000.0
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(  # type: ignore
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
