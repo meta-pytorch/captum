@@ -329,6 +329,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="FeatureAblation.attribute">
 <a class="viewcode-back" href="../../../../feature_ablation.html#captum.attr.FeatureAblation.attribute">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
     <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
