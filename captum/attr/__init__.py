@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# pyre-strict
 from captum.attr._core.dataloader_attr import DataLoaderAttribution
 from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
 from captum.attr._core.feature_ablation import FeatureAblation

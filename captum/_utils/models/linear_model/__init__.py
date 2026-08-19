@@ -1,4 +1,3 @@
-# pyre-strict
 from captum._utils.models.linear_model.model import (
     LinearModel,
     SGDLasso,
