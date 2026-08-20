@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 from typing import Callable, cast, Optional
 
 from captum._utils.common import _format_output, _format_tensor_into_tuples, _is_tuple

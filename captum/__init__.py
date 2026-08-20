@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# pyre-strict
 import captum.attr as attr
 import captum.concept as concept
 import captum.influence as influence
