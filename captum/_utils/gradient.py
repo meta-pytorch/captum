@@ -448,7 +448,7 @@ def _extract_device_ids(
 
 @typing.overload
 # pyre-fixme[43]: The implementation of `_forward_layer_eval_with_neuron_grads` does
-#  not accept all possible arguments of overload defined on line `378`.
+#  not accept all possible arguments of this overload.
 def _forward_layer_eval_with_neuron_grads(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -465,6 +465,8 @@ def _forward_layer_eval_with_neuron_grads(
 
 
 @typing.overload
+# pyre-fixme[43]: The implementation of `_forward_layer_eval_with_neuron_grads` does
+#  not accept all possible arguments of this overload.
 def _forward_layer_eval_with_neuron_grads(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -480,7 +482,7 @@ def _forward_layer_eval_with_neuron_grads(
 
 @typing.overload
 # pyre-fixme[43]: The implementation of `_forward_layer_eval_with_neuron_grads` does
-#  not accept all possible arguments of overload defined on line `392`.
+#  not accept all possible arguments of this overload.
 def _forward_layer_eval_with_neuron_grads(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
