@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# pyre-strict
 
 from captum.influence._core.influence import DataInfluence
 from captum.influence._core.influence_function import NaiveInfluenceFunction
