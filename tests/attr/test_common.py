@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import torch
 from captum.attr._core.noise_tunnel import SUPPORTED_NOISE_TUNNEL_TYPES

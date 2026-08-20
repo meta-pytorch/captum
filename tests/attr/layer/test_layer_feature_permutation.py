@@ -3,7 +3,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
 
 import torch
 from captum.attr._core.layer.layer_feature_permutation import LayerFeaturePermutation
