@@ -49,7 +49,7 @@ test = [
     "parameterized",
     "black==25.11.0",
     "flake8",
-    "pyre-check-nightly==0.0.101750936314",
+    "pyrefly",
     "usort==1.1.0",
     "ufmt",
 ]

@@ -55,11 +55,16 @@ Captum is fully typed using Python 3.10+
 We expect any contributions to also use proper type annotations, and we enforce
 consistency of these in our continuous integration tests.
 
-We use [Pyre](https://pyre-check.org/) for type checking. For contributors, the nightly version of
-Pyre is used which can be installed with pip `pip install pyre-check-nightly`. To run Pyre, you can
-use the following command from inside the repository root:
+We use [Pyrefly](https://pyrefly.org/) for type checking. It is installed as part of the dev
+dependencies (`pip install -e ".[dev]"`), or on its own with `pip install pyrefly`. To run Pyrefly,
+use the following command from inside the repository root, which matches what continuous
+integration runs:
 ```bash
-pyre check
+pyrefly check captum \
+  --project-excludes='**/fb/**' \
+  --python-version=3.10 \
+  --permissive-ignores \
+  --untyped-def-behavior=check-and-infer-return-any
 ```
 
 #### Unit Tests

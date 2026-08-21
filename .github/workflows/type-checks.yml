@@ -22,8 +22,14 @@ jobs:
       script: |
         sudo chmod -R 777 .
         ./scripts/install_via_pip.sh ${{ matrix.pytorch_args }} -d
-        # Fix the version of numpy to install to avoid pyre issues
-        pip install --upgrade numpy==2.1.3
-        # See https://github.com/facebook/pyre-check/issues/988
-        pip install 'click<8.2.0'
-        pyre check
+        pip install pyrefly
+        pyrefly --version
+        # Type checking covers the `captum` library itself, not tests, tutorials,
+        # docs, or the website scaffolding. Naming the scope and behavior here
+        # rather than in a config file keeps this job self-contained.
+        pyrefly check captum \
+          --project-excludes='**/fb/**' \
+          --python-version=3.10 \
+          --permissive-ignores \
+          --untyped-def-behavior=check-and-infer-return-any \
+          --output-format=full-text-with-github
