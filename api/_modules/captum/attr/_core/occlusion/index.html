@@ -433,7 +433,10 @@ src="/_sphinx/documentation_options.js"></script>
 
                 <span class="k">if</span> <span class="n">feature_idx_to_tensor_idx</span><span class="p">[</span><span class="n">feature_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">i</span><span class="p">:</span>
                     <span class="n">tensor_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                            <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+                            <span class="n">device</span><span class="o">=</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                        <span class="p">)</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
                 <span class="n">ablated_feature_num</span> <span class="o">=</span> <span class="n">feature_idx</span> <span class="o">-</span> <span class="n">accumulated_shift_count_prods</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
