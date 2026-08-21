@@ -47,7 +47,7 @@ test = [
     "pytest",
     "pytest-cov",
     "parameterized",
-    "black==25.11.0",
+    "black==26.3.1",
     "flake8",
     "pyrefly",
     "usort==1.1.0",
