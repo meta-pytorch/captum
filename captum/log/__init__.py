@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# pyre-strict
 
 try:
     from captum.log.fb.internal_log import (  # type: ignore

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pyre-strict
 
 """
 Captum Insights was retired after v0.8.0 and is no longer supported.
