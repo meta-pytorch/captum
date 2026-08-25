@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 import math
 from enum import Enum
 from typing import Any, Callable, cast, Dict, Generator, List, Optional, Tuple, Union

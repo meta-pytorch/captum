@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# pyre-strict
 
 try:
     from captum.testing.helpers.fb.internal_base import (  # type: ignore
