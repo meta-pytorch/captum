@@ -715,7 +715,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Size</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""At the beginning of each feature permutation, the prev_results is</span>
 <span class="sd">        reset to the initial eval, and this method helps set that up"""</span>
-        <span class="p">(</span><span class="n">initial_eval</span><span class="p">,</span> <span class="n">prev_results</span><span class="p">,</span> <span class="n">output_shape</span><span class="p">,</span> <span class="n">total_attrib</span><span class="p">,</span> <span class="n">agg_output_mode</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">initial_eval</span><span class="p">,</span> <span class="n">prev_results</span><span class="p">,</span> <span class="n">output_shape</span><span class="p">,</span> <span class="n">total_attrib</span><span class="p">,</span> <span class="n">agg_output_mode</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">processed_initial_eval</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="n">prev_results</span> <span class="o">=</span> <span class="n">initial_eval</span>

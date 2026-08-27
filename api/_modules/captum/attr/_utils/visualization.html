@@ -1244,11 +1244,10 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 <span class="k">def</span> <span class="nf">format_tooltip</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s1">'&lt;div class="tooltip"&gt;</span><span class="si">{item}</span><span class="se">\</span>
+    <span class="n">tooltip</span> <span class="o">=</span> <span class="s1">'&lt;div class="tooltip"&gt;</span><span class="si">{item}</span><span class="se">\</span>
 <span class="s1">        &lt;span class="tooltiptext"&gt;</span><span class="si">{text}</span><span class="s1">&lt;/span&gt;</span><span class="se">\</span>
-<span class="s1">        &lt;/div&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-        <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span>
-    <span class="p">)</span>
+<span class="s1">        &lt;/div&gt;'</span>
+    <span class="k">return</span> <span class="n">tooltip</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">format_word_importances</span><span class="p">(</span>
@@ -1266,11 +1265,10 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">importance</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">importances</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)]):</span>
         <span class="n">word</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">format_special_tokens</span><span class="p">(</span><span class="n">word</span><span class="p">))</span>
         <span class="n">color</span> <span class="o">=</span> <span class="n">_get_color</span><span class="p">(</span><span class="n">importance</span><span class="p">)</span>
-        <span class="n">unwrapped_tag</span> <span class="o">=</span> <span class="s1">'&lt;mark style="background-color: </span><span class="si">{color}</span><span class="s1">; opacity:1.0; </span><span class="se">\</span>
+        <span class="n">unwrapped_tag_template</span> <span class="o">=</span> <span class="s1">'&lt;mark style="background-color: </span><span class="si">{color}</span><span class="s1">; opacity:1.0; </span><span class="se">\</span>
 <span class="s1">                    line-height:1.75"&gt;&lt;font color="black"&gt; </span><span class="si">{word}</span><span class="se">\</span>
-<span class="s1">                    &lt;/font&gt;&lt;/mark&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">word</span><span class="o">=</span><span class="n">word</span>
-        <span class="p">)</span>
+<span class="s1">                    &lt;/font&gt;&lt;/mark&gt;'</span>
+        <span class="n">unwrapped_tag</span> <span class="o">=</span> <span class="n">unwrapped_tag_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">word</span><span class="o">=</span><span class="n">word</span><span class="p">)</span>
         <span class="n">tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unwrapped_tag</span><span class="p">)</span>
     <span class="n">tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;/td&gt;"</span><span class="p">)</span>
     <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
@@ -1321,20 +1319,18 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
-        <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="s1">'&lt;div style="border-top: 1px solid; margin-top: 5px; </span><span class="se">\</span>
+        <span class="n">legend_html</span> <span class="o">=</span> <span class="s1">'&lt;div style="border-top: 1px solid; margin-top: 5px; </span><span class="se">\</span>
 <span class="s1">            padding-top: 5px; display: inline-block"&gt;'</span>
-        <span class="p">)</span>
+        <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">legend_html</span><span class="p">)</span>
         <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;b&gt;Legend: &lt;/b&gt;"</span><span class="p">)</span>
 
+        <span class="n">color_box_template</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">'&lt;span style="display: inline-block; width: 10px; height: 10px; '</span>
+            <span class="s2">"                border: 1px solid; background-color: "</span>
+            <span class="s1">'                </span><span class="si">{value}</span><span class="s1">"&gt;&lt;/span&gt; </span><span class="si">{label}</span><span class="s1">  '</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s2">"Negative"</span><span class="p">,</span> <span class="s2">"Neutral"</span><span class="p">,</span> <span class="s2">"Positive"</span><span class="p">]):</span>
-            <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s1">'&lt;span style="display: inline-block; width: 10px; height: 10px; </span><span class="se">\</span>
-<span class="s1">                border: 1px solid; background-color: </span><span class="se">\</span>
-<span class="s1">                </span><span class="si">{value}</span><span class="s1">"&gt;&lt;/span&gt; </span><span class="si">{label}</span><span class="s1">  '</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">value</span><span class="o">=</span><span class="n">_get_color</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">color_box_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">_get_color</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">))</span>
         <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"&lt;/div&gt;"</span><span class="p">)</span>
 
     <span class="n">dom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rows</span><span class="p">))</span>
