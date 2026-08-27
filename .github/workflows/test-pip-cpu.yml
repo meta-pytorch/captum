@@ -42,7 +42,6 @@ jobs:
     with:
       runner: linux.12xlarge
       docker-image: ${{ matrix.docker_img }}
-      repository: pytorch/captum
       script: |
         sudo chmod -R 777 .
         ./scripts/install_via_pip.sh ${{ matrix.pytorch_args }} ${{ matrix.transformers_args }}

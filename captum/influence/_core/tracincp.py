@@ -45,7 +45,6 @@ from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader, Dataset
 
-
 r"""
 
 Note: methods starting with "_" are protected, not private, and can be overridden in

@@ -8,7 +8,6 @@ import captum.log as log
 import captum.metrics as metrics
 import captum.robust as robust
 
-
 __version__ = "0.9.0"
 
 __all__ = ["attr", "concept", "influence", "log", "metrics", "robust"]

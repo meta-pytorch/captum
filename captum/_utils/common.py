@@ -749,18 +749,15 @@ def _extract_device(
         and (hook_outputs is None or len(hook_outputs) == 0)
         and len(params) == 0
     ):
-        raise RuntimeError(
-            """Unable to extract device information for the module
-            {}. Both inputs and outputs to the forward hook and
+        message = f"""Unable to extract device information for the module
+            {module}. Both inputs and outputs to the forward hook and
             `module.parameters()` are empty.
             The reason that the inputs to the forward hook are empty
             could be due to the fact that the arguments to that
-            module {} are all named and are passed as named
+            module {module} are all named and are passed as named
             variables to its forward function.
-            """.format(
-                module, module
-            )
-        )
+            """
+        raise RuntimeError(message)
     if hook_inputs is not None and len(hook_inputs) > 0:
         return hook_inputs[0].device
     if hook_outputs is not None and len(hook_outputs) > 0:

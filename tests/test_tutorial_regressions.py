@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 TUTORIALS_PATH = Path(__file__).resolve().parents[1] / "tutorials"
 
 

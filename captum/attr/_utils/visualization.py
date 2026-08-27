@@ -1203,11 +1203,10 @@ def format_special_tokens(token: str) -> str:
 
 
 def format_tooltip(item: str, text: str) -> str:
-    return '<div class="tooltip">{item}\
+    tooltip = '<div class="tooltip">{item}\
         <span class="tooltiptext">{text}</span>\
-        </div>'.format(
-        item=item, text=text
-    )
+        </div>'
+    return tooltip.format(item=item, text=text)
 
 
 def format_word_importances(
@@ -1225,11 +1224,10 @@ def format_word_importances(
     for word, importance in zip(words, importances[: len(words)]):
         word = html.escape(format_special_tokens(word))
         color = _get_color(importance)
-        unwrapped_tag = '<mark style="background-color: {color}; opacity:1.0; \
+        unwrapped_tag_template = '<mark style="background-color: {color}; opacity:1.0; \
                     line-height:1.75"><font color="black"> {word}\
-                    </font></mark>'.format(
-            color=color, word=word
-        )
+                    </font></mark>'
+        unwrapped_tag = unwrapped_tag_template.format(color=color, word=word)
         tags.append(unwrapped_tag)
     tags.append("</td>")
     return "".join(tags)
@@ -1280,20 +1278,18 @@ def visualize_text(
         )
 
     if legend:
-        dom.append(
-            '<div style="border-top: 1px solid; margin-top: 5px; \
+        legend_html = '<div style="border-top: 1px solid; margin-top: 5px; \
             padding-top: 5px; display: inline-block">'
-        )
+        dom.append(legend_html)
         dom.append("<b>Legend: </b>")
 
+        color_box_template = (
+            '<span style="display: inline-block; width: 10px; height: 10px; '
+            "                border: 1px solid; background-color: "
+            '                {value}"></span> {label}  '
+        )
         for value, label in zip([-1, 0, 1], ["Negative", "Neutral", "Positive"]):
-            dom.append(
-                '<span style="display: inline-block; width: 10px; height: 10px; \
-                border: 1px solid; background-color: \
-                {value}"></span> {label}  '.format(
-                    value=_get_color(value), label=label
-                )
-            )
+            dom.append(color_box_template.format(value=_get_color(value), label=label))
         dom.append("</div>")
 
     dom.append("".join(rows))

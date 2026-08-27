@@ -64,13 +64,10 @@ def apply_gradient_requirements(
             hasattr(inputs_dtype, "is_complex") and inputs_dtype.is_complex
         ):
             if warn:
-                warnings.warn(
-                    """Input Tensor %d has a dtype of %s.
+                message = f"""Input Tensor {index} has a dtype of {inputs_dtype}.
                     Gradients cannot be activated
                     for these data types."""
-                    % (index, str(inputs_dtype)),
-                    stacklevel=2,
-                )
+                warnings.warn(message, stacklevel=2)
         elif not input.requires_grad:
             if warn:
                 warnings.warn(

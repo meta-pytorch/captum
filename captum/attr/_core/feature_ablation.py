@@ -35,7 +35,6 @@ from captum.log import log_usage
 from torch import dtype, Tensor
 from torch.futures import collect_all, Future
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 
@@ -608,7 +607,7 @@ class FeatureAblation(PerturbationAttribution):
         )
         all_feature_idxs = list(feature_idx_to_tensor_idx.keys())
 
-        (all_features_repeated, additional_args_repeated, target_repeated) = (
+        all_features_repeated, additional_args_repeated, target_repeated = (
             _maybe_expand_parameters(
                 perturbations_per_eval,
                 formatted_inputs,
@@ -919,7 +918,7 @@ class FeatureAblation(PerturbationAttribution):
         )
         all_feature_idxs = list(feature_idx_to_tensor_idx.keys())
 
-        (all_features_repeated, additional_args_repeated, target_repeated) = (
+        all_features_repeated, additional_args_repeated, target_repeated = (
             _maybe_expand_parameters(
                 perturbations_per_eval,
                 formatted_inputs,

@@ -675,7 +675,7 @@ class ShapleyValueSampling(PerturbationAttribution):
     ) -> Tuple[Tensor, Tensor, Size, List[Tensor], bool]:
         """At the beginning of each feature permutation, the prev_results is
         reset to the initial eval, and this method helps set that up"""
-        (initial_eval, prev_results, output_shape, total_attrib, agg_output_mode) = (
+        initial_eval, prev_results, output_shape, total_attrib, agg_output_mode = (
             processed_initial_eval.value()
         )
         prev_results = initial_eval
