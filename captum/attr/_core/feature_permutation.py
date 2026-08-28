@@ -9,7 +9,11 @@
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import torch
-from captum._utils.common import _format_output, _format_tensor_into_tuples
+from captum._utils.common import (
+    _format_output,
+    _format_tensor_into_tuples,
+    _generate_derangement,
+)
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.feature_ablation import FeatureAblation
 from captum.log import log_usage
@@ -25,6 +29,15 @@ def _permute_feature(x: Tensor, feature_mask: Tensor) -> Tensor:
     no_perm = torch.arange(n)
     while (perm == no_perm).all():
         perm = torch.randperm(n)
+
+    return torch.where(feature_mask.to(device=x.device, dtype=torch.bool), x[perm], x)
+
+
+def _permute_feature_without_self_donors(x: Tensor, feature_mask: Tensor) -> Tensor:
+    n = x.size(0)
+    assert n > 1, "cannot permute features with batch_size = 1"
+
+    perm = _generate_derangement(n, x.device)
 
     return torch.where(feature_mask.to(device=x.device, dtype=torch.bool), x[perm], x)
 
@@ -58,6 +71,11 @@ class FeaturePermutation(FeatureAblation):
     This method, unlike other attribution methods, requires a batch
     of examples to compute attributions and cannot be performed on a single example.
 
+    The default permutation may leave individual rows fixed. Set
+    ``exclude_self_donors=True`` to require every selected value to come from a
+    different row. Distinct donor rows may still contain equal feature values;
+    those are valid samples from the empirical feature distribution.
+
     By default, each scalar value within
     each input tensor is taken as a feature and shuffled independently. Passing
     a feature mask allows grouping features to be shuffled together (including
@@ -80,7 +98,8 @@ class FeaturePermutation(FeatureAblation):
     def __init__(
         self,
         forward_func: Callable[..., Union[int, float, Tensor, Future[Tensor]]],
-        perm_func: Callable[[Tensor, Tensor], Tensor] = _permute_feature,
+        perm_func: Callable[[Tensor, Tensor], Tensor] | None = None,
+        exclude_self_donors: bool = False,
     ) -> None:
         r"""
         Args:
@@ -93,9 +112,20 @@ class FeaturePermutation(FeatureAblation):
                 which applies a random permutation, this argument only needs
                 to be provided if a custom permutation behavior is desired.
                 Default: `_permute_feature`
+            exclude_self_donors (bool, optional): If True, every selected row
+                receives its value from a different donor row. This cannot be
+                combined with a custom ``perm_func``. Default: False
         """
         FeatureAblation.__init__(self, forward_func=forward_func)
-        self.perm_func = perm_func
+        if exclude_self_donors and perm_func is not None:
+            raise ValueError(
+                "exclude_self_donors cannot be combined with a custom perm_func"
+            )
+        self.perm_func = (
+            _permute_feature_without_self_donors
+            if exclude_self_donors
+            else perm_func if perm_func is not None else _permute_feature
+        )
         # Considering the case when we permute multiple input tensors at once
         # through `feature_mask`, we disregard the feature group if the 0th
         # dim of *any* input tensor in the group is less than

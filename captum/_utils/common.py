@@ -36,6 +36,24 @@ from torch.futures import Future
 from torch.nn import Module
 
 
+def _generate_derangement(n: int, device: torch.device | None = None) -> Tensor:
+    """Generate a random cyclic donor ordering without fixed points.
+
+    A random cycle gives every row a uniformly distributed donor among the
+    other rows while requiring only one device-side ``randperm`` and no
+    device-to-host synchronization. The result is a valid derangement for
+    every ``n > 1``.
+    """
+    row_indices = torch.arange(n, device=device)
+    if n <= 1:
+        return row_indices
+
+    cycle = torch.randperm(n, device=device)
+    permutation = torch.empty_like(cycle)
+    permutation[cycle] = torch.roll(cycle, shifts=-1)
+    return permutation
+
+
 def parse_version(v: str) -> Tuple[int, ...]:
     """
     Parse version strings into tuples for comparison.
