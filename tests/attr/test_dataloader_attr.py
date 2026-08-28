@@ -11,7 +11,11 @@ from typing import Callable, cast, Dict, List, Optional, Tuple, Union
 from unittest.mock import Mock, patch
 
 import torch
-from captum.attr._core.dataloader_attr import DataLoaderAttribution, InputRole
+from captum.attr._core.dataloader_attr import (
+    _perturb_inputs,
+    DataLoaderAttribution,
+    InputRole,
+)
 from captum.attr._core.feature_ablation import FeatureAblation
 from captum.testing.helpers.basic import (
     assertAttributionComparision,
@@ -73,6 +77,66 @@ mock_dataset = TensorDataset(
 
 
 class Test(BaseTest):
+    def test_tuple_batch_is_supported(self) -> None:
+        fa = FeatureAblation(sum_forward)
+        dl_fa = DataLoaderAttribution(fa)
+        batch = (
+            torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+            torch.tensor([[5.0], [6.0]]),
+        )
+
+        # Citrine C0/C4: exercise the production asynchronous transfer setup.
+        dataloader = DataLoader(
+            TensorDataset(torch.tensor([0])),
+            collate_fn=lambda _: batch,
+            num_workers=2,
+            pin_memory=True,
+        )
+        result = dl_fa.attribute(dataloader)
+
+        expected = fa.attribute(batch)
+        assertAttributionComparision(self, result, expected)
+
+    def test_invalid_input_role_is_rejected(self) -> None:
+        fa = FeatureAblation(sum_forward)
+        dl_fa = DataLoaderAttribution(fa)
+
+        with self.assertRaisesRegex(AssertionError, "Unsupported input role"):
+            dl_fa.attribute(
+                # Citrine C0/C4: match the production DataLoader configuration.
+                DataLoader(
+                    TensorDataset(torch.tensor([0])),
+                    collate_fn=lambda _: (
+                        torch.tensor([[1.0]]),
+                        torch.tensor([[2.0]]),
+                    ),
+                    num_workers=2,
+                    pin_memory=True,
+                ),
+                input_roles=(InputRole.need_attr, 99),
+            )
+
+    def test_perturb_inputs_ignores_nonfinite_inactive_baseline(self) -> None:
+        result = _perturb_inputs(
+            (torch.tensor([[1.0, 2.0]]),),
+            (InputRole.need_attr,),
+            (torch.tensor([[0.0, float("nan")]]),),
+            (torch.tensor([[False, True]]),),
+        )
+
+        torch.testing.assert_close(result[0], torch.tensor([[0.0, 2.0]]))
+
+    def test_perturb_inputs_moves_tensor_baseline_to_input_device(self) -> None:
+        result = _perturb_inputs(
+            (torch.empty((1, 1), device="meta"),),
+            (InputRole.need_attr,),
+            (torch.tensor([[0.0]]),),
+            (torch.tensor([[False]]),),
+        )
+
+        result_tensor = cast(Tensor, result[0])
+        self.assertEqual(result_tensor.device.type, "meta")
+
     @parameterized.expand(
         [
             (sum_forward,),
@@ -83,7 +147,10 @@ class Test(BaseTest):
         fa = FeatureAblation(forward)
         dl_fa = DataLoaderAttribution(fa)
 
-        dataloader = DataLoader(mock_dataset, batch_size=2)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset, batch_size=2, num_workers=2, pin_memory=True
+        )
 
         dl_attributions = dl_fa.attribute(dataloader)
 
@@ -117,7 +184,10 @@ class Test(BaseTest):
         fa = FeatureAblation(forward)
         dl_fa = DataLoaderAttribution(fa)
 
-        dataloader = DataLoader(mock_dataset, batch_size=2)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset, batch_size=2, num_workers=2, pin_memory=True
+        )
 
         dl_attributions = dl_fa.attribute(dataloader, feature_mask=masks)
 
@@ -149,7 +219,10 @@ class Test(BaseTest):
         fa = FeatureAblation(forward)
         dl_fa = DataLoaderAttribution(fa)
 
-        dataloader = DataLoader(mock_dataset, batch_size=2)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset, batch_size=2, num_workers=2, pin_memory=True
+        )
 
         dl_attributions = dl_fa.attribute(dataloader, baselines=baselines)
 
@@ -202,7 +275,13 @@ class Test(BaseTest):
         dl_fa = DataLoaderAttribution(fa)
 
         batch_size = 2
-        dataloader = DataLoader(mock_dataset, batch_size=batch_size)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset,
+            batch_size=batch_size,
+            num_workers=2,
+            pin_memory=True,
+        )
 
         dl_attribution = dl_fa.attribute(
             dataloader,
@@ -259,7 +338,13 @@ class Test(BaseTest):
         dl_fa = DataLoaderAttribution(fa)
 
         batch_size = 2
-        dataloader = DataLoader(mock_dataset, batch_size=batch_size)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset,
+            batch_size=batch_size,
+            num_workers=2,
+            pin_memory=True,
+        )
 
         dl_attributions = dl_fa.attribute(
             dataloader,
@@ -298,7 +383,10 @@ class Test(BaseTest):
         fa = FeatureAblation(forward)
         dl_fa = DataLoaderAttribution(fa)
 
-        dataloader = DataLoader(mock_dataset, batch_size=2)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset, batch_size=2, num_workers=2, pin_memory=True
+        )
 
         dl_attribution = dl_fa.attribute(dataloader, return_input_shape=False)
 
@@ -336,7 +424,10 @@ class Test(BaseTest):
         fa = FeatureAblation(forward)
         dl_fa = DataLoaderAttribution(fa)
 
-        dataloader = DataLoader(mock_dataset, batch_size=2)
+        # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+        dataloader = DataLoader(
+            mock_dataset, batch_size=2, num_workers=2, pin_memory=True
+        )
 
         dl_attribution = dl_fa.attribute(
             dataloader, feature_mask=masks, return_input_shape=False
@@ -358,7 +449,10 @@ class Test(BaseTest):
         mock_dl_iter = Mock(wraps=DataLoader.__iter__)
 
         with patch.object(DataLoader, "__iter__", lambda self: mock_dl_iter(self)):
-            dataloader = DataLoader(mock_dataset, batch_size=2)
+            # Citrine C0/C4: use pinned memory and parallel workers for transfer parity.
+            dataloader = DataLoader(
+                mock_dataset, batch_size=2, num_workers=2, pin_memory=True
+            )
 
             dl_attributions = dl_fa.attribute(
                 dataloader, perturbations_per_pass=perturb_per_pass

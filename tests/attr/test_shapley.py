@@ -83,6 +83,25 @@ class Test(BaseTest):
         ).wait()
         torch.testing.assert_close(future_result, expected)
 
+    def test_attributions_preserve_float64_output_dtype(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0]], dtype=torch.float64)
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+
+        result = attribution.attribute(inputs, n_samples=1)
+        self.assertEqual(result.dtype, torch.float64)
+
+        def future_sum(values: Tensor) -> Future[Tensor]:
+            future: Future[Tensor] = Future()
+            future.set_result(values.sum(dim=1))
+            return future
+
+        future_result = (
+            ShapleyValueSampling(future_sum)
+            .attribute_future(inputs, n_samples=1)
+            .wait()
+        )
+        self.assertEqual(future_result.dtype, torch.float64)
+
     def test_selected_nonfinite_baseline_is_replaced_cleanly(self) -> None:
         attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
 

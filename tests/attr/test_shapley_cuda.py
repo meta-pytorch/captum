@@ -10,7 +10,7 @@
 import unittest
 
 import torch
-from captum.attr._core.shapley_value import _shape_feature_mask
+from captum.attr._core.shapley_value import _shape_feature_mask, ShapleyValueSampling
 from captum.testing.helpers.basic import BaseTest
 
 
@@ -29,6 +29,22 @@ class TestShapleyDeviceMismatch(BaseTest):
         result = _shape_feature_mask((mask1, mask2), (inp1, inp2))
         self.assertEqual(result[0].device, inp1.device)
         self.assertEqual(result[1].device, inp2.device)
+
+    def test_multi_input_attributions_remain_on_each_input_device(self) -> None:
+        cpu_input = torch.tensor([[1.0, 2.0]], device="cpu")
+        cuda_input = torch.tensor([[3.0, 4.0]], device="cuda")
+
+        def forward(first: torch.Tensor, second: torch.Tensor) -> torch.Tensor:
+            return first.to(second.device).sum(dim=1) + second.sum(dim=1)
+
+        attributions = ShapleyValueSampling(forward).attribute(
+            (cpu_input, cuda_input), n_samples=1
+        )
+
+        self.assertEqual(attributions[0].device, cpu_input.device)
+        self.assertEqual(attributions[1].device, cuda_input.device)
+        torch.testing.assert_close(attributions[0], cpu_input)
+        torch.testing.assert_close(attributions[1], cuda_input)
 
 
 if __name__ == "__main__":

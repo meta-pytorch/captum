@@ -113,6 +113,30 @@ class Test(BaseTest):
             sliding_window_shapes=((1,)),
         )
 
+    def test_nonfinite_inactive_baseline_does_not_contaminate(self) -> None:
+        occlusion = Occlusion(lambda x: x.sum(dim=1))
+        attributions = occlusion.attribute(
+            torch.tensor([[1.0, 2.0]]),
+            baselines=torch.tensor([[0.0, float("nan")]]),
+            sliding_window_shapes=(1,),
+        )
+
+        self.assertEqual(attributions[0, 0].item(), 1.0)
+        self.assertTrue(torch.isnan(attributions[0, 1]))
+
+    def test_tensor_baseline_moves_to_input_device(self) -> None:
+        device = torch.device("meta")
+        inp = torch.empty((1, 2), device=device)
+
+        attributions = Occlusion(lambda x: x.sum(dim=1)).attribute(
+            inp,
+            baselines=torch.zeros((1, 2)),
+            sliding_window_shapes=(1,),
+        )
+
+        self.assertEqual(attributions.device, device)
+        self.assertEqual(attributions.shape, inp.shape)
+
     def test_simple_multi_input_int_to_int(self) -> None:
         net = BasicModel3()
         inp1 = torch.tensor([[-10], [3]])
