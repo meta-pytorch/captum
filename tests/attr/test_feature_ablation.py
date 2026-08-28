@@ -167,6 +167,20 @@ class Test(BaseTest):
                 expected = inputs - baseline
                 torch.testing.assert_close(result, expected)
 
+    def test_inactive_nonfinite_baseline_does_not_contaminate_ablation(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0]])
+        attribution = FeatureAblation(lambda values: values.sum(dim=1))
+
+        for inactive_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(inactive_value=inactive_value):
+                result = attribution.attribute(
+                    inputs,
+                    baselines=torch.tensor([[0.0, inactive_value]]),
+                    feature_mask=torch.tensor([[0, 1]]),
+                )
+
+                self.assertEqual(result[0, 0].item(), 1.0)
+
     def test_simple_ablation_boolean(self) -> None:
         ablation_algo = FeatureAblation(BasicModelBoolInput())
         inp = torch.tensor([[True, False, True]])
