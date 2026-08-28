@@ -56,6 +56,12 @@ class Test(BaseTest):
             (torch.tensor([-1.0]),), (torch.tensor([-2.0]),), method="gausslegendre"
         )
 
+        with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+            _validate_input(
+                (torch.zeros((2, 3)),),
+                (torch.zeros((1, 4)),),
+            )
+
     def test_validate_nt_type(self) -> None:
         with self.assertRaises(
             AssertionError,
