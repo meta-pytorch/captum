@@ -84,6 +84,21 @@ def _shape_feature_mask(
     return tuple(mask_list)
 
 
+def _validate_shapley_feature_mask(feature_mask: Tuple[Tensor, ...]) -> None:
+    for mask in feature_mask:
+        if mask.is_complex():
+            values_are_integral = False
+        elif mask.is_floating_point():
+            values_are_integral = bool(
+                torch.isfinite(mask).all() and (mask == mask.round()).all()
+            )
+        else:
+            values_are_integral = True
+        assert values_are_integral and (
+            mask.numel() == 0 or bool((mask >= 0).all())
+        ), "Feature mask values must be non-negative integers."
+
+
 class ShapleyValueSampling(PerturbationAttribution):
     """
     A perturbation based approach to compute attribution, based on the concept
@@ -326,6 +341,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             additional_forward_args
         )
         formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        _validate_shapley_feature_mask(formatted_feature_mask)
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
@@ -494,6 +510,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             additional_forward_args
         )
         formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        _validate_shapley_feature_mask(formatted_feature_mask)
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
