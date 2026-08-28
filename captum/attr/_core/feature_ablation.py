@@ -22,6 +22,7 @@ from captum._utils.common import (
     _is_tuple,
     _maybe_expand_parameters,
     _run_forward,
+    _validate_input,
 )
 from captum._utils.exceptions import FeatureAblationFutureError
 from captum._utils.progress import NullProgress, progress, Progress
@@ -501,6 +502,7 @@ class FeatureAblation(PerturbationAttribution):
         is_inputs_tuple = _is_tuple(inputs)
 
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(formatted_inputs, baselines, allow_broadcastable_baselines=True)
         formatted_additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
@@ -834,6 +836,7 @@ class FeatureAblation(PerturbationAttribution):
         # converting it into a tuple.
         is_inputs_tuple = _is_tuple(inputs)
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(formatted_inputs, baselines, allow_broadcastable_baselines=True)
         formatted_additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
