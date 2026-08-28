@@ -77,6 +77,80 @@ class Test(BaseTest):
             ablation_algo, inp, [[80.0, 200.0, 120.0]], perturbations_per_eval=(1, 2, 3)
         )
 
+    def test_output_shape_validation_is_per_call(self) -> None:
+        ablation_algo = FeatureAblation(lambda x: x.sum())
+        inp = torch.tensor([[1.0, 2.0]])
+
+        ablation_algo.attribute(inp, perturbations_per_eval=1)
+
+        with self.assertRaisesRegex(AssertionError, "output shape"):
+            ablation_algo.attribute(inp, perturbations_per_eval=2)
+
+    def test_future_contributions_do_not_share_mutable_accumulators(self) -> None:
+        attribution = FeatureAblation(lambda x: x.sum())
+        barrier = threading.Barrier(2)
+        initial_attribution = [torch.zeros(1, 1)]
+        initial_weights = [torch.zeros(1, 1)]
+        initial_result = (
+            initial_attribution,
+            initial_weights,
+            torch.zeros(1),
+            torch.zeros(1),
+            1,
+            torch.float32,
+        )
+        initial_future: torch.futures.Future[Any] = torch.futures.Future()
+        initial_future.set_result(initial_result)
+
+        def process_contribution(**kwargs: Any) -> tuple[list[Tensor], list[Tensor]]:
+            total_attrib = kwargs["total_attrib"]
+            weights = kwargs["weights"]
+            snapshot = total_attrib[0].clone()
+            barrier.wait()
+            total_attrib[0] = snapshot + kwargs["modified_eval"].reshape_as(snapshot)
+            return total_attrib, weights
+
+        results: list[tuple[list[Tensor], list[Tensor]] | None] = [None, None]
+        errors: list[BaseException] = []
+
+        def evaluate(index: int, value: float) -> None:
+            modified_future: torch.futures.Future[Any] = torch.futures.Future()
+            modified_future.set_result(torch.tensor([value]))
+            collected_future: torch.futures.Future[Any] = torch.futures.Future()
+            collected_future.set_result([initial_future, modified_future])
+            try:
+                results[index] = attribution._eval_fut_to_ablated_out_fut_cross_tensor(
+                    collected_future,
+                    current_inputs=(torch.ones(1, 1),),
+                    current_mask=(torch.ones(1, 1, dtype=torch.bool),),
+                    perturbations_per_eval=1,
+                    num_examples=1,
+                )
+            except Exception as error:
+                errors.append(error)
+
+        with unittest.mock.patch.object(
+            attribution,
+            "_process_ablated_out_full",
+            side_effect=process_contribution,
+        ):
+            threads = [
+                threading.Thread(target=evaluate, args=(0, 1.0)),
+                threading.Thread(target=evaluate, args=(1, 2.0)),
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        self.assertEqual(errors, [])
+        first_result = cast(tuple[list[Tensor], list[Tensor]], results[0])
+        second_result = cast(tuple[list[Tensor], list[Tensor]], results[1])
+        torch.testing.assert_close(
+            first_result[0][0] + second_result[0][0], torch.tensor([[3.0]])
+        )
+        torch.testing.assert_close(initial_attribution[0], torch.zeros(1, 1))
+
     def test_simple_ablation_int_to_int(self) -> None:
         ablation_algo = FeatureAblation(BasicModel())
         inp = torch.tensor([[-3, 1, 2]])
