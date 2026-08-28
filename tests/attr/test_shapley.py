@@ -64,6 +64,25 @@ class Test(BaseTest):
                 with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
                     attribution.attribute_future(inputs, baselines=baseline)
 
+    def test_float_scalar_baseline_preserves_dtype_for_integer_input(self) -> None:
+        inputs = torch.tensor([[1, 2]])
+        expected = torch.tensor([[0.5, 1.5]])
+
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+        result = attribution.attribute(inputs, baselines=0.5, n_samples=1)
+        torch.testing.assert_close(result, expected)
+
+        def future_sum(values: Tensor) -> Future[Tensor]:
+            result: Future[Tensor] = Future()
+            result.set_result(values.sum(dim=1))
+            return result
+
+        future_attribution = ShapleyValueSampling(future_sum)
+        future_result = future_attribution.attribute_future(
+            inputs, baselines=0.5, n_samples=1
+        ).wait()
+        torch.testing.assert_close(future_result, expected)
+
     def test_selected_nonfinite_baseline_is_replaced_cleanly(self) -> None:
         attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
 
