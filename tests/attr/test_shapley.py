@@ -29,6 +29,41 @@ from torch.futures import Future
 
 
 class Test(BaseTest):
+    def test_rejects_baseline_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = ShapleyValueSampling(
+            lambda first, second: first[:, 0] + second[:, 0]
+        )
+
+        for baselines in (
+            (torch.tensor([[0.0]]),),
+            (torch.tensor([[0.0]]),) * 3,
+        ):
+            with self.subTest(baseline_count=len(baselines)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and baseline must have the same"
+                ):
+                    attribution.attribute(inputs, baselines=baselines)
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and baseline must have the same"
+                ):
+                    attribution.attribute_future(inputs, baselines=baselines)
+
+    def test_rejects_invalid_baseline_shape(self) -> None:
+        inputs = torch.tensor([[1.0], [2.0], [3.0]])
+        attribution = ShapleyValueSampling(lambda values: values[:, 0])
+
+        for baseline in (
+            torch.tensor([[10.0], [20.0]]),
+            torch.tensor([[10.0, 20.0]]),
+            torch.tensor(10.0),
+        ):
+            with self.subTest(baseline_shape=baseline.shape):
+                with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+                    attribution.attribute(inputs, baselines=baseline)
+                with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+                    attribution.attribute_future(inputs, baselines=baseline)
+
     @parameterized.expand([True, False])
     def test_simple_shapley_sampling(self, use_future: bool) -> None:
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)
