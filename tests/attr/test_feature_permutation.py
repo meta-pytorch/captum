@@ -207,6 +207,128 @@ class Test(BaseTest):
 
         assertTensorAlmostEqual(self, attribs, expected, delta=1e-6, mode="max")
 
+    @unittest.mock.patch("torch.randperm", return_value=torch.tensor([1, 2, 0]))
+    def test_cross_tensor_group_uses_shared_donor_rows(
+        self, mock_randperm: unittest.mock.MagicMock
+    ) -> None:
+        forwarded_inputs = []
+
+        def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
+            forwarded_inputs.append((x1.clone(), x2.clone()))
+            return x1[:, 0] * x2[:, 0]
+
+        inputs = (
+            torch.tensor([[1.0], [2.0], [3.0]]),
+            torch.tensor([[10.0], [20.0], [30.0]]),
+        )
+        feature_mask = (torch.tensor([[0]]), torch.tensor([[0]]))
+
+        FeaturePermutation(forward_func).attribute(inputs, feature_mask=feature_mask)
+
+        self.assertEqual(mock_randperm.call_count, 1)
+        torch.testing.assert_close(
+            forwarded_inputs[1][0], torch.tensor([[2.0], [3.0], [1.0]])
+        )
+        torch.testing.assert_close(
+            forwarded_inputs[1][1], torch.tensor([[20.0], [30.0], [10.0]])
+        )
+
+    def test_custom_cross_tensor_permutation_requires_grouped_function(self) -> None:
+        inputs = (torch.ones(2, 1), torch.ones(2, 1))
+        feature_mask = (torch.zeros(1, 1), torch.zeros(1, 1))
+        attribution = FeaturePermutation(
+            lambda first, second: first[:, 0] + second[:, 0],
+            perm_func=self._deterministic_perm,
+        )
+
+        with self.assertRaisesRegex(ValueError, "grouped_perm_func"):
+            attribution.attribute(inputs, feature_mask=feature_mask)
+
+    def test_cross_tensor_group_rejects_mismatched_batch_sizes(self) -> None:
+        inputs = (torch.ones(2, 1), torch.ones(3, 1))
+        feature_mask = (torch.zeros(1, 1), torch.zeros(1, 1))
+
+        with self.assertRaisesRegex(ValueError, "same batch size"):
+            FeaturePermutation(
+                lambda first, second: first[:, 0] + second[: first.shape[0], 0]
+            ).attribute(inputs, feature_mask=feature_mask)
+
+    def test_custom_grouped_permutation_is_applied_atomically(self) -> None:
+        forwarded_inputs = []
+
+        def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
+            forwarded_inputs.append((x1.clone(), x2.clone()))
+            return x1[:, 0] * x2[:, 0]
+
+        def grouped_perm_func(
+            inputs: Tuple[Tensor, ...], masks: Tuple[Tensor, ...]
+        ) -> Tuple[Tensor, ...]:
+            return tuple(
+                torch.where(mask, input_tensor.flip(0), input_tensor)
+                for input_tensor, mask in zip(inputs, masks)
+            )
+
+        inputs = (
+            torch.tensor([[1.0], [2.0], [3.0]]),
+            torch.tensor([[10.0], [20.0], [30.0]]),
+        )
+        feature_mask = (torch.tensor([[0]]), torch.tensor([[0]]))
+        FeaturePermutation(
+            forward_func,
+            perm_func=self._deterministic_perm,
+            grouped_perm_func=grouped_perm_func,
+        ).attribute(inputs, feature_mask=feature_mask)
+
+        torch.testing.assert_close(
+            forwarded_inputs[1][0], torch.tensor([[3.0], [2.0], [1.0]])
+        )
+        torch.testing.assert_close(
+            forwarded_inputs[1][1], torch.tensor([[30.0], [20.0], [10.0]])
+        )
+
+    def test_custom_grouped_permutation_uses_perturbation_block_index(self) -> None:
+        forwarded_inputs = []
+
+        def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
+            forwarded_inputs.append((x1.clone(), x2.clone()))
+            return (x1 + x2).sum(dim=1)
+
+        def grouped_perm_func(
+            inputs: Tuple[Tensor, ...], masks: Tuple[Tensor, ...]
+        ) -> Tuple[Tensor, ...]:
+            return tuple(
+                torch.where(mask, input_tensor.flip(0), input_tensor)
+                for input_tensor, mask in zip(inputs, masks)
+            )
+
+        inputs = (
+            torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+            torch.tensor([[10.0, 20.0], [30.0, 40.0]]),
+        )
+        feature_mask = (
+            torch.tensor([[10, 20]]),
+            torch.tensor([[10, 20]]),
+        )
+
+        FeaturePermutation(
+            forward_func,
+            perm_func=self._deterministic_perm,
+            grouped_perm_func=grouped_perm_func,
+        ).attribute(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+        )
+
+        torch.testing.assert_close(
+            forwarded_inputs[1][0],
+            torch.tensor([[3.0, 2.0], [1.0, 4.0], [1.0, 4.0], [3.0, 2.0]]),
+        )
+        torch.testing.assert_close(
+            forwarded_inputs[1][1],
+            torch.tensor([[30.0, 20.0], [10.0, 40.0], [10.0, 40.0], [30.0, 20.0]]),
+        )
+
     def test_n_samples_validation(self) -> None:
         def forward_func(x: Tensor) -> Tensor:
             return x.sum(dim=-1)
@@ -237,8 +359,12 @@ class Test(BaseTest):
         )
 
         feature_importance._min_examples_per_batch_grouped = 1
-        with self.assertRaises(AssertionError):
-            feature_importance.attribute(inp)
+        assertTensorAlmostEqual(
+            self,
+            feature_importance.attribute(inp),
+            torch.tensor([[0.0, 0.0]]),
+            delta=0.0,
+        )
 
     def test_simple_input_custom_mask_with_min_examples_in_group(self) -> None:
         def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
@@ -261,7 +387,7 @@ class Test(BaseTest):
         )
 
         feature_importance._min_examples_per_batch_grouped = 1
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "same batch size"):
             feature_importance.attribute(inp, feature_mask=mask)
 
     def _deterministic_perm(self, x: Tensor, feature_mask: Tensor) -> Tensor:
@@ -366,6 +492,88 @@ class Test(BaseTest):
         self.assertTrue(attribs.squeeze(0).size() == (batch_size,) + input_size)
         assertTensorAlmostEqual(self, attribs[:, 0], zeros, delta=0.05, mode="max")
         self.assertTrue((attribs[:, 1 : input_size[0]].abs() > 0).all())
+
+    def test_singleton_input_with_future_returns_zeros(self) -> None:
+        def forward_func(x: Tensor) -> Tensor:
+            return x.sum(dim=-1)
+
+        feature_importance = FeaturePermutation(
+            forward_func=self.construct_future_forward(forward_func)
+        )
+
+        attribs = feature_importance.attribute_future(torch.tensor([[1.0, 2.0]])).wait()
+
+        torch.testing.assert_close(attribs, torch.zeros((1, 2)))
+
+    def test_future_n_samples_and_run_forward_on_skip(self) -> None:
+        perm_calls = 0
+        forward_calls = 0
+
+        def perm_func(x: Tensor, feature_mask: Tensor) -> Tensor:
+            nonlocal perm_calls
+            perm_calls += 1
+            return torch.where(feature_mask.bool(), x.flip(0), x)
+
+        def forward_func(x: Tensor) -> Tensor:
+            nonlocal forward_calls
+            forward_calls += 1
+            return x.sum(dim=-1)
+
+        feature_importance = FeaturePermutation(
+            forward_func=self.construct_future_forward(forward_func),
+            perm_func=perm_func,
+        )
+        feature_importance.attribute_future(
+            torch.tensor([[1.0], [2.0]]), n_samples=3
+        ).wait()
+        self.assertEqual(perm_calls, 3)
+
+        skipped = FeaturePermutation(
+            forward_func=self.construct_future_forward(forward_func)
+        )
+        calls_before_skip = forward_calls
+        skipped.attribute_future(torch.tensor([[1.0]]), run_forward_on_skip=True).wait()
+        self.assertEqual(forward_calls - calls_before_skip, 2)
+
+    def test_future_run_forward_on_skip_isolates_alignment_error(self) -> None:
+        forward_calls = 0
+
+        def future_forward(x1: Tensor, x2: Tensor) -> torch.futures.Future[Tensor]:
+            nonlocal forward_calls
+            forward_calls += 1
+            future: torch.futures.Future[Any] = torch.futures.Future()
+            if forward_calls == 2:
+                future.set_exception(RuntimeError("alignment forward failed"))
+            else:
+                future.set_result(x2.sum(dim=-1))
+            return future
+
+        feature_importance = FeaturePermutation(
+            forward_func=future_forward,
+            perm_func=self._deterministic_perm,
+        )
+        inputs = (
+            torch.tensor([[1.0, 2.0]]),
+            torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+        )
+        feature_mask = (
+            torch.tensor([[0, 0]]),
+            torch.tensor([[1, 2]]),
+        )
+
+        attributions = feature_importance.attribute_future(
+            inputs,
+            feature_mask=feature_mask,
+            run_forward_on_skip=True,
+        ).wait()
+
+        self.assertEqual(forward_calls, 4)
+        assertTensorAlmostEqual(
+            self,
+            attributions[0],
+            torch.zeros_like(attributions[0]),
+            delta=0.0,
+        )
 
     def test_multi_input(
         self,
