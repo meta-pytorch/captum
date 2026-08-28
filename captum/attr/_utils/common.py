@@ -281,7 +281,16 @@ def _tensorize_baseline(
     # pyre-fixme[2]: Parameter must be annotated.
     def _tensorize_single_baseline(baseline, input):
         if isinstance(baseline, (int, float)):
-            return torch.full_like(input, baseline)
+            baseline_dtype = (
+                input.dtype
+                if input.dtype == torch.bool
+                else torch.result_type(input, baseline)
+            )
+            return torch.full_like(
+                input,
+                baseline,
+                dtype=baseline_dtype,
+            )
         if input.shape[0] > baseline.shape[0] and baseline.shape[0] == 1:
             return torch.cat([baseline] * input.shape[0])
         return baseline
