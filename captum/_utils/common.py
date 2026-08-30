@@ -36,6 +36,24 @@ from torch.futures import Future
 from torch.nn import Module
 
 
+def _generate_derangement(n: int, device: torch.device | None = None) -> Tensor:
+    """Generate a random cyclic donor ordering without fixed points.
+
+    A random cycle gives every row a uniformly distributed donor among the
+    other rows while requiring only one device-side ``randperm`` and no
+    device-to-host synchronization. The result is a valid derangement for
+    every ``n > 1``.
+    """
+    row_indices = torch.arange(n, device=device)
+    if n <= 1:
+        return row_indices
+
+    cycle = torch.randperm(n, device=device)
+    permutation = torch.empty_like(cycle)
+    permutation[cycle] = torch.roll(cycle, shifts=-1)
+    return permutation
+
+
 def parse_version(v: str) -> Tuple[int, ...]:
     """
     Parse version strings into tuples for comparison.
@@ -117,6 +135,7 @@ def _validate_input(
     inputs: Tuple[Tensor, ...],
     baselines: Tuple[Union[Tensor, int, float], ...],
     draw_baseline_from_distrib: bool = False,
+    allow_broadcastable_baselines: bool = False,
 ) -> None:
     assert len(inputs) == len(baselines), (
         "Input and baseline must have the same "
@@ -137,10 +156,24 @@ def _validate_input(
                 " Found baseline: {} and input: {} ".format(baseline, input)
             )
         else:
+            baseline_is_broadcastable = False
+            if allow_broadcastable_baselines and isinstance(baseline, Tensor):
+                try:
+                    baseline_is_broadcastable = (
+                        torch.broadcast_shapes(input.shape, baseline.shape)
+                        == input.shape
+                    )
+                except RuntimeError:
+                    pass
             assert (
                 isinstance(baseline, (int, float))
                 or input.shape == baseline.shape
-                or baseline.shape[0] == 1
+                or (
+                    baseline.dim() > 0
+                    and baseline.shape[0] == 1
+                    and input.shape[1:] == baseline.shape[1:]
+                )
+                or baseline_is_broadcastable
             ), (
                 "Baseline can be provided as a tensor for just one input and"
                 " broadcasted to the batch or input and baseline must have the"
@@ -226,6 +259,10 @@ def _format_feature_mask(
 
     else:
         formatted_mask = _format_tensor_into_tuples(feature_mask)
+        assert len(formatted_mask) == len(inputs), (
+            "Input and feature mask must have the same number of tensors, "
+            f"but input has {len(inputs)} and feature mask has {len(formatted_mask)}."
+        )
 
     return formatted_mask
 

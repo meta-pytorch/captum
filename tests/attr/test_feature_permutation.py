@@ -7,10 +7,16 @@
 
 # pyre-strict
 
+import unittest.mock
 from typing import Any, Callable, List, Tuple
 
 import torch
-from captum.attr._core.feature_permutation import _permute_feature, FeaturePermutation
+from captum.attr._core.feature_permutation import (
+    _generate_derangement,
+    _permute_feature,
+    _permute_feature_without_self_donors,
+    FeaturePermutation,
+)
 from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual, set_all_random_seeds
 from captum.testing.helpers.basic_models import BasicModelWithSparseInputs
@@ -94,6 +100,72 @@ class Test(BaseTest):
             self.assertTrue(mask.shape == mask_size)
 
             self._check_perm_fn_with_mask(inp, mask)
+
+    def test_inactive_nonfinite_donor_does_not_contaminate_permutation(self) -> None:
+        mask = torch.tensor([False, True])
+
+        for inactive_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(inactive_value=inactive_value):
+                inp = torch.tensor([[inactive_value, 2.0], [1.0, 3.0]])
+                with unittest.mock.patch(
+                    "torch.randperm", return_value=torch.tensor([1, 0])
+                ):
+                    result = _permute_feature(inp, mask)
+
+                self.assertEqual(result[1, 0].item(), 1.0)
+
+    def test_deranged_permutation_rejects_self_donors(self) -> None:
+        inp = torch.tensor([[1.0], [2.0], [3.0]])
+
+        with unittest.mock.patch(
+            "torch.randperm", return_value=torch.tensor([0, 1, 2])
+        ) as randperm:
+            result = _permute_feature_without_self_donors(inp, torch.tensor([True]))
+
+        self.assertEqual(randperm.call_count, 1)
+        torch.testing.assert_close(result, torch.tensor([[2.0], [3.0], [1.0]]))
+
+    def test_feature_permutation_exposes_no_self_donor_policy(self) -> None:
+        attribution = FeaturePermutation(
+            lambda inputs: inputs.sum(dim=1),
+            exclude_self_donors=True,
+        )
+
+        with unittest.mock.patch(
+            "torch.randperm", return_value=torch.tensor([0, 1, 2])
+        ):
+            result = attribution.perm_func(
+                torch.tensor([[1.0], [2.0], [3.0]]),
+                torch.tensor([True]),
+            )
+
+        torch.testing.assert_close(result, torch.tensor([[2.0], [3.0], [1.0]]))
+
+    def test_feature_permutation_rejects_conflicting_no_self_configuration(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, "custom perm_func"):
+            FeaturePermutation(
+                lambda inputs: inputs.sum(dim=1),
+                perm_func=self._deterministic_perm,
+                exclude_self_donors=True,
+            )
+
+    def test_distinct_donor_can_have_equal_feature_value(self) -> None:
+        inp = torch.tensor([[1.0], [1.0]])
+
+        result = _permute_feature_without_self_donors(inp, torch.tensor([True]))
+
+        torch.testing.assert_close(result, inp)
+
+    @unittest.mock.patch("torch.randperm", return_value=torch.tensor([2, 1, 0]))
+    def test_derangement_uses_one_random_cycle(
+        self, mock_randperm: unittest.mock.MagicMock
+    ) -> None:
+        permutation = _generate_derangement(3)
+
+        torch.testing.assert_close(permutation, torch.tensor([2, 0, 1]))
+        self.assertEqual(mock_randperm.call_count, 1)
 
     def test_single_input(self) -> None:
         batch_size = 2

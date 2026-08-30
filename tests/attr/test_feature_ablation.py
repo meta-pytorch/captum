@@ -131,6 +131,70 @@ class Test(BaseTest):
             perturbations_per_eval=(1, 2, 3),
         )
 
+    def test_perturbation_methods_reject_baseline_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = FeatureAblation(lambda first, second: first[:, 0] + second[:, 0])
+
+        for baselines in (
+            (torch.tensor([[0.0]]),),
+            (torch.tensor([[0.0]]),) * 3,
+        ):
+            with self.subTest(baseline_count=len(baselines)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and baseline must have the same"
+                ):
+                    attribution.attribute(inputs, baselines=baselines)
+
+    def test_perturbation_methods_reject_invalid_baseline_batch_size(self) -> None:
+        inputs = torch.tensor([[1.0], [2.0], [3.0]])
+
+        attribution = FeatureAblation(lambda values: values[:, 0])
+        for baseline in (
+            torch.tensor([[10.0], [20.0]]),
+            torch.tensor([[10.0, 20.0]]),
+        ):
+            with self.subTest(baseline_shape=baseline.shape):
+                with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+                    attribution.attribute(inputs, baselines=baseline)
+
+    def test_accepts_broadcastable_tensor_baselines(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+        attribution = FeatureAblation(lambda values: values.sum(dim=1))
+
+        for baseline in (torch.tensor([0.5, 1.5]), torch.tensor(0.5)):
+            with self.subTest(baseline_shape=baseline.shape):
+                result = attribution.attribute(inputs, baselines=baseline)
+                expected = inputs - baseline
+                torch.testing.assert_close(result, expected)
+
+    def test_inactive_nonfinite_baseline_does_not_contaminate_ablation(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0]])
+        attribution = FeatureAblation(lambda values: values.sum(dim=1))
+
+        for inactive_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(inactive_value=inactive_value):
+                result = attribution.attribute(
+                    inputs,
+                    baselines=torch.tensor([[0.0, inactive_value]]),
+                    feature_mask=torch.tensor([[0, 1]]),
+                )
+
+                self.assertEqual(result[0, 0].item(), 1.0)
+
+    def test_rejects_feature_mask_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = FeatureAblation(lambda first, second: first[:, 0] + second[:, 0])
+
+        for feature_mask in (
+            (torch.tensor([[0]]),),
+            (torch.tensor([[0]]),) * 3,
+        ):
+            with self.subTest(mask_count=len(feature_mask)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and feature mask must have the same"
+                ):
+                    attribution.attribute(inputs, feature_mask=feature_mask)
+
     def test_simple_ablation_boolean(self) -> None:
         ablation_algo = FeatureAblation(BasicModelBoolInput())
         inp = torch.tensor([[True, False, True]])
