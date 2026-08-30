@@ -6,8 +6,9 @@ import captum.concept as concept
 import captum.influence as influence
 import captum.log as log
 import captum.metrics as metrics
+import captum.optim as optim
 import captum.robust as robust
 
 __version__ = "0.9.0"
 
-__all__ = ["attr", "concept", "influence", "log", "metrics", "robust"]
+__all__ = ["attr", "concept", "influence", "log", "metrics", "robust", "optim"]
