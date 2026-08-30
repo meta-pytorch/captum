@@ -77,6 +77,80 @@ class Test(BaseTest):
             ablation_algo, inp, [[80.0, 200.0, 120.0]], perturbations_per_eval=(1, 2, 3)
         )
 
+    def test_output_shape_validation_is_per_call(self) -> None:
+        ablation_algo = FeatureAblation(lambda x: x.sum())
+        inp = torch.tensor([[1.0, 2.0]])
+
+        ablation_algo.attribute(inp, perturbations_per_eval=1)
+
+        with self.assertRaisesRegex(AssertionError, "output shape"):
+            ablation_algo.attribute(inp, perturbations_per_eval=2)
+
+    def test_future_contributions_do_not_share_mutable_accumulators(self) -> None:
+        attribution = FeatureAblation(lambda x: x.sum())
+        barrier = threading.Barrier(2)
+        initial_attribution = [torch.zeros(1, 1)]
+        initial_weights = [torch.zeros(1, 1)]
+        initial_result = (
+            initial_attribution,
+            initial_weights,
+            torch.zeros(1),
+            torch.zeros(1),
+            1,
+            torch.float32,
+        )
+        initial_future: torch.futures.Future[Any] = torch.futures.Future()
+        initial_future.set_result(initial_result)
+
+        def process_contribution(**kwargs: Any) -> tuple[list[Tensor], list[Tensor]]:
+            total_attrib = kwargs["total_attrib"]
+            weights = kwargs["weights"]
+            snapshot = total_attrib[0].clone()
+            barrier.wait()
+            total_attrib[0] = snapshot + kwargs["modified_eval"].reshape_as(snapshot)
+            return total_attrib, weights
+
+        results: list[tuple[list[Tensor], list[Tensor]] | None] = [None, None]
+        errors: list[BaseException] = []
+
+        def evaluate(index: int, value: float) -> None:
+            modified_future: torch.futures.Future[Any] = torch.futures.Future()
+            modified_future.set_result(torch.tensor([value]))
+            collected_future: torch.futures.Future[Any] = torch.futures.Future()
+            collected_future.set_result([initial_future, modified_future])
+            try:
+                results[index] = attribution._eval_fut_to_ablated_out_fut_cross_tensor(
+                    collected_future,
+                    current_inputs=(torch.ones(1, 1),),
+                    current_mask=(torch.ones(1, 1, dtype=torch.bool),),
+                    perturbations_per_eval=1,
+                    num_examples=1,
+                )
+            except Exception as error:
+                errors.append(error)
+
+        with unittest.mock.patch.object(
+            attribution,
+            "_process_ablated_out_full",
+            side_effect=process_contribution,
+        ):
+            threads = [
+                threading.Thread(target=evaluate, args=(0, 1.0)),
+                threading.Thread(target=evaluate, args=(1, 2.0)),
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        self.assertEqual(errors, [])
+        first_result = cast(tuple[list[Tensor], list[Tensor]], results[0])
+        second_result = cast(tuple[list[Tensor], list[Tensor]], results[1])
+        torch.testing.assert_close(
+            first_result[0][0] + second_result[0][0], torch.tensor([[3.0]])
+        )
+        torch.testing.assert_close(initial_attribution[0], torch.zeros(1, 1))
+
     def test_simple_ablation_int_to_int(self) -> None:
         ablation_algo = FeatureAblation(BasicModel())
         inp = torch.tensor([[-3, 1, 2]])
@@ -130,6 +204,70 @@ class Test(BaseTest):
             baselines=4,
             perturbations_per_eval=(1, 2, 3),
         )
+
+    def test_perturbation_methods_reject_baseline_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = FeatureAblation(lambda first, second: first[:, 0] + second[:, 0])
+
+        for baselines in (
+            (torch.tensor([[0.0]]),),
+            (torch.tensor([[0.0]]),) * 3,
+        ):
+            with self.subTest(baseline_count=len(baselines)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and baseline must have the same"
+                ):
+                    attribution.attribute(inputs, baselines=baselines)
+
+    def test_perturbation_methods_reject_invalid_baseline_batch_size(self) -> None:
+        inputs = torch.tensor([[1.0], [2.0], [3.0]])
+
+        attribution = FeatureAblation(lambda values: values[:, 0])
+        for baseline in (
+            torch.tensor([[10.0], [20.0]]),
+            torch.tensor([[10.0, 20.0]]),
+        ):
+            with self.subTest(baseline_shape=baseline.shape):
+                with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+                    attribution.attribute(inputs, baselines=baseline)
+
+    def test_accepts_broadcastable_tensor_baselines(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+        attribution = FeatureAblation(lambda values: values.sum(dim=1))
+
+        for baseline in (torch.tensor([0.5, 1.5]), torch.tensor(0.5)):
+            with self.subTest(baseline_shape=baseline.shape):
+                result = attribution.attribute(inputs, baselines=baseline)
+                expected = inputs - baseline
+                torch.testing.assert_close(result, expected)
+
+    def test_inactive_nonfinite_baseline_does_not_contaminate_ablation(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0]])
+        attribution = FeatureAblation(lambda values: values.sum(dim=1))
+
+        for inactive_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(inactive_value=inactive_value):
+                result = attribution.attribute(
+                    inputs,
+                    baselines=torch.tensor([[0.0, inactive_value]]),
+                    feature_mask=torch.tensor([[0, 1]]),
+                )
+
+                self.assertEqual(result[0, 0].item(), 1.0)
+
+    def test_rejects_feature_mask_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = FeatureAblation(lambda first, second: first[:, 0] + second[:, 0])
+
+        for feature_mask in (
+            (torch.tensor([[0]]),),
+            (torch.tensor([[0]]),) * 3,
+        ):
+            with self.subTest(mask_count=len(feature_mask)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and feature mask must have the same"
+                ):
+                    attribution.attribute(inputs, feature_mask=feature_mask)
 
     def test_simple_ablation_boolean(self) -> None:
         ablation_algo = FeatureAblation(BasicModelBoolInput())
