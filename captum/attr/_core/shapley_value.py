@@ -37,6 +37,7 @@ from captum._utils.common import (
     _is_mask_valid,
     _is_tuple,
     _run_forward,
+    _validate_input,
 )
 from captum._utils.exceptions import ShapleyValueFutureError
 from captum._utils.progress import progress
@@ -320,6 +321,7 @@ class ShapleyValueSampling(PerturbationAttribution):
         # converting it into a tuple.
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(inputs_tuple, baselines)
         additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
@@ -487,6 +489,7 @@ class ShapleyValueSampling(PerturbationAttribution):
     ) -> Future[TensorOrTupleOfTensorsGeneric]:
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(inputs_tuple, baselines)
         additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
