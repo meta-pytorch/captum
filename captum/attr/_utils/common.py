@@ -292,6 +292,10 @@ def _tensorize_baseline(
             type(baselines), type(inputs)
         )
     )
+    assert len(inputs) == len(baselines), (
+        "Input and baseline must have the same dimensions, baseline has "
+        f"{len(baselines)} features whereas input has {len(inputs)}."
+    )
     return tuple(
         _tensorize_single_baseline(baseline, input)
         for baseline, input in zip(baselines, inputs)
