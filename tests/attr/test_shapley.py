@@ -29,6 +29,141 @@ from torch.futures import Future
 
 
 class Test(BaseTest):
+    def test_rejects_baseline_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = ShapleyValueSampling(
+            lambda first, second: first[:, 0] + second[:, 0]
+        )
+
+        for baselines in (
+            (torch.tensor([[0.0]]),),
+            (torch.tensor([[0.0]]),) * 3,
+        ):
+            with self.subTest(baseline_count=len(baselines)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and baseline must have the same"
+                ):
+                    attribution.attribute(inputs, baselines=baselines)
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and baseline must have the same"
+                ):
+                    attribution.attribute_future(inputs, baselines=baselines)
+
+    def test_rejects_invalid_baseline_shape(self) -> None:
+        inputs = torch.tensor([[1.0], [2.0], [3.0]])
+        attribution = ShapleyValueSampling(lambda values: values[:, 0])
+
+        for baseline in (
+            torch.tensor([[10.0], [20.0]]),
+            torch.tensor([[10.0, 20.0]]),
+            torch.tensor(10.0),
+        ):
+            with self.subTest(baseline_shape=baseline.shape):
+                with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+                    attribution.attribute(inputs, baselines=baseline)
+                with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+                    attribution.attribute_future(inputs, baselines=baseline)
+
+    def test_selected_nonfinite_baseline_is_replaced_cleanly(self) -> None:
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+
+        for selected_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(selected_value=selected_value):
+                result = attribution._update_current_tensors(
+                    (torch.tensor([[0.0, selected_value]]),),
+                    (torch.tensor([[1.0, 2.0]]),),
+                    1,
+                    (torch.tensor([[0, 1]]),),
+                    {1: [0]},
+                )
+
+                torch.testing.assert_close(result[0], torch.tensor([[0.0, 2.0]]))
+
+    def test_nonfinite_marginal_does_not_contaminate_other_features(self) -> None:
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+        previous_result: Future[
+            Tuple[Tensor, Tensor, torch.Size, List[Tensor], bool]
+        ] = Future()
+        previous_result.set_result(
+            (
+                torch.tensor([0.0]),
+                torch.tensor([0.0]),
+                torch.Size([1]),
+                [torch.zeros((1, 2))],
+                False,
+            )
+        )
+        modified_result: Future[Tensor] = Future()
+        modified_result.set_result(torch.tensor([1.0, float("nan")]))
+        evaluations: Future[
+            List[
+                Union[
+                    Future[Tuple[Tensor, Tensor, torch.Size, List[Tensor], bool]],
+                    Future[Tensor],
+                ]
+            ]
+        ] = Future()
+        evaluations.set_result([previous_result, modified_result])
+
+        result = attribution._eval_fut_to_prev_results_tuple(
+            evaluations,
+            1,
+            (torch.zeros((1, 2)),),
+            (torch.tensor([[[1, 0]], [[0, 1]]]),),
+        )
+
+        self.assertEqual(result[3][0][0, 0].item(), 1.0)
+        self.assertTrue(torch.isnan(result[3][0][0, 1]))
+
+    def test_rejects_feature_mask_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = ShapleyValueSampling(
+            lambda first, second: first[:, 0] + second[:, 0]
+        )
+
+        for feature_mask in (
+            (torch.tensor([[0]]),),
+            (torch.tensor([[0]]),) * 3,
+        ):
+            with self.subTest(mask_count=len(feature_mask)):
+                for attribute in (
+                    attribution.attribute,
+                    attribution.attribute_future,
+                ):
+                    with self.assertRaisesRegex(
+                        AssertionError, "Input and feature mask must have the same"
+                    ):
+                        attribute(inputs, feature_mask=feature_mask)
+
+    def test_rejects_nonintegral_or_negative_feature_masks(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0]])
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+
+        for feature_mask in (
+            torch.tensor([[0.0, 0.5]]),
+            torch.tensor([[0, -1]]),
+            torch.tensor([[0.0, float("nan")]]),
+            torch.tensor([[0.0, float("inf")]]),
+            torch.tensor([[0.0 + 0.0j, 1.0 + 0.0j]]),
+        ):
+            with self.subTest(feature_mask=feature_mask):
+                for attribute in (
+                    attribution.attribute,
+                    attribution.attribute_future,
+                ):
+                    with self.assertRaisesRegex(
+                        AssertionError, "non-negative integers"
+                    ):
+                        attribute(inputs, feature_mask=feature_mask)
+
+        for feature_mask in (
+            torch.tensor([[0.0, 1.0]]),
+            torch.tensor([[False, True]]),
+        ):
+            with self.subTest(valid_feature_mask=feature_mask):
+                result = attribution.attribute(inputs, feature_mask=feature_mask)
+                torch.testing.assert_close(result, inputs)
+
     @parameterized.expand([True, False])
     def test_simple_shapley_sampling(self, use_future: bool) -> None:
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)
