@@ -27,3 +27,15 @@ Classifier
 
 .. autoclass:: captum.concept.Classifier
     :members:
+
+DefaultClassifier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: captum.concept.DefaultClassifier
+    :members:
+
+FastCAVClassifier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: captum.concept.FastCAVClassifier
+    :members:
