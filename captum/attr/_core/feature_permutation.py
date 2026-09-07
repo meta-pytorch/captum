@@ -9,25 +9,51 @@
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import torch
-from captum._utils.common import _format_output, _format_tensor_into_tuples
+from captum._utils.common import (
+    _format_output,
+    _format_tensor_into_tuples,
+    _generate_derangement,
+)
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.feature_ablation import FeatureAblation
 from captum.log import log_usage
 from torch import Tensor
-from torch.futures import Future
+from torch.futures import collect_all, Future
+
+
+def _generate_permutation(n: int, device: Optional[torch.device] = None) -> Tensor:
+    row_indices = torch.arange(n, device=device)
+    if n <= 1:
+        return row_indices
+    permutation = torch.randperm(n, device=device)
+    while (permutation == row_indices).all():
+        permutation = torch.randperm(n, device=device)
+    return permutation
 
 
 def _permute_feature(x: Tensor, feature_mask: Tensor) -> Tensor:
     n = x.size(0)
+    perm = _generate_permutation(n, x.device)
+
+    return torch.where(feature_mask.to(device=x.device, dtype=torch.bool), x[perm], x)
+
+
+def _permute_feature_without_self_donors(x: Tensor, feature_mask: Tensor) -> Tensor:
+    n = x.size(0)
     assert n > 1, "cannot permute features with batch_size = 1"
 
-    perm = torch.randperm(n)
-    no_perm = torch.arange(n)
-    while (perm == no_perm).all():
-        perm = torch.randperm(n)
+    perm = _generate_derangement(n, x.device)
 
-    return (x[perm] * feature_mask.to(dtype=x.dtype)) + (
-        x * feature_mask.bitwise_not().to(dtype=x.dtype)
+    return torch.where(feature_mask.to(device=x.device, dtype=torch.bool), x[perm], x)
+
+
+def _permute_feature_with_indices(
+    x: Tensor, feature_mask: Tensor, permutation: Tensor
+) -> Tensor:
+    return torch.where(
+        feature_mask.to(device=x.device, dtype=torch.bool),
+        x[permutation.to(x.device)],
+        x,
     )
 
 
@@ -60,6 +86,11 @@ class FeaturePermutation(FeatureAblation):
     This method, unlike other attribution methods, requires a batch
     of examples to compute attributions and cannot be performed on a single example.
 
+    The default permutation may leave individual rows fixed. Set
+    ``exclude_self_donors=True`` to require every selected value to come from a
+    different row. Distinct donor rows may still contain equal feature values;
+    those are valid samples from the empirical feature distribution.
+
     By default, each scalar value within
     each input tensor is taken as a feature and shuffled independently. Passing
     a feature mask allows grouping features to be shuffled together (including
@@ -82,7 +113,11 @@ class FeaturePermutation(FeatureAblation):
     def __init__(
         self,
         forward_func: Callable[..., Union[int, float, Tensor, Future[Tensor]]],
-        perm_func: Callable[[Tensor, Tensor], Tensor] = _permute_feature,
+        perm_func: Callable[[Tensor, Tensor], Tensor] | None = None,
+        grouped_perm_func: Optional[
+            Callable[[Tuple[Tensor, ...], Tuple[Tensor, ...]], Tuple[Tensor, ...]]
+        ] = None,
+        exclude_self_donors: bool = False,
     ) -> None:
         r"""
         Args:
@@ -95,9 +130,27 @@ class FeaturePermutation(FeatureAblation):
                 which applies a random permutation, this argument only needs
                 to be provided if a custom permutation behavior is desired.
                 Default: `_permute_feature`
+            grouped_perm_func (Callable, optional): A function that atomically
+                permutes a feature group spanning multiple input tensors. It accepts
+                tuples of aligned input batches and masks and must return a tuple of
+                tensors with matching shapes. This is required for cross-tensor groups
+                when ``perm_func`` is custom, since independently invoking an arbitrary
+                transform cannot guarantee shared donor rows. Default: None
+            exclude_self_donors (bool, optional): If True, every selected row
+                receives its value from a different donor row. This cannot be
+                combined with a custom ``perm_func``. Default: False
         """
         FeatureAblation.__init__(self, forward_func=forward_func)
-        self.perm_func = perm_func
+        if exclude_self_donors and perm_func is not None:
+            raise ValueError(
+                "exclude_self_donors cannot be combined with a custom perm_func"
+            )
+        self.perm_func = (
+            _permute_feature_without_self_donors
+            if exclude_self_donors
+            else perm_func if perm_func is not None else _permute_feature
+        )
+        self.grouped_perm_func = grouped_perm_func
         # Considering the case when we permute multiple input tensors at once
         # through `feature_mask`, we disregard the feature group if the 0th
         # dim of *any* input tensor in the group is less than
@@ -373,24 +426,60 @@ class FeaturePermutation(FeatureAblation):
         feature_mask: Union[None, TensorOrTupleOfTensorsGeneric] = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
+        n_samples: int = 1,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> Future[TensorOrTupleOfTensorsGeneric]:
         """
         Similar to attribute(), but supports async forward functions.
+
+        Args:
+            n_samples: Number of independently sampled permutations to average.
+            run_forward_on_skip: Run an unchanged forward pass when a feature group
+                cannot be permuted, keeping distributed forward counts aligned.
         """
+        assert (
+            isinstance(n_samples, int) and n_samples >= 1
+        ), "n_samples must be an integer and at least 1."
         if isinstance(kwargs, dict) and "baselines" in kwargs:
             del kwargs["baselines"]
-        return FeatureAblation.attribute_future.__wrapped__(
-            self,
-            inputs,
-            baselines=None,
-            target=target,
-            additional_forward_args=additional_forward_args,
-            feature_mask=feature_mask,
-            perturbations_per_eval=perturbations_per_eval,
-            show_progress=show_progress,
-            **kwargs,
-        )
+        attribution_futures = [
+            FeatureAblation.attribute_future.__wrapped__(
+                self,
+                inputs,
+                baselines=None,
+                target=target,
+                additional_forward_args=additional_forward_args,
+                feature_mask=feature_mask,
+                perturbations_per_eval=perturbations_per_eval,
+                show_progress=show_progress,
+                run_forward_on_skip=run_forward_on_skip,
+                **kwargs,
+            )
+            for _ in range(n_samples)
+        ]
+        if n_samples == 1:
+            return attribution_futures[0]
+
+        is_attrib_tuple = isinstance(inputs, tuple)
+
+        def average_attributions(
+            collected: Future[List[Future[TensorOrTupleOfTensorsGeneric]]],
+        ) -> TensorOrTupleOfTensorsGeneric:
+            formatted_attributions = [
+                _format_tensor_into_tuples(attribution.value())
+                for attribution in collected.value()
+            ]
+            averaged_attributions = tuple(
+                torch.stack(values).mean(dim=0)
+                for values in zip(*formatted_attributions)
+            )
+            return cast(
+                TensorOrTupleOfTensorsGeneric,
+                _format_output(is_attrib_tuple, averaged_attributions),
+            )
+
+        return collect_all(attribution_futures).then(average_attributions)
 
     def _construct_ablated_input_across_tensors(
         self,
@@ -410,6 +499,80 @@ class FeaturePermutation(FeatureAblation):
             )
             for tensor_idx in sublist
         }
+        shared_permutations: Dict[int, Tensor] = {}
+        grouped_permutations: Dict[Tuple[int, int], Tensor] = {}
+        for feature_idx in feature_idxs:
+            group_batch_sizes = {
+                inputs[tensor_idx].shape[0] // current_num_ablated_features
+                for tensor_idx in feature_idx_to_tensor_idx[feature_idx]
+            }
+            if len(group_batch_sizes) != 1:
+                raise ValueError(
+                    "A cross-tensor feature group must use the same batch size "
+                    "for every participating input tensor."
+                )
+        if self.perm_func in (_permute_feature, _permute_feature_without_self_donors):
+            for feature_idx in feature_idxs:
+                first_tensor_idx = feature_idx_to_tensor_idx[feature_idx][0]
+                num_examples = (
+                    inputs[first_tensor_idx].shape[0] // current_num_ablated_features
+                )
+                if self.perm_func is _permute_feature_without_self_donors:
+                    assert (
+                        num_examples > 1
+                    ), "cannot permute features with batch_size = 1"
+                    shared_permutations[feature_idx] = _generate_derangement(
+                        num_examples,
+                        device=inputs[first_tensor_idx].device,
+                    )
+                else:
+                    shared_permutations[feature_idx] = _generate_permutation(
+                        num_examples,
+                        device=inputs[first_tensor_idx].device,
+                    )
+        else:
+            for block_idx, feature_idx in enumerate(feature_idxs):
+                grouped_tensor_idxs = feature_idx_to_tensor_idx[feature_idx]
+                if len(grouped_tensor_idxs) <= 1:
+                    continue
+                if self.grouped_perm_func is None:
+                    raise ValueError(
+                        "A custom perm_func cannot be applied independently to a "
+                        "feature group spanning multiple input tensors. Provide "
+                        "grouped_perm_func to transform the aligned tensors atomically."
+                    )
+                grouped_inputs = []
+                grouped_masks = []
+                for tensor_idx in grouped_tensor_idxs:
+                    input_tensor = inputs[tensor_idx]
+                    original_input_size = (
+                        input_tensor.shape[0] // current_num_ablated_features
+                    )
+                    start_idx = block_idx * original_input_size
+                    end_idx = (block_idx + 1) * original_input_size
+                    grouped_inputs.append(input_tensor[start_idx:end_idx])
+                    grouped_masks.append(
+                        (input_mask[tensor_idx] == feature_idx)
+                        .to(input_tensor.device)
+                        .bool()
+                    )
+                grouped_outputs = self.grouped_perm_func(
+                    tuple(grouped_inputs), tuple(grouped_masks)
+                )
+                if len(grouped_outputs) != len(grouped_inputs):
+                    raise ValueError(
+                        "grouped_perm_func must return one tensor for each "
+                        "input tensor."
+                    )
+                for tensor_idx, original, permuted in zip(
+                    grouped_tensor_idxs, grouped_inputs, grouped_outputs
+                ):
+                    if permuted.shape != original.shape:
+                        raise ValueError(
+                            "grouped_perm_func outputs must match their input shapes."
+                        )
+                    grouped_permutations[(feature_idx, tensor_idx)] = permuted
+
         permuted_inputs = []
         for i, input_tensor in enumerate(inputs):
             if i not in tensor_idxs:
@@ -418,20 +581,31 @@ class FeaturePermutation(FeatureAblation):
                 continue
             tensor_mask = []
             permuted_input = input_tensor.clone()
-            for j, feature_idx in enumerate(feature_idxs):
+            for block_idx, feature_idx in enumerate(feature_idxs):
                 original_input_size = (
                     input_tensor.shape[0] // current_num_ablated_features
                 )
-                start_idx = j * original_input_size
-                end_idx = (j + 1) * original_input_size
+                start_idx = block_idx * original_input_size
+                end_idx = (block_idx + 1) * original_input_size
 
                 mask = (input_mask[i] == feature_idx).to(input_tensor.device).bool()
                 if mask.ndim == 0:
                     mask = mask.reshape((1,) * input_tensor.dim())
                 tensor_mask.append(mask)
-                permuted_input[start_idx:end_idx] = self.perm_func(
-                    input_tensor[start_idx:end_idx], mask
-                )
+                if feature_idx in shared_permutations:
+                    permuted_input[start_idx:end_idx] = _permute_feature_with_indices(
+                        input_tensor[start_idx:end_idx],
+                        mask,
+                        shared_permutations[feature_idx],
+                    )
+                elif (feature_idx, i) in grouped_permutations:
+                    permuted_input[start_idx:end_idx] = grouped_permutations[
+                        (feature_idx, i)
+                    ]
+                else:
+                    permuted_input[start_idx:end_idx] = self.perm_func(
+                        input_tensor[start_idx:end_idx], mask
+                    )
             current_masks.append(torch.stack(tensor_mask, dim=0))
             permuted_inputs.append(permuted_input)
 

@@ -62,7 +62,7 @@ class Stat:
         assert self._other_stats is not None
         return cast(Optional[_S], self._other_stats.get(stat))
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         raise NotImplementedError()
 
     def get(self) -> Optional[StatValue]:
@@ -100,21 +100,20 @@ class Stat:
 
 class Count(Stat):
     """
-    Counts the number of elements, i.e. the
-    number of `update`'s called
+    Counts observations, including frequency weights supplied to `update`.
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name=name)
-        self.n: Optional[int] = None
+        self.n: Optional[Union[int, float]] = None
 
-    def get(self) -> Optional[int]:
+    def get(self) -> Optional[Union[int, float]]:
         return self.n
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         if self.n is None:
             self.n = 0
-        self.n += 1
+        self.n += weight
 
 
 class Mean(Stat):
@@ -133,7 +132,7 @@ class Mean(Stat):
     def init(self) -> None:
         self.n = self._get_stat(Count())
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         assert self.n is not None
         n = self.n.get()
         assert n is not None
@@ -144,7 +143,7 @@ class Mean(Stat):
             self.rolling_mean = x.clone() if x.is_floating_point() else x.double()
         else:
             delta = x - rolling_mean
-            self.rolling_mean = rolling_mean + delta / n
+            self.rolling_mean = rolling_mean + delta * weight / n
 
 
 class MSE(Stat):
@@ -166,12 +165,12 @@ class MSE(Stat):
             return torch.zeros_like(self.prev_mean)
         return self.mse
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         assert self.mean is not None
         mean = self.mean.get()
 
         if mean is not None and self.prev_mean is not None:
-            rhs = (x - self.prev_mean) * (x - mean)
+            rhs = weight * (x - self.prev_mean) * (x - mean)
             if self.mse is None:
                 self.mse = rhs
             else:
@@ -207,7 +206,7 @@ class Var(Stat):
         self.mse_stat = self._get_stat(MSE())
         self.n_stat = self._get_stat(Count())
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         pass
 
     def get(self) -> Optional[Tensor]:
@@ -251,7 +250,7 @@ class StdDev(Stat):
     def init(self) -> None:
         self.var_stat = self._get_stat(Var(order=self.order))
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         pass
 
     def get(self) -> Optional[Tensor]:
@@ -276,7 +275,7 @@ class GeneralAccumFn(Stat):
     def get(self) -> Optional[Tensor]:
         return self.result
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         if self.result is None:
             self.result = x
         else:
@@ -308,6 +307,9 @@ class Sum(GeneralAccumFn):
         add_fn: Callable[[Tensor, Tensor], Tensor] = torch.add,
     ) -> None:
         super().__init__(name=name, fn=add_fn)
+
+    def update(self, x: Tensor, weight: float = 1) -> None:
+        super().update(x * weight)
 
 
 def CommonStats() -> List[Stat]:

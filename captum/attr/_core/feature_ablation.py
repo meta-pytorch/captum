@@ -22,6 +22,7 @@ from captum._utils.common import (
     _is_tuple,
     _maybe_expand_parameters,
     _run_forward,
+    _validate_input,
 )
 from captum._utils.exceptions import FeatureAblationFutureError
 from captum._utils.progress import NullProgress, progress, Progress
@@ -501,6 +502,7 @@ class FeatureAblation(PerturbationAttribution):
         is_inputs_tuple = _is_tuple(inputs)
 
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(formatted_inputs, baselines, allow_broadcastable_baselines=True)
         formatted_additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
@@ -630,6 +632,7 @@ class FeatureAblation(PerturbationAttribution):
                 else:
                     reshaped_baselines.append(baseline)
             baselines = tuple(reshaped_baselines) if reshaped else baselines
+        should_validate_output_shape = True
         for i in range(0, len(all_feature_idxs), perturbations_per_eval):
             current_feature_idxs = all_feature_idxs[i : i + perturbations_per_eval]
             current_num_ablated_features = min(
@@ -701,8 +704,8 @@ class FeatureAblation(PerturbationAttribution):
                 "when use_futures is True, modified_eval should have "
                 f"non-Future type rather than {type(modified_eval)}"
             )
-            # Just do the check once.
-            if not self._is_output_shape_valid:
+            # Validate once for each attribution call.
+            if should_validate_output_shape:
                 check_output_shape_valid(
                     inputs=current_inputs,
                     num_examples=num_examples,
@@ -710,7 +713,7 @@ class FeatureAblation(PerturbationAttribution):
                     modified_eval=modified_eval,
                     perturbations_per_eval=perturbations_per_eval,
                 )
-                self._is_output_shape_valid = True
+                should_validate_output_shape = False
             total_attrib, weights = self._process_ablated_out_full(
                 modified_eval=modified_eval,
                 current_mask=current_masks,
@@ -782,9 +785,9 @@ class FeatureAblation(PerturbationAttribution):
                 tensor_mask.append(mask)
 
                 assert baseline is not None, "baseline must be provided"
-                ablated_feature = input_tensor[start_idx:end_idx] * (1 - mask).to(
-                    input_tensor.dtype
-                ) + (baseline * mask.to(input_tensor.dtype))
+                ablated_feature = torch.where(
+                    mask.bool(), baseline, input_tensor[start_idx:end_idx]
+                )
                 ablated_input = ablated_input.to(ablated_feature.dtype)
                 ablated_input[start_idx:end_idx] = ablated_feature
             current_masks.append(torch.stack(tensor_mask, dim=0))
@@ -823,17 +826,22 @@ class FeatureAblation(PerturbationAttribution):
         feature_mask: Union[None, Tensor, Tuple[Tensor, ...]] = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> Future[TensorOrTupleOfTensorsGeneric]:
         r"""
         Almost the same as the attribute function, except that it requires a
-        forward function that returns a Future, and it returns a Future.
+        forward function that returns a Future, and it returns a Future. When
+        ``run_forward_on_skip`` is enabled, failures from a skipped group's
+        alignment-only forward are ignored because its output is intentionally
+        excluded from the attribution result.
         """
 
         # Keeps track whether original input is a tuple or not before
         # converting it into a tuple.
         is_inputs_tuple = _is_tuple(inputs)
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(formatted_inputs, baselines, allow_broadcastable_baselines=True)
         formatted_additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
@@ -895,6 +903,8 @@ class FeatureAblation(PerturbationAttribution):
                     processed_initial_eval_fut=processed_initial_eval_fut,
                     is_inputs_tuple=is_inputs_tuple,
                     perturbations_per_eval=perturbations_per_eval,
+                    run_forward_on_skip=run_forward_on_skip,
+                    **kwargs,
                 ),
             )
 
@@ -911,6 +921,7 @@ class FeatureAblation(PerturbationAttribution):
         ],
         is_inputs_tuple: bool,
         perturbations_per_eval: int,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> Future[Union[Tensor, Tuple[Tensor, ...]]]:
         feature_idx_to_tensor_idx = self._get_feature_idx_to_tensor_idx(
@@ -949,11 +960,25 @@ class FeatureAblation(PerturbationAttribution):
                 perturbations_per_eval, len(current_feature_idxs)
             )
 
-            if self._should_skip_inputs_and_warn(
+            should_skip = self._should_skip_inputs_and_warn(
                 current_feature_idxs,
                 feature_idx_to_tensor_idx,
                 formatted_inputs,
-            ):
+            )
+            if should_skip and run_forward_on_skip:
+                skipped_eval = _run_forward(
+                    self.forward_func,
+                    formatted_inputs,
+                    target,
+                    formatted_additional_forward_args,
+                )
+                if not isinstance(skipped_eval, torch.Future):
+                    raise AssertionError(
+                        "when using attribute_future, skipped_eval should have "
+                        f"Future type rather than {type(skipped_eval)}"
+                    )
+                all_modified_eval_futures.append(skipped_eval.then(lambda _: ([], [])))
+            if should_skip:
                 continue
 
             # Store appropriate inputs and additional args based on batch size.
@@ -1048,25 +1073,9 @@ class FeatureAblation(PerturbationAttribution):
 
         return self._generate_async_result_cross_tensor(
             all_modified_eval_futures,
+            processed_initial_eval_fut,
             is_inputs_tuple,
         )
-
-    def _fut_tuple_to_accumulate_fut_list_cross_tensor(
-        self,
-        total_attrib: List[Tensor],
-        weights: List[Tensor],
-        fut_tuple: Future[Tuple[List[Tensor], List[Tensor]]],
-    ) -> None:
-        try:
-            # process_ablated_out_* already accumlates the total attribution.
-            # Just get the latest value
-            attribs, this_weights = fut_tuple.value()
-            total_attrib[:] = attribs
-            weights[:] = this_weights
-        except FeatureAblationFutureError as e:
-            raise FeatureAblationFutureError(
-                "_fut_tuple_to_accumulate_fut_list_cross_tensor failed"
-            ) from e
 
     def _attribute_progress_setup(
         self,
@@ -1087,28 +1096,55 @@ class FeatureAblation(PerturbationAttribution):
     def _generate_async_result_cross_tensor(
         self,
         futs: List[Future[Tuple[List[Tensor], List[Tensor]]]],
+        processed_initial_eval_fut: Future[
+            Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]
+        ],
         is_inputs_tuple: bool,
     ) -> Future[Union[Tensor, Tuple[Tensor, ...]]]:
-        accumulate_fut_list: List[Future[None]] = []
-        total_attrib: List[Tensor] = []
-        weights: List[Tensor] = []
-
-        for fut_tuple in futs:
-            accumulate_fut_list.append(
-                fut_tuple.then(
-                    lambda fut_tuple: self._fut_tuple_to_accumulate_fut_list_cross_tensor(  # noqa: E501 line too long
-                        total_attrib, weights, fut_tuple
-                    )
-                )
+        def reduce_results(
+            collected: Future[
+                List[
+                    Future[
+                        Union[
+                            Tuple[
+                                List[Tensor],
+                                List[Tensor],
+                                Tensor,
+                                Tensor,
+                                int,
+                                dtype,
+                            ],
+                            Tuple[List[Tensor], List[Tensor]],
+                        ]
+                    ]
+                ]
+            ],
+        ) -> Union[Tensor, Tuple[Tensor, ...]]:
+            initial_result = cast(
+                Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype],
+                collected.value()[0].value(),
             )
-
-        result_fut = collect_all(accumulate_fut_list).then(
-            lambda x: format_result(
+            total_attrib = [torch.zeros_like(attr) for attr in initial_result[0]]
+            weights = [torch.zeros_like(weight) for weight in initial_result[1]]
+            for result_future in collected.value()[1:]:
+                attrs, result_weights = cast(
+                    Tuple[List[Tensor], List[Tensor]], result_future.value()
+                )
+                if attrs:
+                    total_attrib = [
+                        total + contribution
+                        for total, contribution in zip(total_attrib, attrs)
+                    ]
+                if result_weights:
+                    weights = [
+                        total + contribution
+                        for total, contribution in zip(weights, result_weights)
+                    ]
+            return format_result(
                 total_attrib, weights, is_inputs_tuple, use_weights=self.use_weights
             )
-        )
 
-        return result_fut
+        return collect_all([processed_initial_eval_fut, *futs]).then(reduce_results)
 
     def _eval_fut_to_ablated_out_fut_cross_tensor(
         self,
@@ -1145,23 +1181,23 @@ class FeatureAblation(PerturbationAttribution):
                     "modified eval should be a Tensor"
                 )
             (
-                total_attrib,
-                weights,
+                initial_total_attrib,
+                initial_weights,
                 initial_eval,
                 flattened_initial_eval,
                 n_outputs,
                 attrib_type,
             ) = initial_eval_tuple
-            # Just do the check once.
-            if not self._is_output_shape_valid:
-                check_output_shape_valid(
-                    inputs=current_inputs,
-                    num_examples=num_examples,
-                    initial_eval=initial_eval,
-                    modified_eval=modified_eval,
-                    perturbations_per_eval=perturbations_per_eval,
-                )
-                self._is_output_shape_valid = True
+            check_output_shape_valid(
+                inputs=current_inputs,
+                num_examples=num_examples,
+                initial_eval=initial_eval,
+                modified_eval=modified_eval,
+                perturbations_per_eval=perturbations_per_eval,
+            )
+
+            total_attrib = [torch.zeros_like(attr) for attr in initial_total_attrib]
+            weights = [torch.zeros_like(weight) for weight in initial_weights]
 
             total_attrib, weights = self._process_ablated_out_full(
                 modified_eval=modified_eval,
@@ -1208,6 +1244,10 @@ class FeatureAblation(PerturbationAttribution):
                 eval_diff_shape + (inputs[i].dim() - 1) * (1,)
             )
             eval_diff = eval_diff.to(total_attrib[i].device)
-            total_attrib[i] += (eval_diff * mask.to(attrib_type)).sum(dim=0)
+            total_attrib[i] += torch.where(
+                mask.to(device=eval_diff.device, dtype=torch.bool),
+                eval_diff,
+                torch.zeros_like(eval_diff),
+            ).sum(dim=0)
 
         return total_attrib, weights
