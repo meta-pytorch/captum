@@ -7,6 +7,7 @@
 
 # pyre-strict
 
+import math
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import torch
@@ -63,14 +64,25 @@ class Summarizer:
 
         return copy.deepcopy(self._stats)
 
-    def update(self, x: Union[float, Tensor, Tuple[Union[float, Tensor], ...]]) -> None:
+    def update(
+        self,
+        x: Union[float, Tensor, Tuple[Union[float, Tensor], ...]],
+        weight: float = 1,
+    ) -> None:
         r"""
         Calls `update` on each `Stat` object within the summarizer
 
         Args:
             x (Tensor or Tuple[Tensor, ...]):
                 The input(s) you wish to summarize
+            weight (float):
+                Frequency weight for this update. This is useful when ``x`` is
+                already a mean over multiple observations.
         """
+        if not math.isfinite(weight) or weight < 0:
+            raise ValueError(f"weight must be finite and nonnegative, got {weight}")
+        if weight == 0:
+            return
         if self._is_inputs_tuple is None:
             self._is_inputs_tuple = isinstance(x, tuple)
         else:
@@ -99,7 +111,7 @@ class Summarizer:
                 )
             if not isinstance(inp, torch.Tensor):
                 inp = torch.tensor(inp, dtype=torch.float)
-            self._summarizers[i].update(inp)
+            self._summarizers[i].update(inp, weight)
 
     @property
     def summary(
@@ -213,7 +225,7 @@ class SummarizerSingleTensor:
             stat._other_stats = self
             stat.init()
 
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor, weight: float = 1) -> None:
         r"""
         Updates the summary of a given tensor `x`
 
@@ -222,7 +234,10 @@ class SummarizerSingleTensor:
                 The tensor to summarize
         """
         for stat in self._stats:
-            stat.update(x)
+            if weight == 1:
+                stat.update(x)
+            else:
+                stat.update(x, weight)
 
     def get(self, stat: Stat) -> Optional[Stat]:
         r"""
