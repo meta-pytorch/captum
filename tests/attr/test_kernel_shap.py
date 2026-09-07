@@ -63,6 +63,66 @@ class Test(BaseTest):
     def test_baseline_kernel_shap_alias(self) -> None:
         self.assertIs(BaselineKernelShap, KernelShap)
 
+    def test_single_feature_kernel_shap(self) -> None:
+        attributions = KernelShap(lambda x: x.sum(dim=1)).attribute(
+            torch.tensor([[3.0]]), baselines=torch.tensor([[1.0]]), n_samples=2
+        )
+
+        assertTensorAlmostEqual(self, attributions, [[2.0]], delta=1e-5)
+
+    def test_kernel_shap_requires_both_endpoints(self) -> None:
+        with self.assertRaisesRegex(AssertionError, "at least 2"):
+            KernelShap(lambda x: x.sum(dim=1)).attribute(
+                torch.tensor([[3.0]]), n_samples=1
+            )
+
+    def test_random_baseline_rejects_empty_distribution(self) -> None:
+        with self.assertRaisesRegex(AssertionError, "at least one sample"):
+            RandomBaselineKernelShap(lambda x: x.sum(dim=1)).attribute(
+                torch.tensor([[3.0]]), torch.empty(0, 1), n_samples=2
+            )
+
+    def test_random_baseline_replacement_preserves_fractional_baseline(self) -> None:
+        rbks = RandomBaselineKernelShap(lambda x: x.sum(dim=1))
+        original = torch.tensor([[3]], dtype=torch.int64)
+        feature_mask = torch.tensor([[0]])
+        absent_sample = torch.tensor([[0]])
+        baseline_indices = torch.tensor([0])
+
+        scalar_result = rbks._replace_missing_with_random_baselines(
+            absent_sample,
+            original,
+            feature_mask,
+            0.5,
+            baseline_indices,
+        )
+        tensor_result = rbks._replace_missing_with_random_baselines(
+            absent_sample,
+            original,
+            feature_mask,
+            torch.tensor([[0.25]]),
+            baseline_indices,
+        )
+
+        torch.testing.assert_close(scalar_result, torch.tensor([[0.5]]))
+        torch.testing.assert_close(tensor_result, torch.tensor([[0.25]]))
+
+    def test_random_baseline_float_for_bool_input_is_not_coerced_to_bool(
+        self,
+    ) -> None:
+        result = RandomBaselineKernelShap(
+            lambda x: x.sum(dim=1)
+        )._replace_missing_with_random_baselines(
+            torch.tensor([[0]]),
+            torch.tensor([[True]]),
+            torch.tensor([[0]]),
+            1.0,
+            torch.tensor([0]),
+        )
+
+        self.assertEqual(result.dtype, torch.float32)
+        torch.testing.assert_close(result, torch.tensor([[1.0]]))
+
     def test_random_baseline_kernel_shap_linear(self) -> None:
         weight = torch.tensor([[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]])
         net = BasicLinearModel2(3, 2)

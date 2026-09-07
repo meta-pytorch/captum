@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
+import math
 import random
 from typing import Callable, Generator, List, Union
 
@@ -30,6 +31,31 @@ def get_values(
 
 # pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
+    def test_weighted_updates_match_uneven_batches(self) -> None:
+        summarizer = Summarizer([Mean(), StdDev(order=0)])
+
+        summarizer.update(torch.tensor(1.0), weight=1)
+        summarizer.update(torch.tensor(3.0), weight=3)
+
+        summary = summarizer.summary
+        assert isinstance(summary, dict)
+        assertTensorAlmostEqual(self, summary["mean"], 2.5)
+        assertTensorAlmostEqual(self, summary["std_dev"], math.sqrt(0.75))
+
+    def test_weighted_updates_reject_invalid_weights(self) -> None:
+        for weight in (-1, float("inf"), float("nan")):
+            with self.subTest(weight=weight):
+                summarizer = Summarizer([Mean()])
+                with self.assertRaisesRegex(ValueError, "finite and nonnegative"):
+                    summarizer.update(torch.tensor(1.0), weight=weight)
+
+    def test_zero_weight_update_is_ignored(self) -> None:
+        summarizer = Summarizer([Mean()])
+
+        summarizer.update(torch.tensor(1.0), weight=0)
+
+        self.assertIsNone(summarizer.summary)
+
     def test_div0(self) -> None:
         summarizer = Summarizer([Var(), Mean()])
         summ = summarizer.summary

@@ -288,14 +288,21 @@ class KernelShap(Lime):
             >>> # Computes KernelSHAP attributions with feature mask.
             >>> attr = ks.attribute(input, target=1, feature_mask=feature_mask)
         """
+        assert (
+            isinstance(n_samples, int) and n_samples >= 2
+        ), "KernelShap requires n_samples to be an integer and at least 2."
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
         feature_mask, num_interp_features = construct_feature_mask(
             feature_mask, formatted_inputs
         )
-        num_features_list = torch.arange(num_interp_features, dtype=torch.float)
-        denom = num_features_list * (num_interp_features - num_features_list)
-        probs = torch.tensor((num_interp_features - 1)) / denom
-        probs[0] = 0.0
+        assert num_interp_features >= 1, "KernelShap requires at least one feature."
+        if num_interp_features == 1:
+            probs = torch.ones(1)
+        else:
+            num_features_list = torch.arange(num_interp_features, dtype=torch.float)
+            denom = num_features_list * (num_interp_features - num_features_list)
+            probs = torch.tensor((num_interp_features - 1)) / denom
+            probs[0] = 0.0
         return self._attribute_kwargs(
             inputs=inputs,
             baselines=baselines,
@@ -605,6 +612,10 @@ class RandomBaselineKernelShap(KernelShap):
             >>> rbks = RandomBaselineKernelShap(net)
             >>> attr = rbks.attribute(input, baselines, target=1, n_samples=200)
         """
+        assert isinstance(n_samples, int) and n_samples >= 2, (
+            "RandomBaselineKernelShap requires n_samples to be an integer and "
+            "at least 2."
+        )
         formatted_inputs, formatted_baselines = _format_input_baseline(
             inputs, baselines
         )
@@ -638,10 +649,16 @@ class RandomBaselineKernelShap(KernelShap):
                 n_baseline_samples,
             )
 
-        num_features_list = torch.arange(num_interp_features, dtype=torch.float)
-        denom = num_features_list * (num_interp_features - num_features_list)
-        probs = torch.tensor((num_interp_features - 1)) / denom
-        probs[0] = 0.0
+        assert (
+            num_interp_features >= 1
+        ), "RandomBaselineKernelShap requires at least one feature."
+        if num_interp_features == 1:
+            probs = torch.ones(1)
+        else:
+            num_features_list = torch.arange(num_interp_features, dtype=torch.float)
+            denom = num_features_list * (num_interp_features - num_features_list)
+            probs = torch.tensor((num_interp_features - 1)) / denom
+            probs[0] = 0.0
         return self._attribute_kwargs(
             inputs=inputs,
             baselines=formatted_baselines,
@@ -725,6 +742,9 @@ class RandomBaselineKernelShap(KernelShap):
         baseline_counts: List[int] = []
         for input, baseline in zip(inputs, baselines):
             if isinstance(baseline, Tensor):
+                assert (
+                    baseline.shape[0] > 0
+                ), "Baseline tensor distributions must contain at least one sample."
                 assert input.dim() == baseline.dim(), (
                     "Baseline tensors must have the same number of dimensions "
                     "as their corresponding input tensor. Found baseline: "
@@ -825,13 +845,9 @@ class RandomBaselineKernelShap(KernelShap):
         ), "RandomBaselineKernelShap expects one input example at a time."
         sample_count = baseline_indices.numel()
         binary_mask = curr_sample[0][feature_mask].bool()
-        expanded_input = original_input.expand(
-            (sample_count,) + tuple(original_input.shape[1:])
-        )
         if isinstance(baseline, Tensor):
-            baseline = baseline.to(
-                device=original_input.device, dtype=original_input.dtype
-            )
+            result_dtype = torch.promote_types(original_input.dtype, baseline.dtype)
+            baseline = baseline.to(device=original_input.device, dtype=result_dtype)
             if baseline.shape[0] == 1:
                 selected_baselines = baseline.expand(
                     (sample_count,) + tuple(baseline.shape[1:])
@@ -839,10 +855,20 @@ class RandomBaselineKernelShap(KernelShap):
             else:
                 selected_baselines = baseline.index_select(0, baseline_indices)
         else:
-            selected_baselines = torch.full(
-                (sample_count,) + tuple(original_input.shape[1:]),
-                baseline,
-                device=original_input.device,
-                dtype=original_input.dtype,
+            result_dtype = (
+                original_input.dtype
+                if original_input.dtype == torch.bool and isinstance(baseline, bool)
+                else torch.result_type(original_input, baseline)
             )
+            selected_baselines = torch.full_like(
+                original_input,
+                baseline,
+                dtype=result_dtype,
+                device=original_input.device,
+            ).expand(
+                (sample_count,) + tuple(original_input.shape[1:]),
+            )
+        expanded_input = original_input.to(result_dtype).expand(
+            (sample_count,) + tuple(original_input.shape[1:])
+        )
         return torch.where(binary_mask, expanded_input, selected_baselines)

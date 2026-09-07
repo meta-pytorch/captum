@@ -17,7 +17,13 @@ import torch
 from captum._utils.models.linear_model import SGDLasso, SkLearnLasso
 from captum._utils.models.model import Model
 from captum._utils.typing import BaselineType, TensorOrTupleOfTensorsGeneric
-from captum.attr._core.lime import get_exp_kernel_similarity_function, Lime, LimeBase
+from captum.attr._core.lime import (
+    construct_feature_mask,
+    default_from_interp_rep_transform,
+    get_exp_kernel_similarity_function,
+    Lime,
+    LimeBase,
+)
 from captum.attr._utils.batching import _batch_example_iterator
 from captum.attr._utils.common import (
     _construct_default_feature_mask,
@@ -123,6 +129,97 @@ class Test(BaseTest):
             "sample_weight in Lasso regression."
         except (ImportError, AssertionError):
             raise unittest.SkipTest("Skipping Lime tests, sklearn not available.")
+
+    def test_default_transform_ignores_nonfinite_inactive_baseline(self) -> None:
+        result = default_from_interp_rep_transform(
+            torch.tensor([[1, 0]]),
+            torch.tensor([[1.0, 2.0]]),
+            feature_mask=torch.tensor([[0, 1]]),
+            baselines=torch.tensor([[float("nan"), 0.0]]),
+        )
+
+        torch.testing.assert_close(result, torch.tensor([[1.0, 0.0]]))
+
+    def test_default_transform_moves_tensor_baseline_to_input_device(self) -> None:
+        result = default_from_interp_rep_transform(
+            torch.tensor([[0]]),
+            torch.empty((1, 1), device="meta"),
+            feature_mask=torch.tensor([[0]]),
+            baselines=torch.tensor([[0.0]]),
+        )
+
+        self.assertEqual(result.device.type, "meta")
+
+    def test_construct_feature_mask_validates_arity_shape_and_values(self) -> None:
+        inputs = (torch.ones(1, 2), torch.ones(1, 2))
+        with self.assertRaisesRegex(AssertionError, "same number of tensors"):
+            construct_feature_mask((torch.zeros(1, 2),), inputs)
+        with self.assertRaisesRegex(AssertionError, "shape of feature mask"):
+            construct_feature_mask((torch.zeros(1, 3), torch.zeros(1, 2)), inputs)
+        with self.assertRaisesRegex(AssertionError, "non-negative integers"):
+            construct_feature_mask(
+                (torch.tensor([[0.5, 1.0]]), torch.zeros(1, 2)), inputs
+            )
+
+    def test_construct_feature_mask_rejects_only_empty_masks(self) -> None:
+        empty = torch.empty((1, 0))
+
+        with self.assertRaisesRegex(AssertionError, "at least one element"):
+            construct_feature_mask((empty,), (empty,))
+
+    def test_lime_does_not_pin_accelerator_resident_training_tensors(self) -> None:
+        interpretable_model = unittest.mock.MagicMock(spec=Model)
+        interpretable_model.representation.return_value = torch.tensor([1.0])
+        lime = LimeBase(
+            forward_func=lambda inputs: inputs.sum(dim=1),
+            interpretable_model=interpretable_model,
+            similarity_func=lambda original, perturbed, interpreted, **kwargs: (
+                torch.ones(1, device=interpreted.device)
+            ),
+            perturb_func=lambda inputs, **kwargs: inputs,
+            perturb_interpretable_space=False,
+            from_interp_rep_transform=None,
+            to_interp_rep_transform=lambda inputs, original, **kwargs: inputs,
+        )
+
+        with unittest.mock.patch("captum.attr._core.lime.DataLoader") as data_loader:
+            lime.attribute(torch.empty((1, 1), device="meta"), n_samples=1)
+
+        self.assertFalse(data_loader.call_args.kwargs["pin_memory"])
+
+    def test_lime_base_validates_sample_count(self) -> None:
+        lime = LimeBase(
+            forward_func=lambda x: x.sum(dim=1),
+            interpretable_model=SGDLasso(),
+            similarity_func=lambda *args, **kwargs: 1.0,
+            perturb_func=lambda x, **kwargs: x,
+            perturb_interpretable_space=False,
+            from_interp_rep_transform=None,
+            to_interp_rep_transform=lambda x, original, **kwargs: x,
+        )
+
+        with self.assertRaisesRegex(AssertionError, "n_samples"):
+            lime.attribute(torch.ones(1, 1), n_samples=0)
+
+    def test_lime_base_rejects_empty_generator(self) -> None:
+        def empty_generator(
+            _: TensorOrTupleOfTensorsGeneric, **kwargs: Any
+        ) -> Generator[Tensor, None, None]:
+            return
+            yield torch.ones(1, 1)
+
+        lime = LimeBase(
+            forward_func=lambda x: x.sum(dim=1),
+            interpretable_model=SGDLasso(),
+            similarity_func=lambda *args, **kwargs: 1.0,
+            perturb_func=empty_generator,
+            perturb_interpretable_space=False,
+            from_interp_rep_transform=None,
+            to_interp_rep_transform=lambda x, original, **kwargs: x,
+        )
+
+        with self.assertRaisesRegex(ValueError, "did not produce any samples"):
+            lime.attribute(torch.ones(1, 1), n_samples=1)
 
     def test_simple_lime(self) -> None:
         net = BasicModel_MultiLayer()

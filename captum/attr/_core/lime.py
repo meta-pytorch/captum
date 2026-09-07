@@ -18,9 +18,10 @@ from captum._utils.common import (
     _expand_additional_forward_args,
     _expand_target,
     _flatten_tensor_or_tuple,
+    _format_feature_mask,
     _format_output,
-    _format_tensor_into_tuples,
     _get_max_feature_index,
+    _is_mask_valid,
     _is_tuple,
     _reduce_list,
     _run_forward,
@@ -425,6 +426,13 @@ class LimeBase(PerturbationAttribution):
         inp_tensor = cast(Tensor, inputs) if isinstance(inputs, Tensor) else inputs[0]
         device = inp_tensor.device
 
+        assert (
+            isinstance(n_samples, int) and n_samples >= 1
+        ), "n_samples must be an integer and at least 1."
+        assert (
+            isinstance(perturbations_per_eval, int) and perturbations_per_eval >= 1
+        ), "perturbations_per_eval must be an integer and at least 1."
+
         interpretable_inps = []
         similarities = []
         outputs = []
@@ -519,6 +527,9 @@ class LimeBase(PerturbationAttribution):
         if show_progress:
             attr_progress.close()
 
+        if batch_count == 0:
+            raise ValueError("The perturbation generator did not produce any samples.")
+
         # Argument 1 to "cat" has incompatible type
         # "list[Tensor | tuple[Tensor, ...]]";
         # expected "tuple[Tensor, ...] | list[Tensor]"  [arg-type]
@@ -532,7 +543,19 @@ class LimeBase(PerturbationAttribution):
             else torch.stack(similarities)
         ).float()
         dataset = TensorDataset(combined_interp_inps, combined_outputs, combined_sim)
-        self.interpretable_model.fit(DataLoader(dataset, batch_size=batch_count))
+        # Citrine C0: pin host memory for efficient surrogate-model transfer;
+        # accelerator-resident tensors cannot be pinned.
+        pin_memory = all(
+            tensor.device.type == "cpu"
+            for tensor in (combined_interp_inps, combined_outputs, combined_sim)
+        )
+        self.interpretable_model.fit(
+            DataLoader(  # noqa: TOR401 -- tensors are already materialized in memory.
+                dataset,
+                batch_size=batch_count,
+                pin_memory=pin_memory,  # noqa: CITRINE(unpinned_memcpy)
+            )
+        )
         return self.interpretable_model.representation()
 
     def _get_perturb_generator_func(
@@ -649,14 +672,18 @@ def default_from_interp_rep_transform(
     ), "Must provide baselines to use default interpretable representation transform"
     feature_mask: TensorOrTupleOfTensorsGeneric = kwargs["feature_mask"]
     if isinstance(feature_mask, Tensor):
+        original_input = cast(Tensor, original_inputs)
         binary_mask = curr_sample[0][feature_mask].bool()
-        return (
-            # pyrefly: ignore [missing-attribute]
-            binary_mask.to(original_inputs.dtype) * original_inputs
-            + (~binary_mask).to(
-                original_inputs.dtype  # pyrefly: ignore [missing-attribute]
-            )  # pyrefly: ignore [missing-attribute]
-            * kwargs["baselines"]  # pyrefly: ignore [missing-attribute]
+        baseline = cast(Tensor | int | float, kwargs["baselines"])
+        if isinstance(baseline, Tensor):
+            baseline = baseline.to(device=original_input.device)
+        return cast(
+            TensorOrTupleOfTensorsGeneric,
+            torch.where(
+                binary_mask.to(original_input.device),
+                original_input,
+                baseline,
+            ),
         )
     else:
         binary_mask = tuple(
@@ -666,9 +693,15 @@ def default_from_interp_rep_transform(
         return cast(
             TensorOrTupleOfTensorsGeneric,
             tuple(
-                binary_mask[j].to(original_inputs[j].dtype) * original_inputs[j]
-                + (~binary_mask[j]).to(original_inputs[j].dtype)
-                * kwargs["baselines"][j]
+                torch.where(
+                    binary_mask[j].to(original_inputs[j].device),
+                    original_inputs[j],
+                    (
+                        kwargs["baselines"][j].to(device=original_inputs[j].device)
+                        if isinstance(kwargs["baselines"][j], Tensor)
+                        else kwargs["baselines"][j]
+                    ),
+                )
                 for j in range(len(feature_mask))
             ),
         )
@@ -721,7 +754,9 @@ def get_exp_kernel_similarity_function(
             cos_sim = CosineSimilarity(dim=0)
             distance = 1 - cos_sim(flattened_original_inp, flattened_perturbed_inp)
         elif distance_mode == "euclidean":
-            distance = torch.norm(flattened_original_inp - flattened_perturbed_inp)
+            distance = torch.linalg.vector_norm(
+                flattened_original_inp - flattened_perturbed_inp
+            )
         else:
             raise ValueError("distance_mode must be either cosine or euclidean.")
         return math.exp(-1 * (distance**2) / (2 * (kernel_width**2)))
@@ -754,13 +789,31 @@ def construct_feature_mask(
             formatted_inputs
         )
     else:
-        feature_mask_tuple = _format_tensor_into_tuples(feature_mask)
-        min_interp_features = int(
-            min(
-                torch.min(single_mask).item()
-                for single_mask in feature_mask_tuple
-                if single_mask.numel()
+        feature_mask_tuple = _format_feature_mask(feature_mask, formatted_inputs)
+        for index, (single_mask, single_input) in enumerate(
+            zip(feature_mask_tuple, formatted_inputs)
+        ):
+            assert _is_mask_valid(single_mask, single_input), (
+                f"the shape of feature mask (index {index}) is invalid, "
+                f"input shape: {single_input.shape}, feature mask shape "
+                f"{single_mask.shape}"
             )
+            values_are_integral = not single_mask.is_complex() and (
+                not single_mask.is_floating_point()
+                or bool(
+                    torch.isfinite(single_mask).all()
+                    and (single_mask == single_mask.round()).all()
+                )
+            )
+            assert values_are_integral and bool(
+                (single_mask >= 0).all()
+            ), "Feature mask values must be non-negative integers."
+        nonempty_masks = tuple(
+            single_mask for single_mask in feature_mask_tuple if single_mask.numel()
+        )
+        assert nonempty_masks, "Feature mask must contain at least one element."
+        min_interp_features = int(
+            min(torch.min(single_mask).item() for single_mask in nonempty_masks)
         )
         if min_interp_features != 0:
             warnings.warn(

@@ -91,8 +91,14 @@ def _perturb_inputs(
             perturbed_inputs.append(inp)
         else:
             baseline = baselines[attr_inp_count]
-
-            perturbed_inp = cast(Tensor, inp) * pert_mask + baseline * (1 - pert_mask)
+            input_tensor = cast(Tensor, inp)
+            if isinstance(baseline, Tensor):
+                baseline = baseline.to(device=input_tensor.device)
+            perturbed_inp = torch.where(
+                pert_mask.to(device=input_tensor.device, dtype=torch.bool),
+                input_tensor,
+                baseline,
+            )
             perturbed_inputs.append(perturbed_inp)
 
         attr_inp_count += 1
@@ -288,10 +294,10 @@ class DataLoaderAttribution(Attribution):
 
                         0: the element is passed to forward_func and needs attribution.
                         It must be a tensor.
-                        1: the element is excluded for forward_func. A typical example
+                        1: the element is passed to forward_func but does not need
+                        attribution. Like additional_forward_args.
+                        2: the element is excluded from forward_func. A typical example
                         is the label.
-                        2: the element is passed to forward_func but does not need
-                        attribution. Like additional_forward_args
 
             baselines (Union[Tensor, tuple[Tensor, ...]], optional): same as the
                         baseline in attribute. The same baseline will be
@@ -363,6 +369,8 @@ class DataLoaderAttribution(Attribution):
         if type(inputs) is list:
             # support list as it is a common return type for dataloader in torch
             inputs_tuple = tuple(inputs)
+        elif type(inputs) is tuple:
+            inputs_tuple = inputs
         elif type(inputs) is not tuple:
             is_inputs_tuple = False
             inputs_tuple = _format_tensor_into_tuples(inputs)
@@ -379,6 +387,15 @@ class DataLoaderAttribution(Attribution):
                 "input_roles must contain at least one element need attribution"
                 f"({InputRole.need_attr}), received input_roles: {input_roles}"
             )
+            assert all(
+                role
+                in (
+                    InputRole.need_attr,
+                    InputRole.need_forward,
+                    InputRole.no_forward,
+                )
+                for role in input_roles
+            ), f"Unsupported input role in input_roles: {input_roles}"
         else:
             # by default, assume every element in the dataloader needs attribution
             # pyrefly: ignore [unbound-name]

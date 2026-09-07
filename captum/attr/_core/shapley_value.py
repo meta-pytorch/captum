@@ -37,6 +37,7 @@ from captum._utils.common import (
     _is_mask_valid,
     _is_tuple,
     _run_forward,
+    _validate_input,
 )
 from captum._utils.exceptions import ShapleyValueFutureError
 from captum._utils.progress import progress
@@ -81,6 +82,21 @@ def _shape_feature_mask(
         mask_list.append(mask.to(inp.device))
 
     return tuple(mask_list)
+
+
+def _validate_shapley_feature_mask(feature_mask: Tuple[Tensor, ...]) -> None:
+    for mask in feature_mask:
+        if mask.is_complex():
+            values_are_integral = False
+        elif mask.is_floating_point():
+            values_are_integral = bool(
+                torch.isfinite(mask).all() and (mask == mask.round()).all()
+            )
+        else:
+            values_are_integral = True
+        assert values_are_integral and (
+            mask.numel() == 0 or bool((mask >= 0).all())
+        ), "Feature mask values must be non-negative integers."
 
 
 class ShapleyValueSampling(PerturbationAttribution):
@@ -320,10 +336,12 @@ class ShapleyValueSampling(PerturbationAttribution):
         # converting it into a tuple.
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(inputs_tuple, baselines)
         additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
         formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        _validate_shapley_feature_mask(formatted_feature_mask)
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
@@ -366,13 +384,18 @@ class ShapleyValueSampling(PerturbationAttribution):
 
             # Initialize attribution totals and counts
             output_shape = initial_eval.shape
+            attribution_dtype = (
+                initial_eval.dtype
+                if initial_eval.is_floating_point() or initial_eval.is_complex()
+                else torch.get_default_dtype()
+            )
 
             # attr shape (*output_shape, *input_feature_shape)
             total_attrib = [
                 torch.zeros(
                     tuple(output_shape) + tuple(input.shape[1:]),
-                    dtype=torch.float,
-                    device=inputs_tuple[0].device,
+                    dtype=attribution_dtype,
+                    device=input.device,
                 )
                 for input in inputs_tuple
             ]
@@ -418,9 +441,7 @@ class ShapleyValueSampling(PerturbationAttribution):
                     if show_progress:
                         attr_progress.update()
                     if agg_output_mode:
-                        eval_diff = (modified_eval - prev_results).to(
-                            inputs_tuple[0].device
-                        )
+                        eval_diff = modified_eval - prev_results
                         prev_results = modified_eval
                     else:
                         # when perturb_per_eval > 1, every num_examples stands for
@@ -428,9 +449,7 @@ class ShapleyValueSampling(PerturbationAttribution):
                         # perumuation, each diff of a perturb is its eval minus
                         # the eval of the previous perturb
                         all_eval = torch.cat((prev_results, modified_eval), dim=0)
-                        eval_diff = (
-                            all_eval[num_examples:] - all_eval[:-num_examples]
-                        ).to(inputs_tuple[0].device)
+                        eval_diff = all_eval[num_examples:] - all_eval[:-num_examples]
                         prev_results = all_eval[-num_examples:]
                     for j in current_feat_list:
                         # format eval_diff to shape
@@ -438,7 +457,9 @@ class ShapleyValueSampling(PerturbationAttribution):
                         # where n_perturb may not be perturb_per_eval
                         # Append n_input_feature dim of 1 to make the tensor
                         # have the same dim as the mask tensor.
-                        formatted_eval_diff = eval_diff.reshape(
+                        formatted_eval_diff = eval_diff.to(
+                            inputs_tuple[j].device
+                        ).reshape(
                             (-1,)
                             + tuple(output_shape)
                             + (len(inputs_tuple[j].shape) - 1) * (1,)
@@ -459,7 +480,13 @@ class ShapleyValueSampling(PerturbationAttribution):
                         )
 
                         # aggregate n_perturb
-                        cur_attr = (formatted_eval_diff * cur_mask.float()).sum(dim=0)
+                        cur_attr = torch.where(
+                            cur_mask.to(
+                                device=formatted_eval_diff.device, dtype=torch.bool
+                            ),
+                            formatted_eval_diff,
+                            torch.zeros_like(formatted_eval_diff),
+                        ).sum(dim=0)
 
                         # (*output_shape, *input_feature_shape)
                         total_attrib[j] += cur_attr
@@ -487,10 +514,12 @@ class ShapleyValueSampling(PerturbationAttribution):
     ) -> Future[TensorOrTupleOfTensorsGeneric]:
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(inputs_tuple, baselines)
         additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
         formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        _validate_shapley_feature_mask(formatted_feature_mask)
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
@@ -648,11 +677,17 @@ class ShapleyValueSampling(PerturbationAttribution):
                 allow_multi_outputs=True,
             )
             output_shape = initial_eval_processed.shape
+            attribution_dtype = (
+                initial_eval_processed.dtype
+                if initial_eval_processed.is_floating_point()
+                or initial_eval_processed.is_complex()
+                else torch.get_default_dtype()
+            )
             total_attrib: List[Tensor] = [
                 torch.zeros(
                     tuple(output_shape) + tuple(input.shape[1:]),
-                    dtype=torch.float,
-                    device=inputs_tuple[0].device,
+                    dtype=attribution_dtype,
+                    device=input.device,
                 )
                 for input in inputs_tuple
             ]
@@ -715,7 +750,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             agg_output_mode,
         ) = prev_results_tuple
         if agg_output_mode:
-            eval_diff = (modified_eval - prev_results).to(inputs_tuple[0].device)
+            eval_diff = modified_eval - prev_results
             prev_results = modified_eval
         else:
             # when perturb_per_eval > 1, every num_examples stands for
@@ -724,9 +759,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             # the eval of the previous perturb
 
             all_eval = torch.cat((prev_results, modified_eval), dim=0)
-            eval_diff = (all_eval[num_examples:] - all_eval[:-num_examples]).to(
-                inputs_tuple[0].device
-            )
+            eval_diff = all_eval[num_examples:] - all_eval[:-num_examples]
             prev_results = all_eval[-num_examples:]
 
         for j in range(len(total_attrib)):
@@ -735,7 +768,7 @@ class ShapleyValueSampling(PerturbationAttribution):
             # where n_perturb may not be perturb_per_eval
             # Append n_input_feature dim of 1 to make the tensor
             # have the same dim as the mask tensor.
-            formatted_eval_diff = eval_diff.reshape(
+            formatted_eval_diff = eval_diff.to(inputs_tuple[j].device).reshape(
                 (-1,) + tuple(output_shape) + (len(inputs_tuple[j].shape) - 1) * (1,)
             )
 
@@ -754,7 +787,11 @@ class ShapleyValueSampling(PerturbationAttribution):
             )
 
             # aggregate n_perturb
-            cur_attr = (formatted_eval_diff * cur_mask.float()).sum(dim=0)
+            cur_attr = torch.where(
+                cur_mask.to(device=formatted_eval_diff.device, dtype=torch.bool),
+                formatted_eval_diff,
+                torch.zeros_like(formatted_eval_diff),
+            ).sum(dim=0)
             # (*output_shape, *input_feature_shape)
             total_attrib[j] += cur_attr
 
@@ -805,10 +842,11 @@ class ShapleyValueSampling(PerturbationAttribution):
         for i in range(len(current_tensors)):
             if i in feat_list:
                 output_tensors.append(
-                    current_tensors[i]
-                    * (~(mask[i] == feature_index)).to(current_tensors[i].dtype)
-                    + input_tensors[i]
-                    * (mask[i] == feature_index).to(input_tensors[i].dtype)
+                    torch.where(
+                        (mask[i] == feature_index).to(current_tensors[i].device),
+                        input_tensors[i],
+                        current_tensors[i],
+                    )
                 )
 
             else:
@@ -821,13 +859,14 @@ class ShapleyValueSampling(PerturbationAttribution):
         mask: Tuple[Tensor, ...],
         empty_mask: Tuple[Tensor, ...],
         feat_tensor_index_map: Dict[int, List[int]],
-        device: torch.device,
     ) -> Tuple[Tensor, ...]:
         feat_list = feat_tensor_index_map[feature_index]
         output_mask = []
         for i in range(len(mask)):
             if i in feat_list:
-                output_mask.append((mask[i] == feature_index).to(device).unsqueeze(0))
+                output_mask.append(
+                    (mask[i] == feature_index).to(empty_mask[i].device).unsqueeze(0)
+                )
             else:
                 output_mask.append(empty_mask[i])
         return tuple(output_mask)
@@ -883,7 +922,6 @@ class ShapleyValueSampling(PerturbationAttribution):
                     mask=input_masks,
                     empty_mask=empty_masks,
                     feat_tensor_index_map=feat_tensor_index_map,
-                    device=inputs[0].device,
                 )
             )
             current_feat_list.update(feat_tensor_index_map[feature_permutation[i]])

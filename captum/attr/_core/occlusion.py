@@ -410,17 +410,17 @@ class Occlusion(FeatureAblation):
                 )
                 tensor_mask.append(mask)
             assert baseline is not None, "baseline must be provided"
+            if isinstance(baseline, Tensor):
+                baseline = baseline.to(device=input_tensor.device)
             current_mask = torch.stack(tensor_mask, dim=0)
             current_masks.append(current_mask)
             ablated_input = input_tensor.clone().reshape(
                 (current_num_ablated_features, -1) + tuple(input_tensor.shape[1:])
             )
-            ablated_input = (
-                ablated_input
-                * (
-                    torch.ones(1, dtype=torch.long, device=input_tensor.device)
-                    - current_mask
-                ).to(input_tensor.dtype)
-            ) + (baseline * current_mask.to(input_tensor.dtype))
+            ablated_input = torch.where(
+                current_mask.to(device=input_tensor.device, dtype=torch.bool),
+                baseline,
+                ablated_input,
+            )
             ablated_inputs.append(ablated_input.reshape(input_tensor.shape))
         return tuple(ablated_inputs), tuple(current_masks)
