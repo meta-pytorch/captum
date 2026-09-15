@@ -64,6 +64,57 @@ class Test(BaseTest):
                 with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
                     attribution.attribute_future(inputs, baselines=baseline)
 
+    def test_selected_nonfinite_baseline_is_replaced_cleanly(self) -> None:
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+
+        for selected_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(selected_value=selected_value):
+                result = attribution._update_current_tensors(
+                    (torch.tensor([[0.0, selected_value]]),),
+                    (torch.tensor([[1.0, 2.0]]),),
+                    1,
+                    (torch.tensor([[0, 1]]),),
+                    {1: [0]},
+                )
+
+                torch.testing.assert_close(result[0], torch.tensor([[0.0, 2.0]]))
+
+    def test_nonfinite_marginal_does_not_contaminate_other_features(self) -> None:
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+        previous_result: Future[
+            Tuple[Tensor, Tensor, torch.Size, List[Tensor], bool]
+        ] = Future()
+        previous_result.set_result(
+            (
+                torch.tensor([0.0]),
+                torch.tensor([0.0]),
+                torch.Size([1]),
+                [torch.zeros((1, 2))],
+                False,
+            )
+        )
+        modified_result: Future[Tensor] = Future()
+        modified_result.set_result(torch.tensor([1.0, float("nan")]))
+        evaluations: Future[
+            List[
+                Union[
+                    Future[Tuple[Tensor, Tensor, torch.Size, List[Tensor], bool]],
+                    Future[Tensor],
+                ]
+            ]
+        ] = Future()
+        evaluations.set_result([previous_result, modified_result])
+
+        result = attribution._eval_fut_to_prev_results_tuple(
+            evaluations,
+            1,
+            (torch.zeros((1, 2)),),
+            (torch.tensor([[[1, 0]], [[0, 1]]]),),
+        )
+
+        self.assertEqual(result[3][0][0, 0].item(), 1.0)
+        self.assertTrue(torch.isnan(result[3][0][0, 1]))
+
     @parameterized.expand([True, False])
     def test_simple_shapley_sampling(self, use_future: bool) -> None:
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)
