@@ -115,6 +115,55 @@ class Test(BaseTest):
         self.assertEqual(result[3][0][0, 0].item(), 1.0)
         self.assertTrue(torch.isnan(result[3][0][0, 1]))
 
+    def test_rejects_feature_mask_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = ShapleyValueSampling(
+            lambda first, second: first[:, 0] + second[:, 0]
+        )
+
+        for feature_mask in (
+            (torch.tensor([[0]]),),
+            (torch.tensor([[0]]),) * 3,
+        ):
+            with self.subTest(mask_count=len(feature_mask)):
+                for attribute in (
+                    attribution.attribute,
+                    attribution.attribute_future,
+                ):
+                    with self.assertRaisesRegex(
+                        AssertionError, "Input and feature mask must have the same"
+                    ):
+                        attribute(inputs, feature_mask=feature_mask)
+
+    def test_rejects_nonintegral_or_negative_feature_masks(self) -> None:
+        inputs = torch.tensor([[1.0, 2.0]])
+        attribution = ShapleyValueSampling(lambda values: values.sum(dim=1))
+
+        for feature_mask in (
+            torch.tensor([[0.0, 0.5]]),
+            torch.tensor([[0, -1]]),
+            torch.tensor([[0.0, float("nan")]]),
+            torch.tensor([[0.0, float("inf")]]),
+            torch.tensor([[0.0 + 0.0j, 1.0 + 0.0j]]),
+        ):
+            with self.subTest(feature_mask=feature_mask):
+                for attribute in (
+                    attribution.attribute,
+                    attribution.attribute_future,
+                ):
+                    with self.assertRaisesRegex(
+                        AssertionError, "non-negative integers"
+                    ):
+                        attribute(inputs, feature_mask=feature_mask)
+
+        for feature_mask in (
+            torch.tensor([[0.0, 1.0]]),
+            torch.tensor([[False, True]]),
+        ):
+            with self.subTest(valid_feature_mask=feature_mask):
+                result = attribution.attribute(inputs, feature_mask=feature_mask)
+                torch.testing.assert_close(result, inputs)
+
     @parameterized.expand([True, False])
     def test_simple_shapley_sampling(self, use_future: bool) -> None:
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)

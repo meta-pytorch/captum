@@ -181,6 +181,20 @@ class Test(BaseTest):
 
                 self.assertEqual(result[0, 0].item(), 1.0)
 
+    def test_rejects_feature_mask_tuple_arity_mismatch(self) -> None:
+        inputs = (torch.tensor([[1.0]]), torch.tensor([[2.0]]))
+        attribution = FeatureAblation(lambda first, second: first[:, 0] + second[:, 0])
+
+        for feature_mask in (
+            (torch.tensor([[0]]),),
+            (torch.tensor([[0]]),) * 3,
+        ):
+            with self.subTest(mask_count=len(feature_mask)):
+                with self.assertRaisesRegex(
+                    AssertionError, "Input and feature mask must have the same"
+                ):
+                    attribution.attribute(inputs, feature_mask=feature_mask)
+
     def test_simple_ablation_boolean(self) -> None:
         ablation_algo = FeatureAblation(BasicModelBoolInput())
         inp = torch.tensor([[True, False, True]])

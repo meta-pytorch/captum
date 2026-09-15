@@ -241,6 +241,10 @@ def _format_feature_mask(
 
     else:
         formatted_mask = _format_tensor_into_tuples(feature_mask)
+        assert len(formatted_mask) == len(inputs), (
+            "Input and feature mask must have the same number of tensors, "
+            f"but input has {len(inputs)} and feature mask has {len(formatted_mask)}."
+        )
 
     return formatted_mask
 
