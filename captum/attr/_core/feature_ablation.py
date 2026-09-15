@@ -22,6 +22,7 @@ from captum._utils.common import (
     _is_tuple,
     _maybe_expand_parameters,
     _run_forward,
+    _validate_input,
 )
 from captum._utils.exceptions import FeatureAblationFutureError
 from captum._utils.progress import NullProgress, progress, Progress
@@ -501,6 +502,7 @@ class FeatureAblation(PerturbationAttribution):
         is_inputs_tuple = _is_tuple(inputs)
 
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(formatted_inputs, baselines, allow_broadcastable_baselines=True)
         formatted_additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
@@ -782,9 +784,9 @@ class FeatureAblation(PerturbationAttribution):
                 tensor_mask.append(mask)
 
                 assert baseline is not None, "baseline must be provided"
-                ablated_feature = input_tensor[start_idx:end_idx] * (1 - mask).to(
-                    input_tensor.dtype
-                ) + (baseline * mask.to(input_tensor.dtype))
+                ablated_feature = torch.where(
+                    mask.bool(), baseline, input_tensor[start_idx:end_idx]
+                )
                 ablated_input = ablated_input.to(ablated_feature.dtype)
                 ablated_input[start_idx:end_idx] = ablated_feature
             current_masks.append(torch.stack(tensor_mask, dim=0))
@@ -834,6 +836,7 @@ class FeatureAblation(PerturbationAttribution):
         # converting it into a tuple.
         is_inputs_tuple = _is_tuple(inputs)
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(formatted_inputs, baselines, allow_broadcastable_baselines=True)
         formatted_additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
@@ -1208,6 +1211,10 @@ class FeatureAblation(PerturbationAttribution):
                 eval_diff_shape + (inputs[i].dim() - 1) * (1,)
             )
             eval_diff = eval_diff.to(total_attrib[i].device)
-            total_attrib[i] += (eval_diff * mask.to(attrib_type)).sum(dim=0)
+            total_attrib[i] += torch.where(
+                mask.to(device=eval_diff.device, dtype=torch.bool),
+                eval_diff,
+                torch.zeros_like(eval_diff),
+            ).sum(dim=0)
 
         return total_attrib, weights

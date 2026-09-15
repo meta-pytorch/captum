@@ -7,6 +7,7 @@
 
 # pyre-strict
 
+import unittest.mock
 from typing import Any, Callable, List, Tuple
 
 import torch
@@ -94,6 +95,19 @@ class Test(BaseTest):
             self.assertTrue(mask.shape == mask_size)
 
             self._check_perm_fn_with_mask(inp, mask)
+
+    def test_inactive_nonfinite_donor_does_not_contaminate_permutation(self) -> None:
+        mask = torch.tensor([False, True])
+
+        for inactive_value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(inactive_value=inactive_value):
+                inp = torch.tensor([[inactive_value, 2.0], [1.0, 3.0]])
+                with unittest.mock.patch(
+                    "torch.randperm", return_value=torch.tensor([1, 0])
+                ):
+                    result = _permute_feature(inp, mask)
+
+                self.assertEqual(result[1, 0].item(), 1.0)
 
     def test_single_input(self) -> None:
         batch_size = 2

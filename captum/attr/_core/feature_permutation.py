@@ -26,9 +26,7 @@ def _permute_feature(x: Tensor, feature_mask: Tensor) -> Tensor:
     while (perm == no_perm).all():
         perm = torch.randperm(n)
 
-    return (x[perm] * feature_mask.to(dtype=x.dtype)) + (
-        x * feature_mask.bitwise_not().to(dtype=x.dtype)
-    )
+    return torch.where(feature_mask.to(device=x.device, dtype=torch.bool), x[perm], x)
 
 
 class FeaturePermutation(FeatureAblation):
