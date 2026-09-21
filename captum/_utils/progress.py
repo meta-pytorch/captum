@@ -26,6 +26,25 @@ from typing_extensions import Self
 
 T = TypeVar("T")
 IterableType = TypeVar("IterableType", covariant=True)
+ProgressCallback = Callable[[Optional[int], float], None]
+
+
+@runtime_checkable
+class ForwardProgressListener(Protocol):
+    """Receives the planned and completed model forwards for an attribution."""
+
+    def on_plan(self, total: int) -> None: ...
+
+    def on_forward_complete(self) -> None: ...
+
+    def on_forward_failed(self) -> None: ...
+
+
+@runtime_checkable
+class SupportsForwardProgressPlan(Protocol):
+    """Attribution algorithm that can predict its model-forward count."""
+
+    def expected_forward_count(self, *args: Any, **kwargs: Any) -> int: ...
 
 
 @runtime_checkable

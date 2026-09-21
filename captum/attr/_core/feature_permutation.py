@@ -9,9 +9,14 @@
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import torch
-from captum._utils.common import _format_output, _format_tensor_into_tuples
+from captum._utils.common import (
+    _format_feature_mask,
+    _format_output,
+    _format_tensor_into_tuples,
+)
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.feature_ablation import FeatureAblation
+from captum.attr._utils.common import _format_input_baseline
 from captum.log import log_usage
 from torch import Tensor
 from torch.futures import Future
@@ -103,6 +108,40 @@ class FeaturePermutation(FeatureAblation):
         # dim of *any* input tensor in the group is less than
         # `_min_examples_per_batch_grouped`.
         self._min_examples_per_batch_grouped = 2
+
+    def expected_forward_count(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        baselines: BaselineType = None,
+        target: TargetType = None,
+        additional_forward_args: object | None = None,
+        feature_mask: Tensor | tuple[Tensor, ...] | None = None,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        run_forward_on_skip: bool = False,
+        n_samples: int = 1,
+        **kwargs: Any,
+    ) -> int:
+        """Return the aggregate forward count across all permutation samples."""
+        if type(self) is not FeaturePermutation:
+            raise NotImplementedError(
+                f"{type(self).__name__} must provide its own exact forward plan."
+            )
+        del baselines
+        assert (
+            isinstance(n_samples, int) and n_samples >= 1
+        ), "n_samples must be an integer and at least 1."
+        del target, additional_forward_args, show_progress
+        formatted_inputs, _ = _format_input_baseline(inputs, None)
+        formatted_feature_mask = _format_feature_mask(feature_mask, formatted_inputs)
+        per_sample = self._expected_forward_count_from_formatted(
+            formatted_inputs,
+            formatted_feature_mask,
+            perturbations_per_eval,
+            run_forward_on_skip,
+            **kwargs,
+        )
+        return n_samples * per_sample
 
     # suppressing error caused by the child class not having a matching
     # signature to the parent

@@ -61,6 +61,45 @@ class Test(BaseTest):
                 self._check_perm_fn_with_mask(inp, flat_mask.view_as(inp[0]))
                 flat_mask[i] = 0
 
+    def test_forward_plan_aggregates_samples_and_matches_calls(self) -> None:
+        forward_calls = 0
+
+        def counted_forward(inputs: Tensor) -> Tensor:
+            nonlocal forward_calls
+            forward_calls += 1
+            return inputs.sum(dim=1)
+
+        algorithm = FeaturePermutation(counted_forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+        feature_mask = torch.tensor([[0, 2, 5]])
+        planned = algorithm.expected_forward_count(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+            n_samples=3,
+        )
+
+        algorithm.attribute(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+            n_samples=3,
+        )
+
+        self.assertEqual(planned, 9)
+        self.assertEqual(planned, forward_calls)
+
+    def test_forward_plan_requires_subclass_override(self) -> None:
+        class DerivedFeaturePermutation(FeaturePermutation):
+            pass
+
+        algorithm = DerivedFeaturePermutation(lambda inputs: inputs.sum(dim=1))
+
+        with self.assertRaisesRegex(
+            NotImplementedError, "must provide its own exact forward plan"
+        ):
+            algorithm.expected_forward_count(torch.tensor([[1.0, 2.0]]))
+
     def test_perm_fn_broadcastable_masks(self) -> None:
         batch_size = 5
         inp_size = (3, 20, 30)

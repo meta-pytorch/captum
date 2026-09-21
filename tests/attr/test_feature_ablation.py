@@ -77,6 +77,40 @@ class Test(BaseTest):
             ablation_algo, inp, [[80.0, 200.0, 120.0]], perturbations_per_eval=(1, 2, 3)
         )
 
+    def test_forward_plan_matches_batched_sparse_mask_calls(self) -> None:
+        forward_calls = 0
+
+        def counted_forward(inputs: Tensor) -> Tensor:
+            nonlocal forward_calls
+            forward_calls += 1
+            return inputs.sum(dim=1)
+
+        algorithm = FeatureAblation(counted_forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        feature_mask = torch.tensor([[0, 2, 5]])
+        planned = algorithm.expected_forward_count(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+        )
+
+        algorithm.attribute(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+        )
+
+        self.assertEqual(planned, 3)
+        self.assertEqual(planned, forward_calls)
+
+    def test_subclass_without_exact_planner_is_rejected(self) -> None:
+        class UnsupportedAblation(FeatureAblation):
+            pass
+
+        algorithm = UnsupportedAblation(lambda inputs: inputs.sum(dim=1))
+        with self.assertRaisesRegex(NotImplementedError, "exact forward plan"):
+            algorithm.expected_forward_count(torch.tensor([[1.0, 2.0]]))
+
     def test_simple_ablation_int_to_int(self) -> None:
         ablation_algo = FeatureAblation(BasicModel())
         inp = torch.tensor([[-3, 1, 2]])

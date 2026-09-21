@@ -210,7 +210,15 @@ def _should_skip_inputs_and_warn(
     Returns:
         bool: True if the feature group should be skipped, False otherwise.
     """
-    should_skip = False
+    should_skip = _should_skip_inputs(
+        current_feature_idxs,
+        feature_idx_to_tensor_idx,
+        formatted_inputs,
+        min_examples_per_batch_grouped,
+    )
+    if not should_skip:
+        return False
+
     all_empty = True
     tensor_idx_list = []
     for feature_idx in current_feature_idxs:
@@ -221,15 +229,12 @@ def _should_skip_inputs_and_warn(
         if min_examples_per_batch_grouped is not None and (
             formatted_inputs[tensor_idx].shape[0] < min_examples_per_batch_grouped
         ):
-            should_skip = True
-            break
-    if should_skip:
-        logger.warning(
-            f"Skipping feature group {current_feature_idxs} since it contains "
-            f"at least one input tensor with 0th dim less than "
-            f"{min_examples_per_batch_grouped}"
-        )
-        return True
+            logger.warning(
+                f"Skipping feature group {current_feature_idxs} since it contains "
+                f"at least one input tensor with 0th dim less than "
+                f"{min_examples_per_batch_grouped}"
+            )
+            return True
     if all_empty:
         logger.info(
             f"Skipping feature group {current_feature_idxs} since all "
@@ -237,6 +242,28 @@ def _should_skip_inputs_and_warn(
         )
         return True
     return False
+
+
+def _should_skip_inputs(
+    current_feature_idxs: list[int],
+    feature_idx_to_tensor_idx: dict[int, list[int]],
+    formatted_inputs: tuple[Tensor, ...],
+    min_examples_per_batch_grouped: int | None = None,
+) -> bool:
+    """Return whether attribution will skip this group without logging."""
+    tensor_idxs = {
+        tensor_idx
+        for feature_idx in current_feature_idxs
+        for tensor_idx in feature_idx_to_tensor_idx[feature_idx]
+    }
+    if not tensor_idxs:
+        return True
+    if all(torch.numel(formatted_inputs[index]) == 0 for index in tensor_idxs):
+        return True
+    return min_examples_per_batch_grouped is not None and any(
+        formatted_inputs[index].shape[0] < min_examples_per_batch_grouped
+        for index in tensor_idxs
+    )
 
 
 class FeatureAblation(PerturbationAttribution):
@@ -290,6 +317,58 @@ class FeatureAblation(PerturbationAttribution):
         # If *all* input tensors in the group are empty, we also skip the feature/
         # feature group (not parameterized by `_min_examples_per_batch_grouped`).
         self._min_examples_per_batch_grouped: Optional[int] = None
+
+    def expected_forward_count(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        baselines: BaselineType = None,
+        target: TargetType = None,
+        additional_forward_args: object | None = None,
+        feature_mask: Tensor | tuple[Tensor, ...] | None = None,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        run_forward_on_skip: bool = False,
+        **kwargs: Any,
+    ) -> int:
+        """Return the exact number of model forwards for this attribution."""
+        if type(self) is not FeatureAblation:
+            raise NotImplementedError(
+                f"{type(self).__name__} must provide its own exact forward plan."
+            )
+        del baselines, target, additional_forward_args, show_progress
+        formatted_inputs, _ = _format_input_baseline(inputs, None)
+        formatted_feature_mask = _format_feature_mask(feature_mask, formatted_inputs)
+        return self._expected_forward_count_from_formatted(
+            formatted_inputs,
+            formatted_feature_mask,
+            perturbations_per_eval,
+            run_forward_on_skip,
+            **kwargs,
+        )
+
+    def _expected_forward_count_from_formatted(
+        self,
+        formatted_inputs: tuple[Tensor, ...],
+        formatted_feature_mask: tuple[Tensor, ...],
+        perturbations_per_eval: int,
+        run_forward_on_skip: bool,
+        **kwargs: Any,
+    ) -> int:
+        feature_idx_to_tensor_idx = self._get_feature_idx_to_tensor_idx(
+            formatted_feature_mask, **kwargs
+        )
+        feature_idxs = list(feature_idx_to_tensor_idx)
+        perturbation_forwards = 0
+        for start in range(0, len(feature_idxs), perturbations_per_eval):
+            current_feature_idxs = feature_idxs[start : start + perturbations_per_eval]
+            if run_forward_on_skip or not _should_skip_inputs(
+                current_feature_idxs,
+                feature_idx_to_tensor_idx,
+                formatted_inputs,
+                self._min_examples_per_batch_grouped,
+            ):
+                perturbation_forwards += 1
+        return 1 + perturbation_forwards
 
     @log_usage(part_of_slo=True)
     @torch.no_grad()
