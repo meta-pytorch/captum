@@ -48,7 +48,7 @@ TracInCP, we return the string TracInCP.</p>
 <dd class="field-odd"><p>a readable class name</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>name (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>)</p>
+<dd class="field-even"><p>name (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)">str</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -90,16 +90,16 @@ implementation of <cite>DataInfluence</cite> abstract class.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>module</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.14)"><em>torch.nn.Module</em></a>) – An instance of pytorch model. This model should
 define all of its layers as attributes of the model.</p></li>
-<li><p><strong>layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – The fully qualified layer(s) for which the
+<li><p><strong>layers</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – The fully qualified layer(s) for which the
 activation vectors are computed.</p></li>
 <li><p><strong>influence_src_dataset</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.Dataset" title="(in PyTorch v2.14)"><em>torch.utils.data.Dataset</em></a>) – PyTorch Dataset that is
 used to create a PyTorch Dataloader to iterate over the dataset and
 its labels. This is the dataset for which we will be seeking for
 influential instances. In most cases this is the training dataset.</p></li>
-<li><p><strong>activation_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The directory of the path to store
+<li><p><strong>activation_dir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The directory of the path to store
 and retrieve activation computations. Best practice would be to use
 an absolute path.</p></li>
-<li><p><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name/version of the model for which layer
+<li><p><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name/version of the model for which layer
 activations are being computed. Activations will be stored and
 loaded under the subdirectory with this name if provided.</p></li>
 <li><p><strong>similarity_metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – <p>This is a callable function that computes a
@@ -130,13 +130,13 @@ these flattened tensors to return the pairwise similarity matrix.
 For example, <cite>similarity_metric(av_test, av_src)</cite> should return a
 tensor of shape (3, 16).</p>
 </p></li>
-<li><p><strong>similarity_direction</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Specifies the direction for selecting
+<li><p><strong>similarity_direction</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Specifies the direction for selecting
 top-k similar examples. If set to “max”, the examples with
 highest similarity scores are selected (most similar). If
 set to “min”, the examples with lowest similarity scores
 are selected (least similar / most distant).
 Default: “max”</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Batch size for iterating through <cite>influence_src_dataset</cite>.</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Batch size for iterating through <cite>influence_src_dataset</cite>.</p></li>
 <li><p><strong>**kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – Additional key-value arguments that are necessary for specific
 implementation of <cite>DataInfluence</cite> abstract class.</p></li>
 </ul>
@@ -148,24 +148,24 @@ implementation of <cite>DataInfluence</cite> abstract class.</p></li>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><em>Tensor</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><em>Tensor</em></a><em>, </em><em>...</em><em>]</em>) – Batch of examples for which
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><em>Tensor</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><em>Tensor</em></a><em>, </em><em>...</em><em>]</em>) – Batch of examples for which
 influential instances are computed. They are passed to the
 forward_func. The first dimension in <cite>inputs</cite> tensor or tuple
 of tensors corresponds to the batch size. A tuple of tensors
 is only passed in if thisis the input form that <cite>module</cite> accepts.</p></li>
-<li><p><strong>top_k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of top-matching activations to return</p></li>
+<li><p><strong>top_k</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of top-matching activations to return</p></li>
 <li><p><strong>additional_forward_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>optional</em>) – Additional arguments that will be
 passed to forward_func after inputs.</p></li>
-<li><p><strong>load_src_from_disk</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Loads activations for <cite>influence_src_dataset</cite>
+<li><p><strong>load_src_from_disk</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Loads activations for <cite>influence_src_dataset</cite>
 where possible. Setting to False would force regeneration of
 activations.</p></li>
-<li><p><strong>load_input_from_disk</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Regenerates activations for inputs by default
+<li><p><strong>load_input_from_disk</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Regenerates activations for inputs by default
 and removes previous <cite>inputs</cite> activations that are flagged with
 <cite>inputs_id</cite>. Setting to True will load prior matching inputs
 activations. Note that this could lead to unexpected behavior if
 <cite>inputs_id</cite> is not configured properly and activations are loaded
 for a different, prior <cite>inputs</cite>.</p></li>
-<li><p><strong>inputs_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Used to identify inputs for loading activations.</p></li>
+<li><p><strong>inputs_id</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Used to identify inputs for loading activations.</p></li>
 <li><p><strong>**kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – Additional key-value arguments that are necessary for specific
 implementation of <cite>DataInfluence</cite> abstract class.</p></li>
 </ul>
@@ -188,7 +188,7 @@ These tensors will be of shape (inputs.shape[0], top_k).</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>influences (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a>)</p>
+<dd class="field-odd"><p>influences (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)">dict</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -230,7 +230,7 @@ yielded, of length <cite>L</cite>, it is assumed that the forward function of
 <cite>model</cite> accepts <cite>L-1</cite> arguments, and the last element of <cite>batch</cite> is
 the label. In other words, <cite>model(*batch[:-1])</cite> gives the output of
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels for the batch.</p></li>
-<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
+<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
 path to store and retrieve model checkpoints, a list of
 filepaths with checkpoints from which to load, or an iterator which
 returns objects from which to load checkpoints.</p></li>
@@ -241,7 +241,7 @@ model saved as a state dict.
 Default: _load_flexible_state_dict</p></li>
 <li><p><strong>loss_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>, </em><em>optional</em>) – The loss function applied to model.
 Default: None</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
 iterate through <cite>train_dataset</cite>, if it is a Dataset.
 <cite>batch_size</cite> should be chosen as large as possible so that certain
 intermediate quantities created from a batch still fit in memory.
@@ -277,7 +277,7 @@ TracInCP, we return the string TracInCP.</p>
 <dd class="field-odd"><p>a readable class name</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>name (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>)</p>
+<dd class="field-even"><p>name (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)">str</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -304,28 +304,28 @@ example.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – <cite>inputs</cite> is the test batch and is a tuple of
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – <cite>inputs</cite> is the test batch and is a tuple of
 any, where the last element is assumed to be the labels for the
 batch. That is, <cite>model(*batch[0:-1])</cite> produces the output for
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels, if any. This is the same
 assumption made for each batch yielded by training dataset
 <cite>train_dataset</cite> - please see its documentation in <cite>__init__</cite> for
 more details on the assumed structure of a batch.</p></li>
-<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
 be run. Otherwise, the k-most influential mode will be run,
 and <cite>k</cite> is the number of proponents / opponents to return per
 example in the test batch.
 Default: None</p></li>
-<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
+<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
 or opponents (<cite>proponents=False</cite>), if running in k-most influential
 mode.
 Default: True</p></li>
-<li><p><strong>unpack_inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True and <cite>inputs</cite> is a tuple or list,
+<li><p><strong>unpack_inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True and <cite>inputs</cite> is a tuple or list,
 the elements are unpacked as separate positional arguments to the
 model. If False, <cite>inputs</cite> is wrapped in a tuple and passed as a
 single argument.
 Default: True</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
 requires “training dataset computations”: computations for each
 batch in the training dataset <cite>train_dataset</cite>, which may
 take a long time. If <cite>show_progress</cite> is true, the progress of
@@ -383,7 +383,7 @@ with are not too large, so that there will not be an out-of-memory error.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em><em>, </em><em>optional</em>) – This specifies the
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em><em>, </em><em>optional</em>) – This specifies the
 dataset for which self influence scores will be computed.
 Either a single tuple of any, or a <cite>DataLoader</cite>, where each
 batch yielded is a tuple of type any. In either case, the tuple
@@ -398,7 +398,7 @@ or <cite>None</cite>, self influence scores will be computed for training
 dataset <cite>train_dataset</cite>, which yields batches satisfying the
 above assumptions.
 Default: None.</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
 take a long time if <cite>inputs</cite> represents many examples. If
 <cite>show_progress</cite> is true, the progress of this computation will be
 displayed. In more detail, this computation will iterate over all
@@ -464,7 +464,7 @@ yielded, of length <cite>L</cite>, it is assumed that the forward function of
 <cite>model</cite> accepts <cite>L-1</cite> arguments, and the last element of <cite>batch</cite> is
 the label. In other words, <cite>model(*batch[:-1])</cite> gives the output of
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels for the batch.</p></li>
-<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
+<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
 path to store and retrieve model checkpoints, a list of
 filepaths with checkpoints from which to load, or an iterator which
 returns objects from which to load checkpoints.</p></li>
@@ -473,7 +473,7 @@ checkpoint into a model to update its parameters, and get the
 learning rate if it is saved. By default uses a utility to load a
 model saved as a state dict.
 Default: _load_flexible_state_dict</p></li>
-<li><p><strong>layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] or </em><em>None</em><em>, </em><em>optional</em>) – A list of layer names for which
+<li><p><strong>layers</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] or </em><em>None</em><em>, </em><em>optional</em>) – A list of layer names for which
 gradients should be computed. If <cite>layers</cite> is None, gradients will
 be computed for all layers. Otherwise, they will only be computed
 for the layers specified in <cite>layers</cite>.
@@ -496,7 +496,7 @@ per-example losses.  If this is not the case, i.e. the reduction
 is the <em>mean</em>, please set the “reduction” attribute of <cite>loss_fn</cite>
 to “mean”, i.e. <cite>loss_fn.reduction = “mean”</cite>.
 Default: None</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
 iterate through <cite>train_dataset</cite>, if it is a Dataset.
 <cite>batch_size</cite> should be chosen as large as possible so that certain
 intermediate quantities created from a batch still fit in memory.
@@ -523,7 +523,7 @@ or both be “reduction” loss functions. If not provided, the loss
 function for test examples is assumed to be the same as the loss
 function for training examples, i.e. <cite>loss_fn</cite>.
 Default: None</p></li>
-<li><p><strong>sample_wise_grads_per_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – PyTorch’s native gradient
+<li><p><strong>sample_wise_grads_per_batch</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – PyTorch’s native gradient
 computations w.r.t. model parameters aggregates the results for a
 batch and does not allow to access sample-wise gradients w.r.t.
 model parameters. This forces us to iterate over each sample in
@@ -577,7 +577,7 @@ element is assumed to be the labels for the batch. That is,
 and <cite>batch[-1]</cite> are the labels, if any. Here, <cite>model</cite> is model
 provided in initialization. This is the same assumption made for
 each batch yielded by training dataset <cite>train_dataset</cite>.</p></li>
-<li><p><strong>aggregate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether to return the sum of the vectors for all
+<li><p><strong>aggregate</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether to return the sum of the vectors for all
 examples, as opposed to vectors for each example.</p></li>
 </ul>
 </dd>
@@ -660,16 +660,16 @@ each batch yielded by training dataset <cite>train_dataset</cite>. Please see
 documentation for the <cite>train_dataset</cite> argument to
 <cite>TracInCPFastRandProj.__init__</cite> for more details on the assumed
 structure of a batch.</p></li>
-<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
 be run. Otherwise, the k-most influential mode will be run,
 and <cite>k</cite> is the number of proponents / opponents to return per
 example in the test batch.
 Default: None</p></li>
-<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
+<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
 or opponents (<cite>proponents=False</cite>), if running in k-most influential
 mode.
 Default: True</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
 requires “training dataset computations”: computations for each
 batch in the training dataset <cite>train_dataset</cite>, which may
 take a long time. If <cite>show_progress</cite> is true, the progress of
@@ -679,7 +679,7 @@ will be displayed. It will try to use tqdm if available for
 advanced features (e.g. time estimation). Otherwise, it will
 fallback to a simple output of progress.
 Default: False</p></li>
-<li><p><strong>aggregate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If true, return “aggregate” influence scores or
+<li><p><strong>aggregate</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If true, return “aggregate” influence scores or
 examples with the highest / lowest aggregate influence scores on
 the test dataset, depending on the mode.</p></li>
 </ul>
@@ -756,7 +756,7 @@ for each batch. For large models, loading checkpoints can be time-intensive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em><em>, </em><em>optional</em>) – This specifies the
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em><em>, </em><em>optional</em>) – This specifies the
 dataset for which self influence scores will be computed.
 Either a single tuple of any, or a <cite>DataLoader</cite>, where each
 batch yielded is a tuple of type any. In either case, the tuple
@@ -771,7 +771,7 @@ or <cite>None</cite>, self influence scores will be computed for training
 dataset <cite>train_dataset</cite>, which yields batches satisfying the
 above assumptions.
 Default: None.</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
 take a long time if <cite>inputs</cite> represents many examples. If
 <cite>show_progress`is true, the progress of this computation will be
 displayed. In more detail, if `outer_loop_by_checkpoints</cite> is False,
@@ -788,7 +788,7 @@ progress, it will try to use tqdm if available for advanced
 features (e.g. time estimation). Otherwise, it will fallback to a
 simple output of progress.
 Default: False</p></li>
-<li><p><strong>outer_loop_by_checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If performing an outer
+<li><p><strong>outer_loop_by_checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If performing an outer
 iteration over checkpoints; see method description for more
 details.
 Default: False</p></li>
@@ -801,7 +801,7 @@ Default: False</p></li>
 </dd></dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="captum.influence.TracInCP.test_reduction_type">
-<span class="sig-name descname"><span class="pre">test_reduction_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><a class="headerlink" href="#captum.influence.TracInCP.test_reduction_type" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">test_reduction_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><a class="headerlink" href="#captum.influence.TracInCP.test_reduction_type" title="Link to this definition">¶</a></dt>
 <dd><p>Either restore model state after done (would have to place functionality
 within influence to restore after every influence call)? or make a copy so that
 changes to grad_requires aren’t persistent after using TracIn.</p>
@@ -862,7 +862,7 @@ yielded, of length <cite>L</cite>, it is assumed that the forward function of
 <cite>model</cite> accepts <cite>L-1</cite> arguments, and the last element of <cite>batch</cite> is
 the label. In other words, <cite>model(*batch[:-1])</cite> gives the output of
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels for the batch.</p></li>
-<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
+<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
 path to store and retrieve model checkpoints, a list of
 filepaths with checkpoints from which to load, or an iterator which
 returns objects from which to load checkpoints.</p></li>
@@ -882,7 +882,7 @@ per-example losses.  If this is not the case, i.e. the reduction
 is the <em>mean</em>, please set the “reduction” attribute of <cite>loss_fn</cite>
 to “mean”, i.e. <cite>loss_fn.reduction = “mean”</cite>.
 Default: None</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
 iterate through <cite>train_dataset</cite>, if it is a Dataset.
 <cite>batch_size</cite> should be chosen as large as possible so that certain
 intermediate quantities created from a batch still fit in memory.
@@ -905,7 +905,7 @@ to <cite>test_loss_fn</cite>, if the latter is provided. If not provided, the
 loss function for test examples is assumed to be the same as the
 loss function for training examples, i.e. <cite>loss_fn</cite>.
 Default: None</p></li>
-<li><p><strong>vectorize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to use experimental vectorize functionality
+<li><p><strong>vectorize</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to use experimental vectorize functionality
 for <cite>torch.autograd.functional.jacobian</cite>.
 Default: False</p></li>
 </ul>
@@ -934,23 +934,23 @@ example.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em>) – <cite>inputs</cite> is the test batch and is a tuple of
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em>) – <cite>inputs</cite> is the test batch and is a tuple of
 any, where the last element is assumed to be the labels for the
 batch. That is, <cite>model(*batch[0:-1])</cite> produces the output for
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels, if any. This is the same
 assumption made for each batch yielded by training dataset
 <cite>train_dataset</cite> - please see its documentation in <cite>__init__</cite> for
 more details on the assumed structure of a batch.</p></li>
-<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
 be run. Otherwise, the k-most influential mode will be run,
 and <cite>k</cite> is the number of proponents / opponents to return per
 example in the test batch.
 Default: None</p></li>
-<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
+<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
 or opponents (<cite>proponents=False</cite>), if running in k-most influential
 mode.
 Default: True</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – For all modes, computation of results
 requires “training dataset computations”: computations for each
 batch in the training dataset <cite>train_dataset</cite>, which may
 take a long time. If <cite>show_progress</cite> is true, the progress of
@@ -1016,7 +1016,7 @@ for each batch. For large models, loading checkpoints can be time-intensive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em><em>, </em><em>optional</em>) – This specifies the
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em><em>, </em><em>optional</em>) – This specifies the
 dataset for which self influence scores will be computed.
 Either a single tuple of any, or a <cite>DataLoader</cite>, where each
 batch yielded is a tuple of type any. In either case, the tuple
@@ -1031,7 +1031,7 @@ or <cite>None</cite>, self influence scores will be computed for training
 dataset <cite>train_dataset</cite>, which yields batches satisfying the
 above assumptions.
 Default: None.</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
 take a long time if <cite>inputs</cite> represents many examples. If
 <cite>show_progress`is true, the progress of this computation will be
 displayed. In more detail, if `outer_loop_by_checkpoints</cite> is False,
@@ -1048,7 +1048,7 @@ progress, it will try to use tqdm if available for advanced
 features (e.g. time estimation). Otherwise, it will fallback to a
 simple output of progress.
 Default: False</p></li>
-<li><p><strong>outer_loop_by_checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If performing an outer
+<li><p><strong>outer_loop_by_checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If performing an outer
 iteration over checkpoints; see method description for more
 details.
 Default: False</p></li>
@@ -1143,7 +1143,7 @@ yielded, of length <cite>L</cite>, it is assumed that the forward function of
 <cite>model</cite> accepts <cite>L-1</cite> arguments, and the last element of <cite>batch</cite> is
 the label. In other words, <cite>model(*batch[:-1])</cite> gives the output of
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels for the batch.</p></li>
-<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
+<li><p><strong>checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><em>Iterator</em></a>) – Either the directory of the
 path to store and retrieve model checkpoints, a list of
 filepaths with checkpoints from which to load, or an iterator which
 returns objects from which to load checkpoints.</p></li>
@@ -1159,7 +1159,7 @@ the reduction must be the <em>sum</em> of the per-example losses. For
 instance, <cite>nn.BCELoss(reduction=”sum”)</cite> is acceptable, but
 <cite>nn.BCELoss(reduction=”mean”)</cite> is <em>not</em> acceptable.
 Default: None</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Batch size of the DataLoader created to
 iterate through <cite>train_dataset</cite>, if it is a Dataset.
 <cite>batch_size</cite> should be chosen as large as possible so that certain
 intermediate quantities created from a batch still fit in memory.
@@ -1181,14 +1181,14 @@ Thus, the same checks that we apply to <cite>loss_fn</cite> are also applied
 to <cite>test_loss_fn</cite>, if the latter is provided. If not provided, the
 loss function for test examples is assumed to be the same as the
 loss function for training examples, i.e. <cite>loss_fn</cite>.</p></li>
-<li><p><strong>vectorize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Flag to use experimental vectorize functionality
+<li><p><strong>vectorize</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Flag to use experimental vectorize functionality
 for <cite>torch.autograd.functional.jacobian</cite>.
 Default: False</p></li>
 <li><p><strong>nearest_neighbors</strong> (<em>NearestNeighbors</em><em>, </em><em>optional</em>) – The NearestNeighbors
 instance for finding nearest neighbors. If None, defaults to
 <cite>AnnoyNearestNeighbors(n_trees=10)</cite>.
 Default: None</p></li>
-<li><p><strong>projection_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Each example will be represented in
+<li><p><strong>projection_dim</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Each example will be represented in
 the nearest neighbors data structure with a vector. This vector
 is the concatenation of several “checkpoint vectors”, each of which
 is computed using a different checkpoint in the <cite>checkpoints</cite>
@@ -1209,7 +1209,7 @@ vector is of dimension no more than <cite>projection_dim</cite> * C.
 <cite>projection_dim</cite> corresponds to the variable d in the top of page
 15 of the TracIn paper: <a class="reference external" href="https://arxiv.org/abs/2002.08484">https://arxiv.org/abs/2002.08484</a>.
 Default: None</p></li>
-<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Because this implementation chooses a random
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Because this implementation chooses a random
 projection, its output is random. Setting this seed specifies the
 random seed when choosing the random projection.
 Default: 0</p></li>
@@ -1294,19 +1294,19 @@ example.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – <cite>inputs</cite> is the test batch and is a tuple of
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – <cite>inputs</cite> is the test batch and is a tuple of
 any, where the last element is assumed to be the labels for the
 batch. That is, <cite>model(*batch[0:-1])</cite> produces the output for
 <cite>model</cite>, and <cite>batch[-1]</cite> are the labels, if any. This is the same
 assumption made for each batch yielded by training dataset
 <cite>train_dataset</cite> - please see its documentation in <cite>__init__</cite> for
 more details on the assumed structure of a batch.</p></li>
-<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If not provided or <cite>None</cite>, the influence score mode will
 be run. Otherwise, the k-most influential mode will be run,
 and <cite>k</cite> is the number of proponents / opponents to return per
 example in the test batch.
 Default: None</p></li>
-<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
+<li><p><strong>proponents</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether seeking proponents (<cite>proponents=True</cite>)
 or opponents (<cite>proponents=False</cite>), if running in k-most influential
 mode.
 Default: True</p></li>
@@ -1357,7 +1357,7 @@ with are not too large, so that there will not be an out-of-memory error.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em>) – Either a single tuple of any, or a
+<li><p><strong>inputs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> or </em><em>DataLoader</em>) – Either a single tuple of any, or a
 <cite>DataLoader</cite>, where each batch yielded is a tuple of any. In
 either case, the tuple represents a single batch, where the last
 element is assumed to be the labels for the batch. That is,
@@ -1367,7 +1367,7 @@ assumption made for each batch yielded by training dataset
 <cite>train_dataset</cite>. Please see documentation for the
 <cite>train_dataset</cite> argument to <cite>TracInCP.__init__</cite> for
 more details on the assumed structure of a batch.</p></li>
-<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
+<li><p><strong>show_progress</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Computation of self influence scores can
 take a long time if <cite>inputs</cite> represents many examples. If
 <cite>show_progress</cite> is true, the progress of this computation will be
 displayed. In more detail, this computation will iterate over all
@@ -1381,7 +1381,7 @@ that have been iterated over is displayed. It will try to use tqdm
 if available for advanced features (e.g. time estimation).
 Otherwise, it will fallback to a simple output of progress.
 Default: False</p></li>
-<li><p><strong>outer_loop_by_checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If performing an outer
+<li><p><strong>outer_loop_by_checkpoints</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If performing an outer
 iteration over checkpoints; see method description for more
 details.
 Default: False</p></li>

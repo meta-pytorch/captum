@@ -62,7 +62,7 @@ is used to “fold” the parts smaller than 0 or larger than 1 back to 0 and 1.
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>n_gates</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – number of gates.</p></li>
+<li><p><strong>n_gates</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – number of gates.</p></li>
 <li><p><strong>mask</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><em>Tensor</em></a><em>, </em><em>optional</em>) – If provided, this allows grouping multiple
 input tensor elements to share the same stochastic gate.
 This tensor should be broadcastable to match the input shape
@@ -71,11 +71,11 @@ Indices grouped to the same stochastic gate should have the same value.
 If not provided, each element in the input tensor
 (on dimensions other than dim 0, i.e., batch dim) is gated separately.
 Default: None</p></li>
-<li><p><strong>reg_weight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – rescaling weight for L0 regularization term.
+<li><p><strong>reg_weight</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – rescaling weight for L0 regularization term.
 Default: 1.0</p></li>
-<li><p><strong>std</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – standard deviation that will be fixed throughout.
+<li><p><strong>std</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – standard deviation that will be fixed throughout.
 Default: 0.5</p></li>
-<li><p><strong>reg_reduction</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – the reduction to apply to the regularization:
+<li><p><strong>reg_reduction</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – the reduction to apply to the regularization:
 <code class="docutils literal notranslate"><span class="pre">'none'</span></code> | <code class="docutils literal notranslate"><span class="pre">'mean'</span></code> | <code class="docutils literal notranslate"><span class="pre">'sum'</span></code>. <code class="docutils literal notranslate"><span class="pre">'none'</span></code>: no reduction will be
 applied and it will be the same as the return of <code class="docutils literal notranslate"><span class="pre">get_active_probs</span></code>,
 <code class="docutils literal notranslate"><span class="pre">'mean'</span></code>: the sum of the gates non-zero probabilities will be divided
@@ -109,7 +109,7 @@ e.g. loss(model_out, target) + l0_reg</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[Tensor, Tensor]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[Tensor, Tensor]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -140,7 +140,7 @@ e.g. loss(model_out, target) + l0_reg</p>
 optionally clamped within 0 and 1.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>clamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to clamp the gate values or not. As smoothed
+<dd class="field-odd"><p><strong>clamp</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to clamp the gate values or not. As smoothed
 Bernoulli variables, gate values are clamped within 0 and 1 by default.
 Turn this off to get the raw means of the underneath
 distribution (e.g., concrete, gaussian), which can be useful to
