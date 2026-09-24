@@ -9,6 +9,7 @@
 
 from inspect import signature
 from typing import Callable, List, Optional, Tuple, Union
+from unittest.mock import patch
 
 import torch
 from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
@@ -35,6 +36,45 @@ BaselineTuple = Tuple[Union[Tensor, int, float], ...]
 
 
 class Test(BaseTest):
+    def test_deepliftshap_internal_batch_size(self) -> None:
+        model = ReLULinearModel()
+        dl = DeepLiftShap(model)
+        inputs = (torch.randn(2, 3), torch.randn(2, 3))
+        baselines = (torch.randn(5, 3), torch.randn(5, 3))
+        additional_args = (torch.tensor([[1.0], [2.0]]),)
+
+        def zero_attributions(multipliers: Tuple[Tensor, ...]) -> Tuple[Tensor, ...]:
+            return tuple(torch.zeros_like(tensor) for tensor in multipliers)
+
+        for custom_func in (None, zero_attributions):
+            expected, expected_delta = dl.attribute(
+                inputs,
+                baselines,
+                target=[0, 0],
+                additional_forward_args=additional_args,
+                return_convergence_delta=True,
+                custom_attribution_func=custom_func,
+            )
+            for batch_size in (4, 8, 20):
+                with self.subTest(batch_size=batch_size, custom_func=custom_func):
+                    with patch.object(model, "forward", wraps=model.forward) as forward:
+                        actual, delta = dl.attribute(
+                            inputs,
+                            baselines,
+                            target=[0, 0],
+                            additional_forward_args=additional_args,
+                            return_convergence_delta=True,
+                            custom_attribution_func=custom_func,
+                            internal_batch_size=batch_size,
+                        )
+                    for attribution, reference in zip(actual, expected):
+                        assertTensorAlmostEqual(self, attribution, reference)
+                    assertTensorAlmostEqual(self, delta, expected_delta)
+                    self.assertLessEqual(
+                        max(call.args[0].shape[0] for call in forward.call_args_list),
+                        batch_size,
+                    )
+
     def test_relu_deeplift(self) -> None:
         x1 = torch.tensor([1.0], requires_grad=True)
         x2 = torch.tensor([2.0], requires_grad=True)
