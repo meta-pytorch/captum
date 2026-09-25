@@ -10,6 +10,8 @@
 import io
 import unittest
 import unittest.mock
+import warnings
+from collections.abc import Iterable, Sequence
 from typing import Any, Callable, List, Tuple, Union
 
 import torch
@@ -29,6 +31,106 @@ from torch.futures import Future
 
 
 class Test(BaseTest):
+    @parameterized.expand(
+        [
+            ("dense_ids", torch.tensor([[0, 0, 1, 2, 2]])),
+            ("sparse_ids", torch.tensor([[0, 0, 2, 2, 2]])),
+        ]
+    )
+    def test_expected_forward_count_matches_execution(
+        self, _name: str, feature_mask: Tensor
+    ) -> None:
+        completed_forwards = 0
+
+        def forward(inputs: Tensor) -> Tensor:
+            nonlocal completed_forwards
+            completed_forwards += 1
+            return inputs.sum(dim=1)
+
+        shapley = ShapleyValueSampling(forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]])
+        kwargs = {
+            "feature_mask": feature_mask,
+            "n_samples": 3,
+            "perturbations_per_eval": 2,
+        }
+        planned_forwards = shapley.expected_forward_count(inputs, **kwargs)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            shapley.attribute(inputs, **kwargs)
+
+        self.assertEqual(planned_forwards, completed_forwards)
+
+    def test_expected_forward_count_rejects_unplanned_subclass(self) -> None:
+        class UnplannedShapley(ShapleyValueSampling):
+            pass
+
+        with self.assertRaisesRegex(NotImplementedError, "exact forward plan"):
+            UnplannedShapley(BasicModel_MultiLayer()).expected_forward_count(
+                torch.tensor([[1.0, 2.0]])
+            )
+
+    def test_expected_forward_count_rejects_custom_permutation_generator(self) -> None:
+        shapley = ShapleyValueSampling(BasicModel_MultiLayer())
+
+        def custom_generator(
+            num_features: int, num_samples: int
+        ) -> Iterable[Sequence[int]]:
+            del num_features, num_samples
+            return ()
+
+        shapley.permutation_generator = custom_generator
+
+        with self.assertRaisesRegex(NotImplementedError, "permutation_generator"):
+            shapley.expected_forward_count(torch.tensor([[1.0, 2.0]]))
+
+    @parameterized.expand([True, False])
+    def test_expected_forward_count_matches_execution_for_negative_n_samples(
+        self, use_future: bool
+    ) -> None:
+        completed_forwards = 0
+
+        def forward(inputs: Tensor) -> Tensor:
+            nonlocal completed_forwards
+            completed_forwards += 1
+            return inputs.sum(dim=1)
+
+        def forward_future(inputs: Tensor) -> Future[Tensor]:
+            fut: Future[Tensor] = Future()
+            fut.set_result(forward(inputs))
+            return fut
+
+        shapley = ShapleyValueSampling(forward_future if use_future else forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]])
+        feature_mask = torch.tensor([[0, 0, 1, 2, 2]])
+        planned_forwards = shapley.expected_forward_count(
+            inputs, feature_mask=feature_mask, n_samples=-1, perturbations_per_eval=2
+        )
+
+        with unittest.mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
+            if use_future:
+                shapley.attribute_future(
+                    inputs,
+                    feature_mask=feature_mask,
+                    n_samples=-1,
+                    perturbations_per_eval=2,
+                    show_progress=True,
+                ).wait()
+            else:
+                shapley.attribute(
+                    inputs,
+                    feature_mask=feature_mask,
+                    n_samples=-1,
+                    perturbations_per_eval=2,
+                    show_progress=True,
+                )
+
+        # No permutations are sampled, so only the initial eval runs.
+        self.assertEqual(planned_forwards, 1)
+        self.assertEqual(completed_forwards, 1)
+        self.assertIn("Shapley Value Sampling attribution: 100%", stderr.getvalue())
+
     @parameterized.expand([True, False])
     def test_simple_shapley_sampling(self, use_future: bool) -> None:
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)
