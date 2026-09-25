@@ -1003,7 +1003,8 @@ class ShapleyValueSampling(PerturbationAttribution):
         self, total_features: int, n_samples: int, perturbations_per_eval: int
     ) -> int:
         """return the total number of forward evaluations needed"""
-        return math.ceil(total_features / perturbations_per_eval) * n_samples
+        # _perm_generator yields no permutations for negative n_samples.
+        return math.ceil(total_features / perturbations_per_eval) * max(n_samples, 0)
 
     def _strict_run_forward(self, *args: Any, **kwargs: Any) -> Tensor:
         """

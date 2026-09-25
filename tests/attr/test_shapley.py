@@ -86,6 +86,52 @@ class Test(BaseTest):
             shapley.expected_forward_count(torch.tensor([[1.0, 2.0]]))
 
     @parameterized.expand([True, False])
+    def test_expected_forward_count_matches_execution_for_negative_n_samples(
+        self, use_future: bool
+    ) -> None:
+        completed_forwards = 0
+
+        def forward(inputs: Tensor) -> Tensor:
+            nonlocal completed_forwards
+            completed_forwards += 1
+            return inputs.sum(dim=1)
+
+        def forward_future(inputs: Tensor) -> Future[Tensor]:
+            fut: Future[Tensor] = Future()
+            fut.set_result(forward(inputs))
+            return fut
+
+        shapley = ShapleyValueSampling(forward_future if use_future else forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]])
+        feature_mask = torch.tensor([[0, 0, 1, 2, 2]])
+        planned_forwards = shapley.expected_forward_count(
+            inputs, feature_mask=feature_mask, n_samples=-1, perturbations_per_eval=2
+        )
+
+        with unittest.mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
+            if use_future:
+                shapley.attribute_future(
+                    inputs,
+                    feature_mask=feature_mask,
+                    n_samples=-1,
+                    perturbations_per_eval=2,
+                    show_progress=True,
+                ).wait()
+            else:
+                shapley.attribute(
+                    inputs,
+                    feature_mask=feature_mask,
+                    n_samples=-1,
+                    perturbations_per_eval=2,
+                    show_progress=True,
+                )
+
+        # No permutations are sampled, so only the initial eval runs.
+        self.assertEqual(planned_forwards, 1)
+        self.assertEqual(completed_forwards, 1)
+        self.assertIn("Shapley Value Sampling attribution: 100%", stderr.getvalue())
+
+    @parameterized.expand([True, False])
     def test_simple_shapley_sampling(self, use_future: bool) -> None:
         inp = torch.tensor([[20.0, 50.0, 30.0]], requires_grad=True)
         if use_future:
