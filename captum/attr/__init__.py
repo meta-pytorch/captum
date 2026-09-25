@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # pyre-strict
+from captum.attr._core.ablation_guided_shapley import AblationGuidedShapleyValueSampling
 from captum.attr._core.dataloader_attr import DataLoaderAttribution
 from captum.attr._core.deep_lift import DeepLift, DeepLiftShap
 from captum.attr._core.feature_ablation import FeatureAblation
@@ -106,6 +107,7 @@ __all__ = [
     "FeatureAblation",
     "FeaturePermutation",
     "Occlusion",
+    "AblationGuidedShapleyValueSampling",
     "ShapleyValueSampling",
     "ShapleyValues",
     "LimeBase",
