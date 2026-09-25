@@ -101,16 +101,14 @@ def compare_to_sk_learn(
 
     pytorch_h = pytorch_classifier.representation()
     sklearn_h = sklearn_classifier.representation()
+    alpha_tensor = torch.tensor(alpha)
+
     if objective == "ridge":
-        # pyre-fixme[6]: For 2nd argument expected `Tensor` but got `float`.
-        o_pytorch["l2_reg"] = alpha * pytorch_h.norm(p=2, dim=-1)
-        # pyre-fixme[6]: For 2nd argument expected `Tensor` but got `float`.
-        o_sklearn["l2_reg"] = alpha * sklearn_h.norm(p=2, dim=-1)
+        o_pytorch["l2_reg"] = alpha_tensor * pytorch_h.norm(p=2, dim=-1)
+        o_sklearn["l2_reg"] = alpha_tensor * sklearn_h.norm(p=2, dim=-1)
     elif objective == "lasso":
-        # pyre-fixme[6]: For 2nd argument expected `Tensor` but got `float`.
-        o_pytorch["l1_reg"] = alpha * pytorch_h.norm(p=1, dim=-1)
-        # pyre-fixme[6]: For 2nd argument expected `Tensor` but got `float`.
-        o_sklearn["l1_reg"] = alpha * sklearn_h.norm(p=1, dim=-1)
+        o_pytorch["l1_reg"] = alpha_tensor * pytorch_h.norm(p=1, dim=-1)
+        o_sklearn["l1_reg"] = alpha_tensor * sklearn_h.norm(p=1, dim=-1)
 
     rel_diff = cast(
         npt.NDArray,
