@@ -127,6 +127,66 @@ class ShapleyValueSampling(PerturbationAttribution):
         PerturbationAttribution.__init__(self, forward_func)
         self.permutation_generator = _perm_generator
 
+    def expected_forward_count(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        *,
+        baselines: BaselineType = None,
+        target: TargetType = None,
+        additional_forward_args: tuple[object, ...] | None = None,
+        feature_mask: TensorOrTupleOfTensorsGeneric | None = None,
+        n_samples: int = 25,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> int:
+        """Return the exact number of model forwards for this attribution."""
+        if type(self) is not ShapleyValueSampling:
+            raise NotImplementedError(
+                f"{type(self).__name__} must provide its own exact forward plan."
+            )
+        return self._expected_forward_count(
+            inputs,
+            baselines=baselines,
+            target=target,
+            additional_forward_args=additional_forward_args,
+            feature_mask=feature_mask,
+            n_samples=n_samples,
+            perturbations_per_eval=perturbations_per_eval,
+            show_progress=show_progress,
+            **kwargs,
+        )
+
+    def _expected_forward_count(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        baselines: BaselineType = None,
+        target: TargetType = None,
+        additional_forward_args: tuple[object, ...] | None = None,
+        feature_mask: TensorOrTupleOfTensorsGeneric | None = None,
+        n_samples: int = 25,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> int:
+        if self.permutation_generator is not _perm_generator:
+            raise NotImplementedError(
+                f"{type(self).__name__} with a custom permutation_generator must "
+                "provide its own exact forward plan."
+            )
+        del baselines, target, additional_forward_args, show_progress, kwargs
+        inputs_tuple = _format_tensor_into_tuples(inputs)
+        formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        reshaped_feature_mask = _shape_feature_mask(
+            formatted_feature_mask, inputs_tuple
+        )
+        # Execution iterates every ID through the maximum, including absent IDs.
+        total_features = _get_max_feature_index(reshaped_feature_mask) + 1
+        return (
+            self._get_n_evaluations(total_features, n_samples, perturbations_per_eval)
+            + 1
+        )
+
     @log_usage(part_of_slo=True)
     @torch.no_grad()
     def attribute(
