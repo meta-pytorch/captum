@@ -33,7 +33,6 @@ from captum._utils.common import (
     _format_feature_mask,
     _format_output,
     _format_tensor_into_tuples,
-    _get_max_feature_index,
     _is_mask_valid,
     _is_tuple,
     _run_forward,
@@ -60,6 +59,19 @@ def _all_perm_generator(num_features: int, num_samples: int) -> Iterable[Sequenc
 def _perm_generator(num_features: int, num_samples: int) -> Iterable[Sequence[int]]:
     for _ in range(num_samples):
         yield torch.randperm(num_features).tolist()
+
+
+def _get_feature_ids(feature_mask: tuple[Tensor, ...]) -> list[int]:
+    """
+    Sorted non-negative feature IDs present in the mask. Negative IDs are never
+    perturbed.
+    """
+    feature_ids: set[int] = set()
+    for mask in feature_mask:
+        feature_ids.update(
+            int(feature_id) for feature_id in torch.unique(mask).tolist()
+        )
+    return sorted(feature_id for feature_id in feature_ids if feature_id >= 0)
 
 
 def _shape_feature_mask(
@@ -180,8 +192,7 @@ class ShapleyValueSampling(PerturbationAttribution):
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
-        # Execution iterates every ID through the maximum, including absent IDs.
-        total_features = _get_max_feature_index(reshaped_feature_mask) + 1
+        total_features = len(_get_feature_ids(reshaped_feature_mask))
         return (
             self._get_n_evaluations(total_features, n_samples, perturbations_per_eval)
             + 1
@@ -396,7 +407,8 @@ class ShapleyValueSampling(PerturbationAttribution):
             baselines = _tensorize_baseline(inputs_tuple, baselines)
             num_examples = inputs_tuple[0].shape[0]
 
-            total_features = _get_max_feature_index(reshaped_feature_mask) + 1
+            feature_ids = _get_feature_ids(reshaped_feature_mask)
+            total_features = len(feature_ids)
 
             if show_progress:
                 attr_progress = progress(
@@ -440,9 +452,8 @@ class ShapleyValueSampling(PerturbationAttribution):
             iter_count = 0
             # Iterate for number of samples, generate a permutation of the features
             # and evalute the incremental increase for each feature.
-            for feature_permutation in self.permutation_generator(
-                total_features, n_samples
-            ):
+            for permutation in self.permutation_generator(total_features, n_samples):
+                feature_permutation = [feature_ids[i] for i in permutation]
                 iter_count += 1
                 prev_results = initial_eval
                 for (
@@ -460,13 +471,6 @@ class ShapleyValueSampling(PerturbationAttribution):
                     feature_permutation,
                     perturbations_per_eval,
                 ):
-                    if sum(torch.sum(mask).item() for mask in current_masks) == 0:
-                        warnings.warn(
-                            "Feature mask is missing some integers between 0 and "
-                            "num_features, for optimal performance, make sure each"
-                            " consecutive integer corresponds to a feature.",
-                            stacklevel=1,
-                        )
                     # modified_eval dimensions: 1D tensor with length
                     # equal to #num_examples * #features in batch
                     modified_eval = self._strict_run_forward(
@@ -563,7 +567,8 @@ class ShapleyValueSampling(PerturbationAttribution):
             baselines = _tensorize_baseline(inputs_tuple, baselines)
             num_examples = inputs_tuple[0].shape[0]
 
-            total_features = _get_max_feature_index(reshaped_feature_mask) + 1
+            feature_ids = _get_feature_ids(reshaped_feature_mask)
+            total_features = len(feature_ids)
 
             if show_progress:
                 attr_progress = progress(
@@ -598,9 +603,8 @@ class ShapleyValueSampling(PerturbationAttribution):
             iter_count = 0
             # Iterate for number of samples, generate a permutation of the features
             # and evalute the incremental increase for each feature.
-            for feature_permutation in self.permutation_generator(
-                total_features, n_samples
-            ):
+            for permutation in self.permutation_generator(total_features, n_samples):
+                feature_permutation = [feature_ids[i] for i in permutation]
                 prev_result_tuple = prev_result_tuple.then(
                     lambda inp=prev_result_tuple: self._set_prev_results_to_initial_eval(inp)  # type: ignore # noqa: E501 line too long
                 )
@@ -621,13 +625,6 @@ class ShapleyValueSampling(PerturbationAttribution):
                     feature_permutation,
                     perturbations_per_eval,
                 ):
-                    if sum(torch.sum(mask).item() for mask in current_masks) == 0:
-                        warnings.warn(
-                            "Feature mask is missing some integers between 0 and "
-                            "num_features, for optimal performance, make sure each"
-                            " consecutive integer corresponds to a feature.",
-                            stacklevel=1,
-                        )
                     # modified_eval dimensions: 1D tensor with length
                     # equal to #num_examples * #features in batch
                     modified_eval = self._strict_run_forward_future(
@@ -1307,9 +1304,8 @@ class ShapleyValues(ShapleyValueSampling):
                 torch.numel(inp[0]) for inp in _format_tensor_into_tuples(inputs)
             )
         else:
-            total_features = (
-                int(max(torch.max(single_mask).item() for single_mask in feature_mask))
-                + 1
+            total_features = len(
+                _get_feature_ids(_format_tensor_into_tuples(feature_mask))
             )
 
         if total_features >= 10:

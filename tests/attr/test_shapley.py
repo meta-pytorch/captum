@@ -17,7 +17,11 @@ from typing import Any, Callable, List, Tuple, Union
 import torch
 from captum._utils.typing import BaselineType, Tensor, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.shapley_value import ShapleyValues, ShapleyValueSampling
-from captum.testing.helpers.basic import assertTensorTuplesAlmostEqual, BaseTest
+from captum.testing.helpers.basic import (
+    assertTensorAlmostEqual,
+    assertTensorTuplesAlmostEqual,
+    BaseTest,
+)
 from captum.testing.helpers.basic_models import (
     BasicModel_MultiLayer,
     BasicModel_MultiLayer_MultiInput,
@@ -33,12 +37,12 @@ from torch.futures import Future
 class Test(BaseTest):
     @parameterized.expand(
         [
-            ("dense_ids", torch.tensor([[0, 0, 1, 2, 2]])),
-            ("sparse_ids", torch.tensor([[0, 0, 2, 2, 2]])),
+            ("dense_ids", torch.tensor([[0, 0, 1, 2, 2]]), 7),
+            ("sparse_ids", torch.tensor([[0, 0, 2, 2, 2]]), 4),
         ]
     )
     def test_expected_forward_count_matches_execution(
-        self, _name: str, feature_mask: Tensor
+        self, _name: str, feature_mask: Tensor, expected_forwards: int
     ) -> None:
         completed_forwards = 0
 
@@ -55,12 +59,95 @@ class Test(BaseTest):
             "perturbations_per_eval": 2,
         }
         planned_forwards = shapley.expected_forward_count(inputs, **kwargs)
+        shapley.attribute(inputs, **kwargs)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            shapley.attribute(inputs, **kwargs)
+        self.assertEqual(planned_forwards, expected_forwards)
+        self.assertEqual(completed_forwards, expected_forwards)
 
-        self.assertEqual(planned_forwards, completed_forwards)
+    @parameterized.expand([True, False])
+    def test_shapley_sampling_skips_absent_feature_ids(self, use_future: bool) -> None:
+        weights = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
+        completed_forwards = 0
+
+        def forward(inputs: Tensor) -> Tensor:
+            nonlocal completed_forwards
+            completed_forwards += 1
+            return (inputs * weights).sum(dim=1)
+
+        def forward_future(inputs: Tensor) -> Future[Tensor]:
+            fut: Future[Tensor] = Future()
+            fut.set_result(forward(inputs))
+            return fut
+
+        inputs = torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0], [5.0, 4.0, 3.0, 2.0, 1.0]])
+        feature_mask = torch.tensor([[-1, 3, 3, 7, 7]])
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            if use_future:
+                attributions = (
+                    ShapleyValueSampling(forward_future)
+                    .attribute_future(inputs, feature_mask=feature_mask, n_samples=2)
+                    .wait()
+                )
+            else:
+                attributions = ShapleyValueSampling(forward).attribute(
+                    inputs, feature_mask=feature_mask, n_samples=2
+                )
+
+        self.assertEqual(caught, [])
+        # 2 present feature IDs * 2 samples + 1 initial eval.
+        self.assertEqual(completed_forwards, 5)
+        assertTensorAlmostEqual(
+            self,
+            attributions,
+            torch.tensor(
+                [[0.0, 13.0, 13.0, 41.0, 41.0], [0.0, 17.0, 17.0, 13.0, 13.0]]
+            ),
+        )
+
+    def test_shapley_values_skips_absent_feature_ids(self) -> None:
+        weights = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
+        completed_forwards = 0
+
+        def forward(inputs: Tensor) -> Tensor:
+            nonlocal completed_forwards
+            completed_forwards += 1
+            return (inputs * weights).sum(dim=1)
+
+        inputs = torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]])
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            attributions = ShapleyValues(forward).attribute(
+                inputs, feature_mask=torch.tensor([[0, 0, 3, 3, 3]])
+            )
+
+        self.assertEqual(caught, [])
+        # 2! permutations * 2 present feature IDs + 1 initial eval.
+        self.assertEqual(completed_forwards, 5)
+        assertTensorAlmostEqual(
+            self,
+            attributions,
+            torch.tensor([[5.0, 5.0, 50.0, 50.0, 50.0]]),
+        )
+
+    def test_shapley_values_feature_count_warning_ignores_absent_ids(self) -> None:
+        class StopAttribution(Exception):
+            pass
+
+        def forward(inputs: Tensor) -> Tensor:
+            # Stop before enumerating permutations, which would take 11! orders
+            # if absent IDs were counted.
+            raise StopAttribution
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with self.assertRaises(StopAttribution):
+                ShapleyValues(forward).attribute(
+                    torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]]),
+                    feature_mask=torch.tensor([[0, 0, 10, 10, 10]]),
+                )
+
+        self.assertEqual(caught, [])
 
     def test_expected_forward_count_rejects_unplanned_subclass(self) -> None:
         class UnplannedShapley(ShapleyValueSampling):
