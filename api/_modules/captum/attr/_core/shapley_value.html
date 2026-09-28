@@ -65,7 +65,6 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_format_feature_mask</span><span class="p">,</span>
     <span class="n">_format_output</span><span class="p">,</span>
     <span class="n">_format_tensor_into_tuples</span><span class="p">,</span>
-    <span class="n">_get_max_feature_index</span><span class="p">,</span>
     <span class="n">_is_mask_valid</span><span class="p">,</span>
     <span class="n">_is_tuple</span><span class="p">,</span>
     <span class="n">_run_forward</span><span class="p">,</span>
@@ -92,6 +91,19 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="k">def</span> <span class="nf">_perm_generator</span><span class="p">(</span><span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_samples</span><span class="p">):</span>
         <span class="k">yield</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">num_features</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_get_feature_ids</span><span class="p">(</span><span class="n">feature_mask</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Sorted non-negative feature IDs present in the mask. Negative IDs are never</span>
+<span class="sd">    perturbed.</span>
+<span class="sd">    """</span>
+    <span class="n">feature_ids</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">mask</span> <span class="ow">in</span> <span class="n">feature_mask</span><span class="p">:</span>
+        <span class="n">feature_ids</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">feature_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature_id</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">feature_id</span> <span class="k">for</span> <span class="n">feature_id</span> <span class="ow">in</span> <span class="n">feature_ids</span> <span class="k">if</span> <span class="n">feature_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_shape_feature_mask</span><span class="p">(</span>
@@ -217,8 +229,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">reshaped_feature_mask</span> <span class="o">=</span> <span class="n">_shape_feature_mask</span><span class="p">(</span>
             <span class="n">formatted_feature_mask</span><span class="p">,</span> <span class="n">inputs_tuple</span>
         <span class="p">)</span>
-        <span class="c1"># Execution iterates every ID through the maximum, including absent IDs.</span>
-        <span class="n">total_features</span> <span class="o">=</span> <span class="n">_get_max_feature_index</span><span class="p">(</span><span class="n">reshaped_feature_mask</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">total_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_get_feature_ids</span><span class="p">(</span><span class="n">reshaped_feature_mask</span><span class="p">))</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_get_n_evaluations</span><span class="p">(</span><span class="n">total_features</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">perturbations_per_eval</span><span class="p">)</span>
             <span class="o">+</span> <span class="mi">1</span>
@@ -435,7 +446,8 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">baselines</span> <span class="o">=</span> <span class="n">_tensorize_baseline</span><span class="p">(</span><span class="n">inputs_tuple</span><span class="p">,</span> <span class="n">baselines</span><span class="p">)</span>
             <span class="n">num_examples</span> <span class="o">=</span> <span class="n">inputs_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-            <span class="n">total_features</span> <span class="o">=</span> <span class="n">_get_max_feature_index</span><span class="p">(</span><span class="n">reshaped_feature_mask</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">feature_ids</span> <span class="o">=</span> <span class="n">_get_feature_ids</span><span class="p">(</span><span class="n">reshaped_feature_mask</span><span class="p">)</span>
+            <span class="n">total_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_ids</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
                 <span class="n">attr_progress</span> <span class="o">=</span> <span class="n">progress</span><span class="p">(</span>
@@ -479,9 +491,8 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">iter_count</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># Iterate for number of samples, generate a permutation of the features</span>
             <span class="c1"># and evalute the incremental increase for each feature.</span>
-            <span class="k">for</span> <span class="n">feature_permutation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">permutation_generator</span><span class="p">(</span>
-                <span class="n">total_features</span><span class="p">,</span> <span class="n">n_samples</span>
-            <span class="p">):</span>
+            <span class="k">for</span> <span class="n">permutation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">permutation_generator</span><span class="p">(</span><span class="n">total_features</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+                <span class="n">feature_permutation</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature_ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">permutation</span><span class="p">]</span>
                 <span class="n">iter_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">prev_results</span> <span class="o">=</span> <span class="n">initial_eval</span>
                 <span class="k">for</span> <span class="p">(</span>
@@ -499,13 +510,6 @@ src="/_sphinx/documentation_options.js"></script>
                     <span class="n">feature_permutation</span><span class="p">,</span>
                     <span class="n">perturbations_per_eval</span><span class="p">,</span>
                 <span class="p">):</span>
-                    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">mask</span> <span class="ow">in</span> <span class="n">current_masks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                            <span class="s2">"Feature mask is missing some integers between 0 and "</span>
-                            <span class="s2">"num_features, for optimal performance, make sure each"</span>
-                            <span class="s2">" consecutive integer corresponds to a feature."</span><span class="p">,</span>
-                            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                        <span class="p">)</span>
                     <span class="c1"># modified_eval dimensions: 1D tensor with length</span>
                     <span class="c1"># equal to #num_examples * #features in batch</span>
                     <span class="n">modified_eval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strict_run_forward</span><span class="p">(</span>
@@ -605,7 +609,8 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">baselines</span> <span class="o">=</span> <span class="n">_tensorize_baseline</span><span class="p">(</span><span class="n">inputs_tuple</span><span class="p">,</span> <span class="n">baselines</span><span class="p">)</span>
             <span class="n">num_examples</span> <span class="o">=</span> <span class="n">inputs_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-            <span class="n">total_features</span> <span class="o">=</span> <span class="n">_get_max_feature_index</span><span class="p">(</span><span class="n">reshaped_feature_mask</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">feature_ids</span> <span class="o">=</span> <span class="n">_get_feature_ids</span><span class="p">(</span><span class="n">reshaped_feature_mask</span><span class="p">)</span>
+            <span class="n">total_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_ids</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
                 <span class="n">attr_progress</span> <span class="o">=</span> <span class="n">progress</span><span class="p">(</span>
@@ -640,9 +645,8 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">iter_count</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># Iterate for number of samples, generate a permutation of the features</span>
             <span class="c1"># and evalute the incremental increase for each feature.</span>
-            <span class="k">for</span> <span class="n">feature_permutation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">permutation_generator</span><span class="p">(</span>
-                <span class="n">total_features</span><span class="p">,</span> <span class="n">n_samples</span>
-            <span class="p">):</span>
+            <span class="k">for</span> <span class="n">permutation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">permutation_generator</span><span class="p">(</span><span class="n">total_features</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+                <span class="n">feature_permutation</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature_ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">permutation</span><span class="p">]</span>
                 <span class="n">prev_result_tuple</span> <span class="o">=</span> <span class="n">prev_result_tuple</span><span class="o">.</span><span class="n">then</span><span class="p">(</span>
                     <span class="k">lambda</span> <span class="n">inp</span><span class="o">=</span><span class="n">prev_result_tuple</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_prev_results_to_initial_eval</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>  <span class="c1"># type: ignore # noqa: E501 line too long</span>
                 <span class="p">)</span>
@@ -663,13 +667,6 @@ src="/_sphinx/documentation_options.js"></script>
                     <span class="n">feature_permutation</span><span class="p">,</span>
                     <span class="n">perturbations_per_eval</span><span class="p">,</span>
                 <span class="p">):</span>
-                    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">mask</span> <span class="ow">in</span> <span class="n">current_masks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                            <span class="s2">"Feature mask is missing some integers between 0 and "</span>
-                            <span class="s2">"num_features, for optimal performance, make sure each"</span>
-                            <span class="s2">" consecutive integer corresponds to a feature."</span><span class="p">,</span>
-                            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                        <span class="p">)</span>
                     <span class="c1"># modified_eval dimensions: 1D tensor with length</span>
                     <span class="c1"># equal to #num_examples * #features in batch</span>
                     <span class="n">modified_eval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strict_run_forward_future</span><span class="p">(</span>
@@ -1356,9 +1353,8 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">inp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">total_features</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">single_mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">single_mask</span> <span class="ow">in</span> <span class="n">feature_mask</span><span class="p">))</span>
-                <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">total_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="n">_get_feature_ids</span><span class="p">(</span><span class="n">_format_tensor_into_tuples</span><span class="p">(</span><span class="n">feature_mask</span><span class="p">))</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">total_features</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
