@@ -1531,6 +1531,7 @@ class DeepLiftShap(DeepLift):
         *,
         return_convergence_delta: Literal[True],
         custom_attribution_func: Union[None, Callable[..., Tuple[Tensor, ...]]] = None,
+        internal_batch_size: Optional[int] = None,
     ) -> Tuple[TensorOrTupleOfTensorsGeneric, Tensor]: ...
 
     @typing.overload
@@ -1545,6 +1546,7 @@ class DeepLiftShap(DeepLift):
         additional_forward_args: Optional[Tuple[object, ...]] = None,
         return_convergence_delta: Literal[False] = False,
         custom_attribution_func: Union[None, Callable[..., Tuple[Tensor, ...]]] = None,
+        internal_batch_size: Optional[int] = None,
     ) -> TensorOrTupleOfTensorsGeneric: ...
 
     @log_usage(part_of_slo=True)
@@ -1558,6 +1560,7 @@ class DeepLiftShap(DeepLift):
         additional_forward_args: Optional[Tuple[object, ...]] = None,
         return_convergence_delta: bool = False,
         custom_attribution_func: Union[None, Callable[..., Tuple[Tensor, ...]]] = None,
+        internal_batch_size: Optional[int] = None,
     ) -> Union[
         TensorOrTupleOfTensorsGeneric, Tuple[TensorOrTupleOfTensorsGeneric, Tensor]
     ]:
@@ -1657,6 +1660,14 @@ class DeepLiftShap(DeepLift):
                         `inputs`.
                         Default: None
 
+            internal_batch_size (int, optional): Maximum number of examples
+                        processed in a forward pass. Baselines are split into
+                        batches before expanding them against the inputs.
+                        DeepLift evaluates inputs and references together, so
+                        this must be at least twice the number of input examples.
+                        Smaller values are rounded up with a warning.
+                        Default: None (process all baselines together).
+
         Returns:
             **attributions** or 2-element tuple of **attributions**, **delta**:
             - **attributions** (*Tensor* or *tuple[Tensor, ...]*):
@@ -1718,41 +1729,61 @@ class DeepLiftShap(DeepLift):
         inp_bsz = inputs_tuple[0].shape[0]
         base_bsz = formatted_baselines[0].shape[0]
 
-        (
-            exp_inp,
-            exp_base,
-            exp_tgt,
-            exp_addit_args,
-        ) = self._expand_inputs_baselines_targets(
-            formatted_baselines,
-            inputs_tuple,
-            target,
-            additional_forward_args,
-        )
-        attributions = super().attribute.__wrapped__(  # type: ignore
-            self,
-            exp_inp,
-            exp_base,
-            target=exp_tgt,
-            additional_forward_args=exp_addit_args,
-            return_convergence_delta=cast(
-                Literal[True, False],
-                return_convergence_delta,
-            ),
-            custom_attribution_func=custom_attribution_func,
-        )
-        delta: Tensor = torch.tensor(0)
-        if return_convergence_delta:
-            attributions, delta = cast(Tuple[Tuple[Tensor, ...], Tensor], attributions)
+        baseline_batch_size = base_bsz
+        if internal_batch_size is not None:
+            if internal_batch_size < 2 * inp_bsz:
+                warnings.warn(
+                    "Internal batch size must be at least twice the number of "
+                    "input examples. Defaulting to {}.".format(2 * inp_bsz)
+                )
+            baseline_batch_size = max(1, internal_batch_size // (2 * inp_bsz))
 
-        attributions = tuple(
-            self._compute_mean_across_baselines(
-                inp_bsz, base_bsz, cast(Tensor, attribution)
+        attributions: Optional[Tuple[Tensor, ...]] = None
+        deltas: List[Tensor] = []
+        for start in range(0, base_bsz, baseline_batch_size):
+            batch_baselines = tuple(
+                baseline[start : start + baseline_batch_size]
+                for baseline in formatted_baselines
             )
-            for attribution in attributions
-        )
+            batch_size = batch_baselines[0].shape[0]
+            exp_inp, exp_base, exp_tgt, exp_addit_args = (
+                self._expand_inputs_baselines_targets(
+                    batch_baselines, inputs_tuple, target, additional_forward_args
+                )
+            )
+            batch_attributions = super().attribute.__wrapped__(  # type: ignore
+                self,
+                exp_inp,
+                exp_base,
+                target=exp_tgt,
+                additional_forward_args=exp_addit_args,
+                return_convergence_delta=cast(
+                    Literal[True, False], return_convergence_delta
+                ),
+                custom_attribution_func=custom_attribution_func,
+            )
+            if return_convergence_delta:
+                batch_attributions, delta = cast(
+                    Tuple[Tuple[Tensor, ...], Tensor], batch_attributions
+                )
+                deltas.append(delta.reshape(inp_bsz, batch_size))
 
+            batch_attributions = tuple(
+                self._compute_mean_across_baselines(inp_bsz, batch_size, attribution)
+                * (batch_size / base_bsz)
+                for attribution in batch_attributions
+            )
+            if attributions is None:
+                attributions = batch_attributions
+            else:
+                attributions = tuple(
+                    total + batch.detach()
+                    for total, batch in zip(attributions, batch_attributions)
+                )
+
+        assert attributions is not None
         if return_convergence_delta:
+            delta = torch.cat(deltas, dim=1).reshape(-1)
             return (
                 cast(
                     TensorOrTupleOfTensorsGeneric,
