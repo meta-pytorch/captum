@@ -160,9 +160,9 @@ class NoiseTunnel(Attribution):
                         attribution algorithm. Not all attribution algorithms
                         return delta value. It is computed only for some
                         algorithms, e.g. integrated gradients.
-                        Delta is computed for each input in the batch
-                        and represents the arithmetic mean
-                        across all `nt_samples` perturbed tensors for that input.
+                        Delta is returned for each perturbed input, as a tensor
+                        of size `batch_size * nt_samples`, where the
+                        `nt_samples` deltas of each input are contiguous.
 
 
         Examples::
@@ -291,7 +291,12 @@ class NoiseTunnel(Attribution):
 
             delta = None
             if self.is_delta_supported and return_convergence_delta:
-                delta = torch.cat(delta_partial_list, dim=0)
+                # Each partial delta is ordered example-major within its
+                # partition, so regroup per example before flattening.
+                bsz = inputs[0].shape[0]
+                delta = torch.cat(
+                    [d.reshape(bsz, -1) for d in delta_partial_list], dim=1
+                ).reshape(-1)
 
         return self._apply_checks_and_return_attributions(
             attributions,

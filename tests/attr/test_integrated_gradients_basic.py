@@ -170,6 +170,25 @@ class Test(BaseTest):
             attributions = ig.attribute_future()  # type: ignore
         self.assertEqual(attributions, None)
 
+    def test_noise_tunnel_delta_order_with_nt_samples_batch_size(self) -> None:
+        # riemann_left on a cubic gives a different, non-zero delta per example
+        inputs = torch.tensor([[1.0, 2.0], [-3.0, 0.5], [2.5, -1.0]])
+        nt = NoiseTunnel(IntegratedGradients(lambda x: (x**3).sum(dim=1)))
+        kwargs = dict(
+            nt_type="smoothgrad",
+            nt_samples=4,
+            stdevs=0.0,
+            n_steps=2,
+            method="riemann_left",
+            return_convergence_delta=True,
+        )
+        _, expected_delta = nt.attribute(inputs, **kwargs)
+        for nt_samples_batch_size in (1, 2, 3):
+            _, delta = nt.attribute(
+                inputs, nt_samples_batch_size=nt_samples_batch_size, **kwargs
+            )
+            assertTensorAlmostEqual(self, delta, expected_delta, delta=0.0)
+
     def _assert_multi_variable(
         self,
         type: str,
