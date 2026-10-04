@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-unsafe
 import glob
 import tempfile
@@ -25,10 +30,12 @@ class RangeDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, idx):
         return self.samples[idx]
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_exists_without_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

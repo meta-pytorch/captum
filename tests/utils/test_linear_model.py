@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-unsafe
 
 from typing import Optional, Union
@@ -16,6 +21,7 @@ from captum.testing.helpers.evaluate_linear_model import evaluate
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestLinearModel(BaseTest):
     MAX_POINTS: int = 3
 

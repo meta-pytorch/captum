@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import warnings
@@ -243,7 +248,8 @@ class LLMAttributionResult:
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 val = data[i, j]
-                color = "black" if 0.2 < im.norm(val) < 0.8 else "white"
+                norm_val = cast(float, im.norm(val))
+                color = "black" if 0.2 < norm_val < 0.8 else "white"
                 im.axes.text(
                     j,
                     i,
@@ -597,6 +603,7 @@ class BaseLLMAttribution(Attribution, ABC):
         self.model: nn.Module = cast(nn.Module, self.forward_func)
 
         self.tokenizer: TokenizerLike = tokenizer
+        # pyrefly: ignore [read-only]
         self.device: torch.device = (
             cast(torch.device, self.model.device)
             if hasattr(self.model, "device")
@@ -621,10 +628,10 @@ class BaseLLMAttribution(Attribution, ABC):
             )
             generate_func = cast(Callable[..., Tensor], self.model.generate)
 
-            if not gen_args:
-                gen_args = DEFAULT_GEN_ARGS
+            gen_args = DEFAULT_GEN_ARGS.copy() if not gen_args else gen_args.copy()
 
             model_inp = self._format_model_input(inp.to_model_input())
+            self._update_model_input_for_generation(model_inp, gen_args)
             input_token_len = model_inp["input_ids"].size(1)
             output_tokens = generate_func(**model_inp, **gen_args)
             target_tokens = output_tokens[0][input_token_len:]
@@ -648,6 +655,20 @@ class BaseLLMAttribution(Attribution, ABC):
                     "{}".format(type(target))
                 )
         return target_tokens
+
+    def _update_model_input_for_generation(
+        self, model_inp: Dict[str, Any], gen_args: Dict[str, Any]
+    ) -> None:
+        input_ids = model_inp.get("input_ids")
+        if isinstance(input_ids, Tensor) and "attention_mask" not in model_inp:
+            model_inp["attention_mask"] = torch.ones_like(input_ids, dtype=torch.long)
+
+        if "pad_token_id" not in gen_args:
+            pad_token_id = getattr(self.tokenizer, "pad_token_id", None)
+            if pad_token_id is None:
+                pad_token_id = getattr(self.tokenizer, "eos_token_id", None)
+            if pad_token_id is not None:
+                gen_args["pad_token_id"] = pad_token_id
 
     def _format_model_input(
         self, model_input: Union[str, Tensor, Mapping]
@@ -887,6 +908,7 @@ class LLMAttribution(BaseLLMAttribution):
             log_prob_list.append(log_probs[0][target_token].detach())
 
             model_inp["input_ids"] = torch.cat(
+                # pyrefly: ignore [bad-argument-type]
                 (
                     model_inp["input_ids"],
                     torch.tensor([[target_token]]).to(self.device),

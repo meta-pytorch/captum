@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 from typing import Any, Callable, List, Tuple
@@ -12,6 +17,7 @@ from captum.testing.helpers.basic_models import BasicModelWithSparseInputs
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def construct_future_forward(
         self, original_forward: Callable[..., Tensor]
@@ -54,6 +60,45 @@ class Test(BaseTest):
                 flat_mask[i] = 1
                 self._check_perm_fn_with_mask(inp, flat_mask.view_as(inp[0]))
                 flat_mask[i] = 0
+
+    def test_forward_plan_aggregates_samples_and_matches_calls(self) -> None:
+        forward_calls = 0
+
+        def counted_forward(inputs: Tensor) -> Tensor:
+            nonlocal forward_calls
+            forward_calls += 1
+            return inputs.sum(dim=1)
+
+        algorithm = FeaturePermutation(counted_forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+        feature_mask = torch.tensor([[0, 2, 5]])
+        planned = algorithm.expected_forward_count(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+            n_samples=3,
+        )
+
+        algorithm.attribute(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+            n_samples=3,
+        )
+
+        self.assertEqual(planned, 9)
+        self.assertEqual(planned, forward_calls)
+
+    def test_forward_plan_requires_subclass_override(self) -> None:
+        class DerivedFeaturePermutation(FeaturePermutation):
+            pass
+
+        algorithm = DerivedFeaturePermutation(lambda inputs: inputs.sum(dim=1))
+
+        with self.assertRaisesRegex(
+            NotImplementedError, "must provide its own exact forward plan"
+        ):
+            algorithm.expected_forward_count(torch.tensor([[1.0, 2.0]]))
 
     def test_perm_fn_broadcastable_masks(self) -> None:
         batch_size = 5
@@ -110,6 +155,35 @@ class Test(BaseTest):
         assertTensorAlmostEqual(self, attribs[:, 0], zeros, delta=0.05, mode="max")
         self.assertTrue((attribs[:, 1 : input_size[0]].abs() > 0).all())
 
+    def test_single_input_with_n_samples(self) -> None:
+        n_samples = 4
+
+        def forward_func(x: Tensor) -> Tensor:
+            return x.sum(dim=-1)
+
+        feature_importance = FeaturePermutation(forward_func=forward_func)
+        inp = torch.arange(20, dtype=torch.float).view(5, 4)
+
+        set_all_random_seeds(123)
+        attribs = feature_importance.attribute(inp, n_samples=n_samples)
+
+        set_all_random_seeds(123)
+        expected = torch.stack(
+            [feature_importance.attribute(inp) for _ in range(n_samples)]
+        ).mean(dim=0)
+
+        assertTensorAlmostEqual(self, attribs, expected, delta=1e-6, mode="max")
+
+    def test_n_samples_validation(self) -> None:
+        def forward_func(x: Tensor) -> Tensor:
+            return x.sum(dim=-1)
+
+        feature_importance = FeaturePermutation(forward_func=forward_func)
+        inp = torch.randn(2, 3)
+
+        with self.assertRaisesRegex(AssertionError, "n_samples"):
+            feature_importance.attribute(inp, n_samples=0)
+
     def test_simple_input_with_min_examples_in_group(self) -> None:
         def forward_func(x: Tensor) -> Tensor:
             return x.sum(dim=-1)
@@ -156,6 +230,80 @@ class Test(BaseTest):
         feature_importance._min_examples_per_batch_grouped = 1
         with self.assertRaises(AssertionError):
             feature_importance.attribute(inp, feature_mask=mask)
+
+    def _deterministic_perm(self, x: Tensor, feature_mask: Tensor) -> Tensor:
+        # Deterministic stand-in for the default random permutation so the
+        # forward-count invariant below does not depend on an RNG seed.
+        return (x.flip(0) * feature_mask.to(dtype=x.dtype)) + (
+            x * feature_mask.bitwise_not().to(dtype=x.dtype)
+        )
+
+    def test_run_forward_on_skip_keeps_forward_count_in_lockstep(self) -> None:
+        # Regression test for the distributed NCCL-desync fix: when a per-rank
+        # batch is uneven, a rank-local skip drops a model forward, offsetting the
+        # shard PG's collective count. run_forward_on_skip=True must keep the
+        # forward count identical to the no-skip case so every rank stays in
+        # lockstep, while the skipped group's attribution stays zero.
+        def make_counting_forward() -> Tuple[Callable[..., Tensor], List[int]]:
+            calls: list[int] = [0]
+
+            def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
+                calls[0] += 1
+                return x2.sum(dim=-1)
+
+            return forward_func, calls
+
+        # Feature group 0 lives only in x1; groups 1 and 2 live only in x2.
+        mask = (
+            torch.tensor([[0, 0]]),
+            torch.tensor([[1, 2]]),
+        )
+
+        # Baseline: every tensor has batch size >= 2, so no group is skipped.
+        # 1 initial eval + 3 group forwards = 4 forwards.
+        no_skip_forward, no_skip_calls = make_counting_forward()
+        no_skip_attr = FeaturePermutation(
+            forward_func=no_skip_forward, perm_func=self._deterministic_perm
+        )
+        no_skip_attr.attribute(
+            (
+                torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+                torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+            ),
+            feature_mask=mask,
+        )
+        self.assertEqual(no_skip_calls[0], 4)
+
+        # x1 now has batch size 1, so group 0 fires the min-examples skip
+        # (_min_examples_per_batch_grouped defaults to 2 for FeaturePermutation).
+        uneven_inp = (
+            torch.tensor([[1.0, 2.0]]),
+            torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+        )
+
+        # With run_forward_on_skip=True, the skipped group still issues a forward,
+        # matching the no-skip count exactly (lockstep).
+        skip_on_forward, skip_on_calls = make_counting_forward()
+        skip_on_attr = FeaturePermutation(
+            forward_func=skip_on_forward, perm_func=self._deterministic_perm
+        )
+        attribs = skip_on_attr.attribute(
+            uneven_inp, feature_mask=mask, run_forward_on_skip=True
+        )
+        self.assertEqual(skip_on_calls[0], no_skip_calls[0])
+        # The skipped group (feature 0, in x1) keeps its zero-initialized attribution.
+        assertTensorAlmostEqual(
+            self, attribs[0], torch.zeros_like(attribs[0]), delta=0.0
+        )
+
+        # Default behavior (run_forward_on_skip=False) drops the skipped group's
+        # forward, which is exactly the desync this flag fixes.
+        skip_off_forward, skip_off_calls = make_counting_forward()
+        skip_off_attr = FeaturePermutation(
+            forward_func=skip_off_forward, perm_func=self._deterministic_perm
+        )
+        skip_off_attr.attribute(uneven_inp, feature_mask=mask)
+        self.assertEqual(skip_off_calls[0], no_skip_calls[0] - 1)
 
     def test_single_input_with_future(
         self,

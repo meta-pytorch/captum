@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
+import html
 import warnings
 from enum import Enum
 from typing import (
@@ -10,7 +16,9 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
+    overload,
     Sequence,
     Tuple,
     Union,
@@ -41,6 +49,7 @@ def draw_mask_border(
     ax: Axes,
     mask: npt.NDArray[np.bool_],
     border_width: int = 1,
+    # pyrefly: ignore [bad-specialization]
     border_color: Union[str, npt.NDArray[np.floating[Any]]] = "black",
 ) -> None:
     """
@@ -169,8 +178,27 @@ def _prepare_image(attr_visual: npt.NDArray) -> npt.NDArray:
     return np.clip(attr_visual.astype(int), 0, 255)
 
 
+def _prepare_image_for_display(original_image: npt.NDArray) -> npt.NDArray:
+    if np.issubdtype(original_image.dtype, np.floating):
+        min_value = np.min(original_image)
+        max_value = np.max(original_image)
+        if min_value < 0 or max_value > 1:
+            if min_value != max_value:
+                original_image = (original_image - min_value) / (max_value - min_value)
+            else:
+                original_image = np.zeros_like(original_image)
+        original_image = original_image * 255
+    return _prepare_image(original_image)
+
+
 def _normalize_scale(attr: npt.NDArray, scale_factor: float) -> npt.NDArray:
-    assert scale_factor != 0, "Cannot normalize by scale factor = 0"
+    if scale_factor == 0:
+        warnings.warn(
+            "No non-zero attribution values found for the selected sign; "
+            "returning an all-zero attribution visualization.",
+            stacklevel=2,
+        )
+        return np.zeros_like(attr)
     if abs(scale_factor) < 1e-5:
         warnings.warn(
             "Attempting to normalize by value approximately 0, visualized results"
@@ -275,6 +303,7 @@ def _visualize_original_image(
     ), "Original image expected for original_image method."
     if len(original_image.shape) > 2 and original_image.shape[2] == 1:
         original_image = np.squeeze(original_image, axis=2)
+    # pyrefly: ignore [bad-argument-type]
     plt_axis.imshow(original_image)
 
 
@@ -286,6 +315,7 @@ def _visualize_heat_map(
     vmax: float,
     **kwargs: Any,
 ) -> AxesImage:
+    # pyrefly: ignore [bad-argument-type]
     heat_map = plt_axis.imshow(norm_attr, cmap=cmap, vmin=vmin, vmax=vmax)
     return heat_map
 
@@ -305,7 +335,12 @@ def _visualize_blended_heat_map(
     ), "Original Image expected for blended_heat_map method."
     plt_axis.imshow(np.mean(original_image, axis=2), cmap="gray")
     heat_map = plt_axis.imshow(
-        norm_attr, cmap=cmap, vmin=vmin, vmax=vmax, alpha=alpha_overlay
+        # pyrefly: ignore [bad-argument-type]
+        norm_attr,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        alpha=alpha_overlay,
     )
     return heat_map
 
@@ -321,6 +356,7 @@ def _visualize_masked_image(
         "Cannot display masked image with both positive and negative "
         "attributions, choose a different sign option."
     )
+    # pyrefly: ignore [bad-argument-type]
     plt_axis.imshow(_prepare_image(original_image * np.expand_dims(norm_attr, 2)))
 
 
@@ -346,6 +382,18 @@ def _visualize_alpha_scaling(
     )
 
 
+def _get_image_attr_visualization_array(image: AxesImage) -> npt.NDArray:
+    image_array = np.asarray(image.get_array())
+
+    if image_array.ndim == 2:
+        return np.asarray(
+            image.to_rgba(image_array, alpha=image.get_alpha(), bytes=True)
+        )
+
+    return image_array.copy()
+
+
+@overload
 def visualize_image_attr(
     attr: npt.NDArray,
     original_image: Optional[npt.NDArray] = None,
@@ -359,7 +407,43 @@ def visualize_image_attr(
     title: Optional[str] = None,
     fig_size: Tuple[int, int] = (6, 6),
     use_pyplot: bool = True,
-) -> Tuple[Figure, Axes]:
+    return_numpy: Literal[False] = False,
+) -> Tuple[Figure, Axes]: ...
+
+
+@overload
+def visualize_image_attr(
+    attr: npt.NDArray,
+    original_image: Optional[npt.NDArray] = None,
+    method: str = "heat_map",
+    sign: str = "absolute_value",
+    plt_fig_axis: Optional[Tuple[Figure, Axes]] = None,
+    outlier_perc: Union[int, float] = 2,
+    cmap: Optional[Union[str, Colormap]] = None,
+    alpha_overlay: float = 0.5,
+    show_colorbar: bool = False,
+    title: Optional[str] = None,
+    fig_size: Tuple[int, int] = (6, 6),
+    use_pyplot: bool = True,
+    return_numpy: Literal[True] = True,
+) -> npt.NDArray: ...
+
+
+def visualize_image_attr(
+    attr: npt.NDArray,
+    original_image: Optional[npt.NDArray] = None,
+    method: str = "heat_map",
+    sign: str = "absolute_value",
+    plt_fig_axis: Optional[Tuple[Figure, Axes]] = None,
+    outlier_perc: Union[int, float] = 2,
+    cmap: Optional[Union[str, Colormap]] = None,
+    alpha_overlay: float = 0.5,
+    show_colorbar: bool = False,
+    title: Optional[str] = None,
+    fig_size: Tuple[int, int] = (6, 6),
+    use_pyplot: bool = True,
+    return_numpy: bool = False,
+) -> Union[Tuple[Figure, Axes], npt.NDArray]:
     r"""
     Visualizes attribution for a given image by normalizing attribution values
     of the desired sign (positive, negative, absolute value, or all) and displaying
@@ -448,9 +532,17 @@ def visualize_image_attr(
                     uses Matplotlib object oriented API and simply returns a
                     figure object without showing.
                     Default: True.
+        return_numpy (bool, optional): If true, returns the visualized image as
+                    a numpy array instead of the matplotlib figure and axis.
+                    Heatmap-based methods return an RGBA array after applying
+                    the colormap. Image-based methods return the image array
+                    passed to matplotlib. In all cases, the returned array has
+                    the attribution image height and width rather than the
+                    rendered figure canvas size.
+                    Default: False.
 
     Returns:
-        2-element tuple of **figure**, **axis**:
+        If return_numpy is False, a 2-element tuple of **figure**, **axis**:
         - **figure** (*matplotlib.pyplot.figure*):
                     Figure object on which visualization
                     is created. If plt_fig_axis argument is given, this is the
@@ -459,6 +551,9 @@ def visualize_image_attr(
                     Axis object on which visualization
                     is created. If plt_fig_axis argument is given, this is the
                     same axis provided.
+
+        If return_numpy is True, returns a numpy array containing the visualized
+                    image data.
 
     Examples::
 
@@ -477,8 +572,7 @@ def visualize_image_attr(
         plt_axis = plt_axis[0]
 
     if original_image is not None:
-        if np.max(original_image) <= 1.0:
-            original_image = _prepare_image(original_image * 255)
+        original_image = _prepare_image_for_display(original_image)
     elif (
         ImageVisualizationMethod[method].value
         != ImageVisualizationMethod.heat_map.value
@@ -546,8 +640,16 @@ def visualize_image_attr(
     if title:
         plt_axis.set_title(title)
 
+    visualization_array: Optional[npt.NDArray] = None
+    if return_numpy:
+        image = heat_map if heat_map is not None else plt_axis.images[-1]
+        visualization_array = _get_image_attr_visualization_array(image)
+
     if use_pyplot:
         plt.show()
+
+    if return_numpy:
+        return cast(npt.NDArray, visualization_array)
 
     return plt_fig, plt_axis
 
@@ -1001,7 +1103,7 @@ def visualize_timeseries_attr(
     else:
         raise AssertionError("Invalid visualization method: {}".format(method))
 
-    plt.xlim([x_values[0], x_values[-1]])
+    plt.xlim((float(x_values[0]), float(x_values[-1])))
 
     if show_colorbar:
         axis_separator = make_axes_locatable(plt_axis_list[-1])
@@ -1101,11 +1203,10 @@ def format_special_tokens(token: str) -> str:
 
 
 def format_tooltip(item: str, text: str) -> str:
-    return '<div class="tooltip">{item}\
+    tooltip = '<div class="tooltip">{item}\
         <span class="tooltiptext">{text}</span>\
-        </div>'.format(
-        item=item, text=text
-    )
+        </div>'
+    return tooltip.format(item=item, text=text)
 
 
 def format_word_importances(
@@ -1121,13 +1222,12 @@ def format_word_importances(
     assert len(words) <= len(importances)
     tags = ["<td>"]
     for word, importance in zip(words, importances[: len(words)]):
-        word = format_special_tokens(word)
+        word = html.escape(format_special_tokens(word))
         color = _get_color(importance)
-        unwrapped_tag = '<mark style="background-color: {color}; opacity:1.0; \
+        unwrapped_tag_template = '<mark style="background-color: {color}; opacity:1.0; \
                     line-height:1.75"><font color="black"> {word}\
-                    </font></mark>'.format(
-            color=color, word=word
-        )
+                    </font></mark>'
+        unwrapped_tag = unwrapped_tag_template.format(color=color, word=word)
         tags.append(unwrapped_tag)
     tags.append("</td>")
     return "".join(tags)
@@ -1136,6 +1236,14 @@ def format_word_importances(
 def visualize_text(
     datarecords: Iterable[VisualizationDataRecord], legend: bool = True
 ) -> "HTML":  # In quotes because this type doesn't exist in standalone mode
+    r"""
+    Visualizes text attribution records and returns an IPython ``HTML`` object.
+
+    In notebooks this object is displayed inline. To persist the same rendering as
+    HTML, write ``html_obj.data`` from the returned object to an ``.html`` file.
+    Captum does not directly export this visualization as a raster image; use an
+    external HTML renderer or screenshot tool when an image file is required.
+    """
     assert HAS_IPYTHON, (
         "IPython must be available to visualize text. "
         "Please run 'pip install ipython'."
@@ -1170,20 +1278,18 @@ def visualize_text(
         )
 
     if legend:
-        dom.append(
-            '<div style="border-top: 1px solid; margin-top: 5px; \
+        legend_html = '<div style="border-top: 1px solid; margin-top: 5px; \
             padding-top: 5px; display: inline-block">'
-        )
+        dom.append(legend_html)
         dom.append("<b>Legend: </b>")
 
+        color_box_template = (
+            '<span style="display: inline-block; width: 10px; height: 10px; '
+            "                border: 1px solid; background-color: "
+            '                {value}"></span> {label}  '
+        )
         for value, label in zip([-1, 0, 1], ["Negative", "Neutral", "Positive"]):
-            dom.append(
-                '<span style="display: inline-block; width: 10px; height: 10px; \
-                border: 1px solid; background-color: \
-                {value}"></span> {label}  '.format(
-                    value=_get_color(value), label=label
-                )
-            )
+            dom.append(color_box_template.format(value=_get_color(value), label=label))
         dom.append("</div>")
 
     dom.append("".join(rows))

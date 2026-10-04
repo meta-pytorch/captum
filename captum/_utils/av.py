@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import glob
@@ -78,10 +83,11 @@ class AV:
             # pyre-fixme[4]: Attribute must be annotated.
             self.files = AV.sort_files(files)
 
+        # pyrefly: ignore [bad-override-param-name]
         def __getitem__(self, idx: int) -> Union[Tensor, Tuple[Tensor, ...]]:
             assert idx < len(self.files), "Layer index is out of bounds!"
             fl = self.files[idx]
-            av = torch.load(fl)
+            av = torch.load(fl, weights_only=True)
             return av
 
         def __len__(self) -> int:

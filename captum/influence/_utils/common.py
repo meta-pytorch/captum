@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import warnings
 from functools import reduce
@@ -177,7 +182,7 @@ def _load_flexible_state_dict(model: Module, path: str) -> float:
     The module state_dict is modified in-place, and the learning rate is returned.
     """
 
-    checkpoint = torch.load(path)
+    checkpoint = torch.load(path, weights_only=True)
 
     learning_rate = checkpoint.get("learning_rate", 1.0)
     # can get learning rate from optimizer state_dict?
@@ -326,6 +331,7 @@ class _DatasetFromList(Dataset):
     def __init__(self, _l: List[Any]) -> None:
         self._l = _l
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, i: int) -> Any:
         return self._l[i]
 
@@ -631,7 +637,9 @@ def _influence_batch_intermediate_quantities_influence_function(
     `IntermediateQuantitiesInfluenceFunction`
     """
     return torch.matmul(
+        # pyrefly: ignore [bad-argument-type]
         influence_inst.compute_intermediate_quantities(test_batch),
+        # pyrefly: ignore [missing-attribute]
         influence_inst.compute_intermediate_quantities(train_batch).T,
     )
 
@@ -665,7 +673,9 @@ def _influence_helper_intermediate_quantities_influence_function(
     return torch.cat(
         [
             torch.matmul(
+                # pyrefly: ignore [bad-argument-type]
                 inputs_intermediate_quantities,
+                # pyrefly: ignore [missing-attribute]
                 influence_inst.compute_intermediate_quantities(batch).T,
             )
             for batch in train_dataloader
@@ -696,6 +706,7 @@ def _self_influence_helper_intermediate_quantities_influence_function(
     inputs_dataset = _format_inputs_dataset(inputs_dataset)
 
     if show_progress:
+        # pyrefly: ignore [bad-assignment]
         inputs_dataset = _progress_bar_constructor(
             influence_inst, inputs_dataset, "inputs_dataset", "self influence scores"
         )
@@ -703,6 +714,7 @@ def _self_influence_helper_intermediate_quantities_influence_function(
     return torch.cat(
         [
             torch.sum(
+                # pyrefly: ignore [unsupported-operation]
                 influence_inst.compute_intermediate_quantities(
                     batch,
                     show_progress=False,
@@ -710,6 +722,7 @@ def _self_influence_helper_intermediate_quantities_influence_function(
                 ** 2,
                 dim=1,
             )
+            # pyrefly: ignore [not-iterable]
             for batch in inputs_dataset
         ]
     )
@@ -940,14 +953,13 @@ def _compute_jacobian_sample_wise_grads_per_batch(
     )
 
 
-# pyre-fixme[3]: Return type must be annotated.
 def _compute_batch_loss_influence_function_base(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     loss_fn: Optional[Union[Module, Callable]],
     input: Any,
     target: Any,
     reduction_type: str,
-):
+) -> Tensor:
     """
     In implementations of `InfluenceFunctionBase`, we need to compute the total loss
     for a batch given `loss_fn`, whose reduction can either be 'none', 'sum', or

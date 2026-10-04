@@ -18,7 +18,6 @@ jobs:
     with:
       timeout: 60
       runner: linux.4xlarge.nvidia.gpu
-      repository: pytorch/captum
       gpu-arch-type: cuda
       gpu-arch-version: ${{ matrix.cuda_arch_version }}
       script: |

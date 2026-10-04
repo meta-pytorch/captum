@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-unsafe
 from typing import cast, List
 
@@ -41,6 +46,7 @@ def alt_correct_fn(model_out: Tensor, target: int, threshold: float) -> bool:
     return False
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_minimal_pert_basic_linear(self) -> None:
         model = BasicModel()

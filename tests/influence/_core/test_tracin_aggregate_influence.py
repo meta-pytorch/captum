@@ -1,4 +1,7 @@
-# (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 
 # pyre-unsafe
 
@@ -44,6 +47,7 @@ class TestTracInAggregateInfluence(BaseTest):
         summing
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -104,6 +108,7 @@ class TestTracInAggregateInfluence(BaseTest):
         when the batches are collated into a single batch
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,
@@ -115,6 +120,7 @@ class TestTracInAggregateInfluence(BaseTest):
 
             # create a single batch representing the entire dataset
             single_batch = next(
+                # pyrefly: ignore [bad-argument-type]
                 iter(DataLoader(train_dataset, batch_size=len(train_dataset)))
             )
 

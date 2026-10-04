@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-# pyre-strict
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 
 from collections import defaultdict
 from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
@@ -74,6 +78,7 @@ class LabelledDataset(Dataset):
                 right = mid
         return -1
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, i: int) -> Tuple[Union[Tensor, Tuple[Tensor, ...]], Tensor]:
         """
         Returns a batch of activation vectors, as well as a batch of labels
@@ -701,7 +706,7 @@ class TCAV(ConceptInterpreter):
         exp_set_lens = np.array(
             [len(exp_set) for exp_set in experimental_sets], dtype=object
         )
-        exp_set_lens_arg_sort = np.argsort(exp_set_lens)
+        exp_set_lens_arg_sort = np.argsort(exp_set_lens, kind="stable")
 
         # compute offsets using sorted lengths using their indices
         exp_set_lens_sort = exp_set_lens[exp_set_lens_arg_sort]
@@ -783,7 +788,13 @@ class TCAV(ConceptInterpreter):
                 )
                 i += 1
 
-        return scores
+        # Preserve the caller-provided experimental set order in the returned
+        # mapping, even though computation batches sets by concept count.
+        ordered_scores: Dict[str, Dict[str, Dict[str, Tensor]]] = {
+            concepts_to_str(concepts): scores[concepts_to_str(concepts)]
+            for concepts in experimental_sets
+        }
+        return ordered_scores
 
     def _tcav_sub_computation(
         self,

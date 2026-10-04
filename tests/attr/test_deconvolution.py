@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 from __future__ import print_function
@@ -19,6 +24,7 @@ from captum.testing.helpers.basic_models import BasicModel_ConvNet_One_Conv
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_simple_input_conv_deconv(self) -> None:
         net = BasicModel_ConvNet_One_Conv()

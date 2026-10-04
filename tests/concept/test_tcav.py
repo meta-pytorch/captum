@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import glob
@@ -696,6 +701,7 @@ def remove_pkls(path: str) -> None:
         os.remove(pkl_file)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     r"""
     Class for testing the TCAV class through a sequence of operations:
@@ -910,6 +916,7 @@ class Test(BaseTest):
         def forward_hook_wrapper(expected_act: Tensor) -> int:
             # pyre-fixme[2]: Parameter `module` must have a type other than `Any`.
             def forward_hook(module: Any, inp: Tensor, out=None) -> None:
+                # pyrefly: ignore [bad-argument-type, missing-attribute]
                 out = torch.reshape(out, (out.shape[0], -1))
                 self.assertEqual(out.detach().shape[1:], expected_act.shape[1:])
 
@@ -993,6 +1000,37 @@ class Test(BaseTest):
                 for _, tcav_i in tcavs.items():
                     self.assertEqual(tcav_i["sign_count"].shape[0], 2)
                     self.assertEqual(tcav_i["magnitude"].shape[0], 2)
+
+    def test_TCAV_interpret_preserves_experimental_set_order(self) -> None:
+        class MultiConceptClassifier(CustomClassifier):
+            def weights(self) -> Tensor:
+                # pyre-fixme[16]: `MultiConceptClassifier` has no attribute
+                #  `num_features`.
+                return torch.ones(len(self.classes()), self.num_features)
+
+        concepts = [
+            ["striped", "random", "ceo"],
+            ["ceo", "random"],
+            ["striped", "dotted"],
+            ["random", "striped", "dotted"],
+        ]
+        classifier = MultiConceptClassifier()
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tcav, concept_dict = init_TCAV(tmpdirname, classifier, "conv2")
+            experimental_sets = self._create_experimental_sets(concepts, concept_dict)
+
+            scores = tcav.interpret(
+                inputs=100 * get_inputs_tensor(),
+                experimental_sets=experimental_sets,
+                target=0,
+                processes=1,
+            )
+
+            self.assertEqual(
+                list(scores.keys()),
+                [concepts_to_str(concepts) for concepts in experimental_sets],
+            )
 
     # Force Train
     def test_TCAV_1_1_a(self) -> None:

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -48,6 +53,7 @@ class Occlusion(FeatureAblation):
         self.use_weights = True
 
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(  # type: ignore
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
@@ -387,7 +393,10 @@ class Occlusion(FeatureAblation):
 
                 if feature_idx_to_tensor_idx[feature_idx][0] != i:
                     tensor_mask.append(
-                        torch.zeros((1,) + tuple(input_tensor.shape[1:]))
+                        torch.zeros(
+                            (1,) + tuple(input_tensor.shape[1:]),
+                            device=input_tensor.device,
+                        )
                     )
                     continue
                 ablated_feature_num = feature_idx - accumulated_shift_count_prods[i]

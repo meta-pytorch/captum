@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import unittest
@@ -14,6 +19,7 @@ from captum.testing.helpers.classification_models import SigmoidModel, SoftmaxMo
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_sigmoid_classification_vanilla(self) -> None:
         self._assert_sigmoid_classification("vanilla", "riemann_right")

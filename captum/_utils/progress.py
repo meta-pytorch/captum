@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import typing
@@ -21,6 +26,25 @@ from typing_extensions import Self
 
 T = TypeVar("T")
 IterableType = TypeVar("IterableType", covariant=True)
+ProgressCallback = Callable[[Optional[int], float], None]
+
+
+@runtime_checkable
+class ForwardProgressListener(Protocol):
+    """Receives the planned and completed model forwards for an attribution."""
+
+    def on_plan(self, total: int) -> None: ...
+
+    def on_forward_complete(self) -> None: ...
+
+    def on_forward_failed(self) -> None: ...
+
+
+@runtime_checkable
+class SupportsForwardProgressPlan(Protocol):
+    """Attribution algorithm that can predict its model-forward count."""
+
+    def expected_forward_count(self, *args: Any, **kwargs: Any) -> int: ...
 
 
 @runtime_checkable
@@ -31,6 +55,7 @@ class BaseProgress(Protocol):
     Note: This protocol is based on the tqdm type stubs.
     """
 
+    # pyrefly: ignore [not-a-type]
     def __enter__(self) -> Self: ...
 
     def __exit__(
@@ -121,6 +146,7 @@ class NullProgress(IterableProgress[IterableType], Progress):
         for it in iterable:
             yield it
 
+    # pyrefly: ignore [not-a-type]
     def __enter__(self) -> Self:
         return self
 
@@ -169,6 +195,7 @@ def progress(
     mininterval: float = 0.5,
     **kwargs: object,
 ) -> Union[Progress, IterableProgress[IterableType]]:
+    # pyrefly: ignore [bad-return, no-matching-overload]
     return tqdm(
         iterable,
         desc=desc,

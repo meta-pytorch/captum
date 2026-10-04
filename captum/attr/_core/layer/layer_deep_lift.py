@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import typing
 from typing import Any, Callable, cast, Dict, Literal, Optional, Sequence, Tuple, Union
@@ -207,7 +212,7 @@ class LayerDeepLift(LayerAttribution, DeepLift):
                           target for the corresponding example.
 
                         Default: None
-            additional_forward_args (Any, optional): If the forward function
+            additional_forward_args (Any, optional): If the model
                         requires additional arguments other than the inputs for
                         which attributions should not be computed, this argument
                         can be provided. It must be either a single additional
@@ -542,7 +547,7 @@ class LayerDeepLiftShap(LayerDeepLift, DeepLiftShap):
                           target for the corresponding example.
 
                         Default: None
-            additional_forward_args (Any, optional): If the forward function
+            additional_forward_args (Any, optional): If the model
                         requires additional arguments other than the inputs for
                         which attributions should not be computed, this argument
                         can be provided. It must be either a single additional
@@ -682,6 +687,7 @@ class LayerDeepLiftShap(LayerDeepLift, DeepLiftShap):
                 self, inp_bsz, base_bsz, attributions
             )
         if return_convergence_delta:
+            # pyrefly: ignore [unbound-name]
             return attributions, delta
         else:
             return cast(

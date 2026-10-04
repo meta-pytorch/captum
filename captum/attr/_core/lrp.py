@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import typing
@@ -61,6 +66,7 @@ class LRP(GradientAttribution):
         """
         GradientAttribution.__init__(self, model)
         self.model = model
+        self._layers_with_added_rules: List[Module] = []
         self._check_rules()
 
     @property
@@ -198,6 +204,7 @@ class LRP(GradientAttribution):
         self._original_state_dict = self.model.state_dict()
         self.layers = []
         self._get_layers(self.model)
+        self._layers_with_added_rules = []
         self._check_and_attach_rules()
         self.backward_handles: List[RemovableHandle] = []
         self.forward_handles: List[RemovableHandle] = []
@@ -286,6 +293,7 @@ class LRP(GradientAttribution):
                 )
         else:
             summed_attr = _sum_rows(attributions)
+        # pyrefly: ignore [unbound-name]
         return output.flatten() - summed_attr.flatten()
 
     def _get_layers(self, model: Module) -> None:
@@ -305,10 +313,12 @@ class LRP(GradientAttribution):
             elif type(layer) in SUPPORTED_LAYERS_WITH_RULES.keys():
                 layer.activations = {}  # type: ignore
                 layer.rule = SUPPORTED_LAYERS_WITH_RULES[type(layer)]()  # type: ignore
+                self._layers_with_added_rules.append(layer)
                 layer.rule.relevance_input = defaultdict(list)  # type: ignore
                 layer.rule.relevance_output = {}  # type: ignore
             elif type(layer) in SUPPORTED_NON_LINEAR_LAYERS:
                 layer.rule = None  # type: ignore
+                self._layers_with_added_rules.append(layer)
             else:
                 raise TypeError(
                     (
@@ -400,7 +410,7 @@ class LRP(GradientAttribution):
                 layer.rule._handle_output_hook.remove()  # type: ignore
 
     def _remove_rules(self) -> None:
-        for layer in self.layers:
+        for layer in self._layers_with_added_rules:
             if hasattr(layer, "rule"):
                 del layer.rule
 
@@ -437,11 +447,19 @@ SUPPORTED_LAYERS_WITH_RULES = {
     nn.MaxPool1d: EpsilonRule,
     nn.MaxPool2d: EpsilonRule,
     nn.MaxPool3d: EpsilonRule,
+    nn.Conv1d: EpsilonRule,
     nn.Conv2d: EpsilonRule,
+    nn.Conv3d: EpsilonRule,
+    nn.AvgPool1d: EpsilonRule,
     nn.AvgPool2d: EpsilonRule,
+    nn.AvgPool3d: EpsilonRule,
+    nn.AdaptiveAvgPool1d: EpsilonRule,
     nn.AdaptiveAvgPool2d: EpsilonRule,
+    nn.AdaptiveAvgPool3d: EpsilonRule,
     nn.Linear: EpsilonRule,
+    nn.BatchNorm1d: EpsilonRule,
     nn.BatchNorm2d: EpsilonRule,
+    nn.BatchNorm3d: EpsilonRule,
     Addition_Module: EpsilonRule,
 }
 

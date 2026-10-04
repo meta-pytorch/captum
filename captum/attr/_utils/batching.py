@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import typing
 import warnings
@@ -170,6 +175,7 @@ def _batched_generator(
     else:
         for current_total in range(0, num_examples, internal_batch_size):
             with torch.autograd.set_grad_enabled(True):
+                # pyrefly: ignore [no-matching-overload]
                 inputs_splice = _tuple_splice_range(
                     # pyre-fixme[6]: For 1st argument expected `None` but got
                     #  `TensorOrTupleOfTensorsGeneric`.

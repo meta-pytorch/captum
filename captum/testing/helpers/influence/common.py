@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import inspect
 import os
@@ -58,6 +63,7 @@ class ExplicitDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         return (self.samples[idx], self.labels[idx])
 
@@ -629,7 +635,9 @@ class DataInfluenceConstructor:
         else:
             return self.data_influence_class(
                 net,
+                # pyrefly: ignore [bad-argument-type]
                 dataset,
+                # pyrefly: ignore [bad-argument-type]
                 tmpdir,
                 batch_size=batch_size,
                 loss_fn=loss_fn,

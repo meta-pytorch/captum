@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 from __future__ import annotations
@@ -177,6 +182,7 @@ class JITMeta(type):
             ):
                 formatted_inputs = _format_tensor_into_tuples(args["inputs"])
                 additional_args: Tuple[Any, ...] = (
+                    # pyrefly: ignore [bad-assignment]
                     _format_additional_forward_args(args["additional_forward_args"])
                     if "additional_forward_args" in args
                     and args["additional_forward_args"] is not None

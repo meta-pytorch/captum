@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 from typing import cast, Dict, List, Tuple, Union
 
@@ -7,6 +12,7 @@ from captum.attr._utils.baselines import ProductBaselines
 from captum.testing.helpers import BaseTest
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestProductBaselines(BaseTest):
     def test_list(self) -> None:
         baseline_values = [

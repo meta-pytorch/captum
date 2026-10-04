@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import typing
 from typing import cast, Dict, List, Literal, Optional, Tuple, TypeVar, Union
@@ -44,6 +49,7 @@ class LayerLRP(LRP, LayerAttribution):
     Ancona et al. [https://openreview.net/forum?id=Sy21R9JAW].
     """
 
+    # pyrefly: ignore [bad-override-mutable-attribute]
     device_ids: List[int]
     verbose: bool
     layers: List[Module]
@@ -74,6 +80,7 @@ class LayerLRP(LRP, LayerAttribution):
             self.device_ids = cast(List[int], self.model.device_ids)
 
     @typing.overload  # type: ignore
+    # pyrefly: ignore [inconsistent-overload]
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
@@ -89,6 +96,7 @@ class LayerLRP(LRP, LayerAttribution):
     ]: ...
 
     @typing.overload
+    # pyrefly: ignore [inconsistent-overload]
     def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,

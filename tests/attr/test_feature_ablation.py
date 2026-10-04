@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import io
@@ -7,7 +12,7 @@ import threading
 import time
 import unittest
 import unittest.mock
-from typing import Any, cast, List, Tuple, Union
+from typing import Any, Callable, cast, List, Tuple, Union
 
 import torch
 from captum._utils.common import _construct_future_forward
@@ -34,6 +39,7 @@ from captum.testing.helpers.basic_models import (
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     r"""
     The following conversion tests are underlying assumptions
@@ -70,6 +76,40 @@ class Test(BaseTest):
         self._ablation_test_assert(
             ablation_algo, inp, [[80.0, 200.0, 120.0]], perturbations_per_eval=(1, 2, 3)
         )
+
+    def test_forward_plan_matches_batched_sparse_mask_calls(self) -> None:
+        forward_calls = 0
+
+        def counted_forward(inputs: Tensor) -> Tensor:
+            nonlocal forward_calls
+            forward_calls += 1
+            return inputs.sum(dim=1)
+
+        algorithm = FeatureAblation(counted_forward)
+        inputs = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        feature_mask = torch.tensor([[0, 2, 5]])
+        planned = algorithm.expected_forward_count(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+        )
+
+        algorithm.attribute(
+            inputs,
+            feature_mask=feature_mask,
+            perturbations_per_eval=2,
+        )
+
+        self.assertEqual(planned, 3)
+        self.assertEqual(planned, forward_calls)
+
+    def test_subclass_without_exact_planner_is_rejected(self) -> None:
+        class UnsupportedAblation(FeatureAblation):
+            pass
+
+        algorithm = UnsupportedAblation(lambda inputs: inputs.sum(dim=1))
+        with self.assertRaisesRegex(NotImplementedError, "exact forward plan"):
+            algorithm.expected_forward_count(torch.tensor([[1.0, 2.0]]))
 
     def test_simple_ablation_int_to_int(self) -> None:
         ablation_algo = FeatureAblation(BasicModel())
@@ -660,6 +700,70 @@ class Test(BaseTest):
                     perturbations_per_eval=batch_size,
                 )
 
+    def test_run_forward_on_skip_keeps_forward_count_in_lockstep(self) -> None:
+        # Regression test for the distributed NCCL-desync fix: when a per-rank
+        # batch is uneven, a rank-local skip drops a model forward, offsetting the
+        # shard PG's collective count. run_forward_on_skip=True must keep the
+        # forward count identical to the no-skip case so every rank stays in
+        # lockstep, while the skipped group's attribution stays zero.
+        def make_counting_forward() -> Tuple[Callable[..., Tensor], List[int]]:
+            calls: list[int] = [0]
+
+            def forward_func(x1: Tensor, x2: Tensor) -> Tensor:
+                calls[0] += 1
+                return x2.sum(dim=-1)
+
+            return forward_func, calls
+
+        # Feature group 0 lives only in x1; groups 1 and 2 live only in x2.
+        mask = (
+            torch.tensor([[0, 0]]),
+            torch.tensor([[1, 2]]),
+        )
+
+        def build_ablator(forward_func: Callable[..., Tensor]) -> FeatureAblation:
+            ablator = FeatureAblation(forward_func)
+            ablator._min_examples_per_batch_grouped = 2
+            return ablator
+
+        # Baseline: every tensor has batch size >= 2, so no group is skipped.
+        # 1 initial eval + 3 group forwards = 4 forwards.
+        no_skip_forward, no_skip_calls = make_counting_forward()
+        build_ablator(no_skip_forward).attribute(
+            (
+                torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+                torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+            ),
+            feature_mask=mask,
+        )
+        self.assertEqual(no_skip_calls[0], 4)
+
+        # x1 now has batch size 1, so group 0 fires the min-examples skip.
+        uneven_inp = (
+            torch.tensor([[1.0, 2.0]]),
+            torch.tensor([[5.0, 6.0], [7.0, 8.0]]),
+        )
+
+        # With run_forward_on_skip=True, the skipped group still issues a forward,
+        # matching the no-skip count exactly (lockstep).
+        skip_on_forward, skip_on_calls = make_counting_forward()
+        attribs = build_ablator(skip_on_forward).attribute(
+            uneven_inp,
+            feature_mask=mask,
+            run_forward_on_skip=True,
+        )
+        self.assertEqual(skip_on_calls[0], no_skip_calls[0])
+        # The skipped group (feature 0, in x1) keeps its zero-initialized attribution.
+        assertTensorAlmostEqual(
+            self, attribs[0], torch.zeros_like(attribs[0]), delta=0.0
+        )
+
+        # Default behavior (run_forward_on_skip=False) drops the skipped group's
+        # forward, which is exactly the desync this flag fixes.
+        skip_off_forward, skip_off_calls = make_counting_forward()
+        build_ablator(skip_off_forward).attribute(uneven_inp, feature_mask=mask)
+        self.assertEqual(skip_off_calls[0], no_skip_calls[0] - 1)
+
     def test_unassociated_output_3d_tensor(self) -> None:
         def forward_func(inp: Tensor) -> Tensor:
             return torch.ones(1, 5, 3, 2)
@@ -905,6 +1009,7 @@ class Test(BaseTest):
                 assertTensorAlmostEqual(self, attributions, expected_ablation)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestParseForwardOutput(BaseTest):
 
     def test_parse_forward_out_tensor_passthrough(self) -> None:
@@ -935,6 +1040,7 @@ class TestParseForwardOutput(BaseTest):
             _parse_forward_out(None)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestFormatResult(BaseTest):
 
     def test_format_result_single_tensor_no_weights(self) -> None:
@@ -1023,6 +1129,7 @@ class TestFormatResult(BaseTest):
         )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestCheckOutputShapeValid(BaseTest):
     def test_valid_output_shape_scaling(self) -> None:
         inputs = (torch.randn(4, 3),)
@@ -1087,6 +1194,7 @@ class TestCheckOutputShapeValid(BaseTest):
             )
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestShouldSkipInputsAndWarn(BaseTest):
     def test_skip_when_batch_size_less_than_min_examples(self) -> None:
         current_feature_idxs = [0, 1]

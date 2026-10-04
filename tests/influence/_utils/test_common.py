@@ -1,4 +1,7 @@
-# (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 
 # pyre-unsafe
 
@@ -10,6 +13,7 @@ from captum.testing.helpers import BaseTest
 from captum.testing.helpers.basic import assertTensorAlmostEqual
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestCommon(BaseTest):
     def setUp(self) -> None:
         super().setUp()

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import typing
 from typing import Callable, cast, List, Literal, Optional, Tuple, Union
@@ -304,12 +309,16 @@ class IntegratedGradients(GradientAttribution):
             return (
                 cast(
                     TensorOrTupleOfTensorsGeneric,
+                    # pyrefly: ignore [no-matching-overload]
                     _format_output(is_inputs_tuple, attributions),
                 ),
                 delta,
             )
         return cast(
-            TensorOrTupleOfTensorsGeneric, _format_output(is_inputs_tuple, attributions)
+            # pyrefly: ignore [no-matching-overload]
+            TensorOrTupleOfTensorsGeneric,
+            # pyrefly: ignore [no-matching-overload]
+            _format_output(is_inputs_tuple, attributions),
         )
 
     def attribute_future(self) -> None:

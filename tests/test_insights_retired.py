@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
+# pyre-strict
+
+from __future__ import annotations
+
+import unittest
+
+import captum.insights
+from captum.insights import AttributionVisualizer, Batch
+
+
+class TestInsightsRetiredStub(unittest.TestCase):
+    def test_import_insights_module(self) -> None:
+        """The stub keeps the retired names but not their removed methods."""
+        self.assertFalse(hasattr(AttributionVisualizer, "render"))
+        self.assertFalse(hasattr(AttributionVisualizer, "serve"))
+
+    def test_attribution_visualizer_raises(self) -> None:
+        """Instantiating AttributionVisualizer should raise ImportError."""
+        with self.assertRaises(ImportError) as ctx:
+            AttributionVisualizer()
+        self.assertIn("retired", str(ctx.exception).lower())
+        self.assertIn("v0.8.0", str(ctx.exception))
+
+    def test_batch_raises(self) -> None:
+        """Instantiating Batch should raise ImportError."""
+        with self.assertRaises(ImportError) as ctx:
+            Batch()
+        self.assertIn("retired", str(ctx.exception).lower())
+
+    def test_unknown_attr_raises(self) -> None:
+        """Accessing an unknown attribute should raise ImportError."""
+        with self.assertRaises(ImportError) as ctx:
+            captum.insights.SomeNonexistentClass  # noqa: B018
+        self.assertIn("SomeNonexistentClass", str(ctx.exception))
+        self.assertIn("retired", str(ctx.exception).lower())
+
+    def test_error_message_includes_migration_guidance(self) -> None:
+        """Error message should include migration guidance to new API."""
+        with self.assertRaises(ImportError) as ctx:
+            AttributionVisualizer()
+        msg = str(ctx.exception)
+        self.assertIn("visualize_image_attr", msg)
+        self.assertIn("visualize_text", msg)
+        self.assertIn("captum.ai", msg)

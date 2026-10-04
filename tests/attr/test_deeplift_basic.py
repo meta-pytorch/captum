@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 from inspect import signature
@@ -14,6 +19,7 @@ from captum.testing.helpers.basic import (
     BaseTest,
 )
 from captum.testing.helpers.basic_models import (
+    BasicModel_MaxPool_ReLU,
     BasicModelWithReusedModules,
     Conv1dSeqModel,
     LinearMaxPoolLinearModel,
@@ -289,6 +295,39 @@ class Test(BaseTest):
             target=(0, 0),
         )
         self.assertEqual(attr.shape, rand_seq_data.shape)
+
+    def test_deepliftshap_maxpool_relu_nonzero_baselines(self) -> None:
+        model = BasicModel_MaxPool_ReLU().double().eval()
+        input = torch.tensor(
+            [
+                [
+                    [15.4100, -2.9343, -21.7879],
+                    [5.6843, -10.8452, -13.9860],
+                ]
+            ],
+            dtype=torch.float64,
+        )
+        baselines = torch.tensor(
+            [
+                [
+                    [-1.4347, -1.1161, -6.1358],
+                    [0.3159, -4.9268, 2.4841],
+                ],
+                [
+                    [-11.2560, -3.1700, -10.9247],
+                    [-0.8519, 3.2761, -7.6071],
+                ],
+            ],
+            dtype=torch.float64,
+        )
+
+        _, delta = DeepLiftShap(model).attribute(  # type: ignore[has-type]
+            input,
+            baselines,
+            return_convergence_delta=True,
+        )
+
+        assertTensorAlmostEqual(self, delta, torch.zeros_like(delta), 1e-10, "max")
 
     def test_reusable_modules(self) -> None:
         model = BasicModelWithReusedModules()

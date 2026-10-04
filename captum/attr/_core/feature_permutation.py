@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import torch
+from captum._utils.common import (
+    _format_feature_mask,
+    _format_output,
+    _format_tensor_into_tuples,
+)
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._core.feature_ablation import FeatureAblation
+from captum.attr._utils.common import _format_input_baseline
 from captum.log import log_usage
 from torch import Tensor
 from torch.futures import Future
@@ -98,9 +109,44 @@ class FeaturePermutation(FeatureAblation):
         # `_min_examples_per_batch_grouped`.
         self._min_examples_per_batch_grouped = 2
 
+    def expected_forward_count(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        baselines: BaselineType = None,
+        target: TargetType = None,
+        additional_forward_args: object | None = None,
+        feature_mask: Tensor | tuple[Tensor, ...] | None = None,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        run_forward_on_skip: bool = False,
+        n_samples: int = 1,
+        **kwargs: Any,
+    ) -> int:
+        """Return the aggregate forward count across all permutation samples."""
+        if type(self) is not FeaturePermutation:
+            raise NotImplementedError(
+                f"{type(self).__name__} must provide its own exact forward plan."
+            )
+        del baselines
+        assert (
+            isinstance(n_samples, int) and n_samples >= 1
+        ), "n_samples must be an integer and at least 1."
+        del target, additional_forward_args, show_progress
+        formatted_inputs, _ = _format_input_baseline(inputs, None)
+        formatted_feature_mask = _format_feature_mask(feature_mask, formatted_inputs)
+        per_sample = self._expected_forward_count_from_formatted(
+            formatted_inputs,
+            formatted_feature_mask,
+            perturbations_per_eval,
+            run_forward_on_skip,
+            **kwargs,
+        )
+        return n_samples * per_sample
+
     # suppressing error caused by the child class not having a matching
     # signature to the parent
     @log_usage(part_of_slo=True)
+    @torch.no_grad()
     def attribute(  # type: ignore
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
@@ -108,7 +154,9 @@ class FeaturePermutation(FeatureAblation):
         additional_forward_args: Optional[object] = None,
         feature_mask: Union[None, TensorOrTupleOfTensorsGeneric] = None,
         perturbations_per_eval: int = 1,
+        n_samples: int = 1,
         show_progress: bool = False,
+        run_forward_on_skip: bool = False,
         **kwargs: Any,
     ) -> TensorOrTupleOfTensorsGeneric:
         r"""
@@ -199,10 +247,27 @@ class FeaturePermutation(FeatureAblation):
                             If the forward function returns a single scalar per batch,
                             perturbations_per_eval must be set to 1.
                             Default: 1
+                n_samples (int, optional): The number of independent
+                            permutation-attribution estimates to average. Each sample
+                            runs FeaturePermutation once, drawing a fresh random
+                            permutation for every feature group when using the default
+                            permutation function.
+                            Default: 1
                 show_progress (bool, optional): Displays the progress of computation.
                             It will try to use tqdm if available for advanced features
                             (e.g. time estimation). Otherwise, it will fallback to
                             a simple output of progress.
+                            Default: False
+                run_forward_on_skip (bool, optional): When True, a feature group
+                            that would otherwise be skipped (e.g. because a
+                            per-rank batch is smaller than
+                            ``min_examples_per_batch_grouped``) still triggers a
+                            model forward whose result is discarded, so distributed
+                            sharded models keep their collectives (e.g. all-to-all)
+                            in lockstep across ranks. The skipped group's
+                            attribution stays zero. See
+                            :func:`FeatureAblation.attribute` for details. Default
+                            False keeps single-process / OSS behavior unchanged.
                             Default: False
                 **kwargs (Any, optional): Any additional arguments used by child
                             classes of :class:`.FeatureAblation` (such as
@@ -262,6 +327,66 @@ class FeaturePermutation(FeatureAblation):
             >>> attr = feature_perm.attribute(input, target=1,
             >>>                               feature_mask=feature_mask)
         """
+        assert (
+            isinstance(n_samples, int) and n_samples >= 1
+        ), "n_samples must be an integer and at least 1."
+
+        attributions = self._attribute_single_sample(
+            inputs=inputs,
+            target=target,
+            additional_forward_args=additional_forward_args,
+            feature_mask=feature_mask,
+            perturbations_per_eval=perturbations_per_eval,
+            show_progress=show_progress,
+            run_forward_on_skip=run_forward_on_skip,
+            **kwargs,
+        )
+
+        if n_samples == 1:
+            return attributions
+
+        is_attrib_tuple = isinstance(attributions, tuple)
+        formatted_attributions = _format_tensor_into_tuples(attributions)
+        for _ in range(n_samples - 1):
+            current_attributions = self._attribute_single_sample(
+                inputs=inputs,
+                target=target,
+                additional_forward_args=additional_forward_args,
+                feature_mask=feature_mask,
+                perturbations_per_eval=perturbations_per_eval,
+                show_progress=show_progress,
+                run_forward_on_skip=run_forward_on_skip,
+                **kwargs,
+            )
+            formatted_current_attributions = _format_tensor_into_tuples(
+                current_attributions
+            )
+            formatted_attributions = tuple(
+                total + current
+                for total, current in zip(
+                    formatted_attributions, formatted_current_attributions
+                )
+            )
+
+        averaged_attributions = tuple(
+            attribution / n_samples for attribution in formatted_attributions
+        )
+        return cast(
+            TensorOrTupleOfTensorsGeneric,
+            _format_output(is_attrib_tuple, averaged_attributions),
+        )
+
+    def _attribute_single_sample(
+        self,
+        inputs: TensorOrTupleOfTensorsGeneric,
+        target: TargetType = None,
+        additional_forward_args: Optional[object] = None,
+        feature_mask: Union[None, TensorOrTupleOfTensorsGeneric] = None,
+        perturbations_per_eval: int = 1,
+        show_progress: bool = False,
+        run_forward_on_skip: bool = False,
+        **kwargs: Any,
+    ) -> TensorOrTupleOfTensorsGeneric:
         # Remove baselines from kwargs if provided so we don't specify this field
         # twice in the FeatureAblation.attribute call below.
         if isinstance(kwargs, dict) and "baselines" in kwargs:
@@ -275,6 +400,7 @@ class FeaturePermutation(FeatureAblation):
             feature_mask=feature_mask,
             perturbations_per_eval=perturbations_per_eval,
             show_progress=show_progress,
+            run_forward_on_skip=run_forward_on_skip,
             **kwargs,
         )
 

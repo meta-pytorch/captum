@@ -47,9 +47,9 @@ test = [
     "pytest",
     "pytest-cov",
     "parameterized",
-    "black==25.11.0",
+    "black==26.3.1",
     "flake8",
-    "pyre-check-nightly==0.0.101750936314",
+    "pyrefly",
     "usort==1.1.0",
     "ufmt",
 ]
@@ -71,9 +71,11 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-exclude = ["tests", "tests.*"]
+include = ["captum", "captum.*"]
 
 [tool.setuptools.dynamic]
+# This imports captum to read __version__, so build with the same minimum
+# python version as requires-python to avoid syntax errors during import.
 version = { attr = "captum.__version__" }
 
 [tool.usort]
@@ -84,7 +86,6 @@ target-version = ['py310']
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = ["tests/insights"]
 
 [tool.coverage.report]
 omit = ["test/*"]

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import warnings
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
@@ -332,7 +337,10 @@ class NeuronConductance(NeuronAttribution, GradientAttribution):
                 grad_kwargs=grad_kwargs,
             )
         return cast(
-            TensorOrTupleOfTensorsGeneric, _format_output(is_inputs_tuple, attrs)
+            # pyrefly: ignore [no-matching-overload]
+            TensorOrTupleOfTensorsGeneric,
+            # pyrefly: ignore [no-matching-overload]
+            _format_output(is_inputs_tuple, attrs),
         )
 
     def _attribute(

@@ -1,5 +1,10 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
-from typing import Callable, cast, List, Optional
+from typing import Any, Callable, cast, List, Optional
 
 import torch.nn as nn
 from captum._utils.models.model import Model
@@ -355,8 +360,7 @@ class SkLearnLogisticRegression(SkLearnLinearModel):
         super().__init__(sklearn_module="linear_model.LogisticRegression", **kwargs)
 
     # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def fit(self, train_data: DataLoader, **kwargs):
+    def fit(self, train_data: DataLoader, **kwargs: Any):
         return super().fit(train_data=train_data, **kwargs)
 
 

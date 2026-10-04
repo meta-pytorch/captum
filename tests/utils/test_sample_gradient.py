@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 from typing import Callable, List, Tuple
@@ -22,6 +27,7 @@ from torch import Tensor
 from torch.nn import Module
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_sample_grads_linear_sum(self) -> None:
         model = BasicModel_MultiLayer(multi_input_module=True)
@@ -85,6 +91,7 @@ class Test(BaseTest):
                     )
                     assertTensorAlmostEqual(
                         self,
+                        # pyrefly: ignore [missing-attribute]
                         layer.bias.grad,
                         layer.bias.sample_grad[i],  # type: ignore
                         mode="max",

@@ -1,4 +1,7 @@
-# (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 
 # pyre-strict
 
@@ -178,7 +181,7 @@ class InfluenceFunctionBase(DataInfluence):
                     inefficient. We offer an implementation of batch-wise gradient
                     computations w.r.t. to model parameters which is computationally
                     more efficient. This implementation can be enabled by setting the
-                    `sample_wise_grad_per_batch` argument to `True`, and should be
+                    `sample_wise_grads_per_batch` argument to `True`, and should be
                     enabled if and only if the `loss_fn` argument is a "reduction" loss
                     function. For example, `nn.BCELoss(reduction="sum")` would be a
                     valid `loss_fn` if this implementation is enabled (see
@@ -585,6 +588,7 @@ def _compute_dataset_func(
     # names of each param in `params`.
     # Both are needed for calling `_flatten_forward_factory`
     _unflatten_params = _unflatten_params_factory(
+        # pyrefly: ignore [bad-argument-type]
         tuple([param.shape for param in params])
     )
     param_names = _params_to_names(params, model)
@@ -800,7 +804,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
                     inefficient. We offer an implementation of batch-wise gradient
                     computations w.r.t. to model parameters which is computationally
                     more efficient. This implementation can be enabled by setting the
-                    `sample_wise_grad_per_batch` argument to `True`, and should be
+                    `sample_wise_grads_per_batch` argument to `True`, and should be
                     enabled if and only if the `loss_fn` argument is a "reduction" loss
                     function. For example, `nn.BCELoss(reduction="sum")` would be a
                     valid `loss_fn` if this implementation is enabled (see
@@ -953,6 +957,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
             device=torch.device("cpu") if projection_on_cpu else self.model_device
         )
 
+    # pyrefly: ignore [bad-override]
     def compute_intermediate_quantities(
         self,
         inputs_dataset: Union[Tuple[Any, ...], DataLoader],
@@ -1023,6 +1028,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         inputs_dataset = _format_inputs_dataset(inputs_dataset)
 
         if show_progress:
+            # pyrefly: ignore [bad-assignment]
             inputs_dataset = _progress_bar_constructor(
                 self, inputs_dataset, "inputs_dataset", "intermediate quantities"
             )
@@ -1072,6 +1078,7 @@ class NaiveInfluenceFunction(IntermediateQuantitiesInfluenceFunction):
         # sum, depending on `aggregate`
         return _get_dataset_embeddings_intermediate_quantities_influence_function(
             get_batch_embeddings,
+            # pyrefly: ignore [bad-argument-type]
             inputs_dataset,
             aggregate,
         )

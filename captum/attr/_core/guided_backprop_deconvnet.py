@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import warnings
 from typing import cast, List, Optional, Tuple, Union
@@ -103,6 +108,7 @@ class ModifiedReluGradientAttribution(GradientAttribution):
     ) -> Union[Tuple[Tensor], Tensor]:
         to_override_grads = grad_output if self.use_relu_grad_output else grad_input
         if isinstance(to_override_grads, tuple):
+            # pyrefly: ignore [bad-return]
             return tuple(
                 F.relu(to_override_grad) for to_override_grad in to_override_grads  # type: ignore # noqa: E501 line too long
             )

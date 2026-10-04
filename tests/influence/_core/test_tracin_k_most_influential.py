@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import tempfile
@@ -19,6 +24,7 @@ from captum.testing.helpers.influence.common import (
 from parameterized import parameterized
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInGetKMostInfluential(BaseTest):
     param_list: List[
         Tuple[str, DataInfluenceConstructor, bool, bool, int, int, str, bool]
@@ -100,6 +106,7 @@ class TestTracInGetKMostInfluential(BaseTest):
         the calls to wrapper method `influence`.
         """
         with tempfile.TemporaryDirectory() as tmpdir:
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,

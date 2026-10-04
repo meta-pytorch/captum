@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import tempfile
@@ -43,10 +48,12 @@ class RangeDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, idx: int) -> Tensor:
         return self.samples[idx]
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_cosine_with_zeros(self) -> None:
         a = torch.cat((torch.zeros((1, 3, 16, 16)), torch.rand((1, 3, 16, 16))))

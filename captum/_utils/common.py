@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 from enum import Enum
 from functools import reduce
@@ -744,18 +749,15 @@ def _extract_device(
         and (hook_outputs is None or len(hook_outputs) == 0)
         and len(params) == 0
     ):
-        raise RuntimeError(
-            """Unable to extract device information for the module
-            {}. Both inputs and outputs to the forward hook and
+        message = f"""Unable to extract device information for the module
+            {module}. Both inputs and outputs to the forward hook and
             `module.parameters()` are empty.
             The reason that the inputs to the forward hook are empty
             could be due to the fact that the arguments to that
-            module {} are all named and are passed as named
+            module {module} are all named and are passed as named
             variables to its forward function.
-            """.format(
-                module, module
-            )
-        )
+            """
+        raise RuntimeError(message)
     if hook_inputs is not None and len(hook_inputs) > 0:
         return hook_inputs[0].device
     if hook_outputs is not None and len(hook_outputs) > 0:
@@ -866,6 +868,18 @@ def _register_backward_hook(
 ) -> List[torch.utils.hooks.RemovableHandle]:
     grad_out: Dict[device, Tensor] = {}
 
+    def backward_pre_hook(
+        module: Module,
+        grad_output: Union[Tensor, Tuple[Tensor, ...]],
+    ) -> None:
+        if isinstance(grad_output, tuple):
+            assert (
+                len(grad_output) == 1
+            ), "Backward hooks not supported for module with >1 output"
+            grad_out[grad_output[0].device] = grad_output[0]
+        else:
+            grad_out[grad_output.device] = grad_output
+
     def forward_hook(
         module: Module,
         inp: Union[Tensor, Tuple[Tensor, ...]],
@@ -905,10 +919,13 @@ def _register_backward_hook(
             inp.register_hook(input_tensor_hook)
             return inp.clone()
 
-    return [
+    hooks = [
         module.register_forward_pre_hook(pre_hook),
         module.register_forward_hook(forward_hook),
     ]
+    if not getattr(module, "inplace", False):
+        hooks.append(module.register_full_backward_pre_hook(backward_pre_hook))
+    return hooks
 
 
 def _get_max_feature_index(feature_mask: Tuple[Tensor, ...]) -> int:

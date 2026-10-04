@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import copy
@@ -46,6 +51,8 @@ from torch import nn, Tensor
 class DummyTokenizer:
     vocab_size: int = 256
     sos: int = 0
+    pad_token_id: int = sos
+    eos_token_id: int = sos
     unk: int = 1
     sos_str: str = "<sos>"
     special_tokens: Dict[int, str] = {sos: sos_str, unk: "<unk>"}
@@ -249,6 +256,7 @@ class DummyLLM(nn.Module):
         for forward_in_tokens in [True, False]
     ],
 )
+# pyrefly: ignore [invalid-inheritance]
 class TestLLMAttr(BaseTest):
     device: str = "cpu"
     use_cached_outputs: bool = False
@@ -381,6 +389,44 @@ class TestLLMAttr(BaseTest):
         self.assertEqual(res.output_tokens, ["x", "y", "z"])
         self.assertEqual(res.seq_attr.device.type, self.device)
         self.assertEqual(cast(Tensor, res.token_attr).device.type, self.device)
+
+    def test_llm_attr_generation_uses_attention_mask(self) -> None:
+        class RecordingLLM(DummyLLM):
+            generate_kwargs: Dict[str, Any]
+
+            def generate(
+                self,
+                input_ids: Tensor,
+                *args: Any,
+                mock_response: Optional[str] = None,
+                **kwargs: Any,
+            ) -> Tensor:
+                self.generate_kwargs = kwargs
+                return super().generate(
+                    input_ids,
+                    *args,
+                    mock_response=mock_response,
+                    **kwargs,
+                )
+
+        llm = RecordingLLM()
+        llm.to(self.device)
+        tokenizer = DummyTokenizer()
+        fa = FeatureAblation(llm)
+        llm_fa = LLMAttribution(fa, tokenizer)
+
+        inp = TextTemplateInput("{} b {} {} e {}", ["a", "c", "d", "f"])
+        llm_fa.attribute(
+            inp,
+            gen_args={"mock_response": "x y z"},
+            use_cached_outputs=self.use_cached_outputs,
+            forward_in_tokens=self.forward_in_tokens,
+        )
+
+        self.assertIn("attention_mask", llm.generate_kwargs)
+        attention_mask = llm.generate_kwargs["attention_mask"]
+        self.assertTrue(torch.equal(attention_mask, torch.ones_like(attention_mask)))
+        self.assertEqual(llm.generate_kwargs["pad_token_id"], tokenizer.pad_token_id)
 
     def test_llm_attr_fa_log_prob(self) -> None:
         llm = DummyLLM()
@@ -531,6 +577,7 @@ class TestLLMAttr(BaseTest):
 @parameterized_class(
     ("device",), [("cpu",), ("cuda",)] if torch.cuda.is_available() else [("cpu",)]
 )
+# pyrefly: ignore [invalid-inheritance]
 class TestLLMGradAttr(BaseTest):
     device: str = "cpu"
 
@@ -692,6 +739,7 @@ class TestLLMGradAttr(BaseTest):
         self.assertEqual(res.output_tokens, ["m", "n", "o", "p", "q"])
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestVLLMProvider(BaseTest):
     """Test suite for VLLMProvider class."""
 
@@ -1093,6 +1141,7 @@ class DummyRemoteLLMProvider(RemoteLLMProvider):
 @parameterized_class(
     ("device",), [("cpu",), ("cuda",)] if torch.cuda.is_available() else [("cpu",)]
 )
+# pyrefly: ignore [invalid-inheritance]
 class TestRemoteLLMAttr(BaseTest):
     device: str = "cpu"
 

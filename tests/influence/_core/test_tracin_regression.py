@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import os
@@ -28,6 +33,7 @@ from parameterized import parameterized
 from torch import Tensor
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInRegression(BaseTest):
     def _test_tracin_regression_setup(
         self, tmpdir: str, features: int, use_gpu: bool = False

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-# pyre-strict
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 
 import random
 import warnings
@@ -192,8 +196,10 @@ class DefaultClassifier(Classifier):
         self.lm.fit(DataLoader(TensorDataset(x_train, y_train)))
 
         predict = self.lm(x_test)
+        classes = self.lm.classes()
+        assert classes is not None
 
-        predict = self.lm.classes()[torch.argmax(predict, dim=1).cpu()]  # type: ignore
+        predict = _predict_classes(predict, classes)
         score = predict.long() == y_test.long().cpu()
 
         accs = score.float().mean()
@@ -233,6 +239,12 @@ class DefaultClassifier(Classifier):
             the model in the `train_and_eval` method.
         """
         return self.lm.classes().detach().numpy()  # type: ignore
+
+
+def _predict_classes(predict: Tensor, classes: Tensor) -> Tensor:
+    if len(classes) == 2 and predict.shape[1] == 1:
+        predict = torch.cat([-predict, predict], dim=1)
+    return classes[torch.argmax(predict, dim=1).cpu()]
 
 
 def _train_test_split(

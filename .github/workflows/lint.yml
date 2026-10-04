@@ -14,7 +14,6 @@ jobs:
     with:
       runner: linux.12xlarge
       docker-image: cimg/python:3.11
-      repository: pytorch/captum
       script: |
         sudo chmod -R 777 .
         ./scripts/install_via_pip.sh

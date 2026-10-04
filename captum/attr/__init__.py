@@ -10,7 +10,11 @@ from captum.attr._core.guided_backprop_deconvnet import Deconvolution, GuidedBac
 from captum.attr._core.guided_grad_cam import GuidedGradCam
 from captum.attr._core.input_x_gradient import InputXGradient
 from captum.attr._core.integrated_gradients import IntegratedGradients
-from captum.attr._core.kernel_shap import KernelShap
+from captum.attr._core.kernel_shap import (
+    BaselineKernelShap,
+    KernelShap,
+    RandomBaselineKernelShap,
+)
 from captum.attr._core.layer.grad_cam import LayerGradCam
 from captum.attr._core.layer.internal_influence import InternalInfluence
 from captum.attr._core.layer.layer_activation import LayerActivation
@@ -66,6 +70,7 @@ from captum.attr._utils.class_summarizer import ClassSummarizer
 from captum.attr._utils.interpretable_input import (
     ImageMaskInput,
     InterpretableInput,
+    TextSegmentInput,
     TextTemplateInput,
     TextTokenInput,
 )
@@ -106,7 +111,9 @@ __all__ = [
     "LimeBase",
     "Lime",
     "LRP",
+    "BaselineKernelShap",
     "KernelShap",
+    "RandomBaselineKernelShap",
     "LayerConductance",
     "LayerGradientXActivation",
     "LayerActivation",
@@ -140,6 +147,7 @@ __all__ = [
     "GradientShap",
     "ImageMaskInput",
     "InterpretableEmbeddingBase",
+    "TextSegmentInput",
     "TextTemplateInput",
     "TextTokenInput",
     "TokenReferenceBase",

@@ -1,3 +1,8 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import tempfile
@@ -21,6 +26,7 @@ from parameterized import parameterized
 from torch.utils.data import DataLoader
 
 
+# pyrefly: ignore [invalid-inheritance]
 class TestTracInDataLoader(BaseTest):
     """
     This tests that the influence score computed when a Dataset is fed to the
@@ -79,6 +85,7 @@ class TestTracInDataLoader(BaseTest):
 
             batch_size = 5
 
+            # pyrefly: ignore [bad-unpacking]
             (
                 net,
                 train_dataset,

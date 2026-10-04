@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 from typing import cast, Tuple
@@ -20,6 +25,7 @@ from captum.testing.helpers.basic_models import BasicLinearModel, BasicModel2
 from captum.testing.helpers.classification_models import SoftmaxModel
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
 
     # This test reproduces some of the test cases from the original implementation

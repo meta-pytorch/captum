@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
 import typing
@@ -9,6 +14,7 @@ import torch
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr import (
     DeepLift,
+    FeatureAblation,
     GradientShap,
     GuidedBackprop,
     IntegratedGradients,
@@ -61,6 +67,7 @@ def _perturb_func(
     return perturbed_input1, input2 + perturb_ratio(input2)
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_basic_sensitivity_max_single(self) -> None:
         model = BasicModel2()
@@ -276,6 +283,40 @@ class Test(BaseTest):
             max_examples_per_batch=30,
         )
         assertTensorAlmostEqual(self, sens1, sens2)
+
+    def test_sensitivity_max_with_feature_mask(self) -> None:
+        r"""
+        Test that sensitivity_max correctly expands feature_mask
+        when batching perturbed inputs.
+        """
+        model = BasicModel_MultiLayer()
+        input = torch.arange(1.0, 7.0).view(2, 3)
+        feature_mask = torch.tensor([[0, 0, 1], [0, 1, 1]])
+        target: List[int] = [0, 0]
+
+        fa = FeatureAblation(model)
+
+        sens1 = sensitivity_max(
+            fa.attribute,
+            input,
+            perturb_func=_perturb_func,
+            target=target,
+            feature_mask=feature_mask,
+            n_perturb_samples=5,
+        )
+        self.assertEqual(sens1.shape, torch.Size([2]))
+
+        # Verify batched computation gives the same result
+        sens2 = sensitivity_max(
+            fa.attribute,
+            input,
+            perturb_func=_perturb_func,
+            target=target,
+            feature_mask=feature_mask,
+            n_perturb_samples=5,
+            max_examples_per_batch=2,
+        )
+        assertTensorAlmostEqual(self, sens1, sens2, 0.0)
 
     def sensitivity_max_assert(
         self,

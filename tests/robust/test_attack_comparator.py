@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-unsafe
 import collections
 from typing import Dict, List, Tuple, Union
@@ -64,6 +69,7 @@ class SamplePerturb:
         return mask * inp
 
 
+# pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
     def test_attack_comparator_basic(self) -> None:
         model = BasicModel()

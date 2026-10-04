@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import threading
 import typing
@@ -59,13 +64,10 @@ def apply_gradient_requirements(
             hasattr(inputs_dtype, "is_complex") and inputs_dtype.is_complex
         ):
             if warn:
-                warnings.warn(
-                    """Input Tensor %d has a dtype of %s.
+                message = f"""Input Tensor {index} has a dtype of {inputs_dtype}.
                     Gradients cannot be activated
                     for these data types."""
-                    % (index, str(inputs_dtype)),
-                    stacklevel=2,
-                )
+                warnings.warn(message, stacklevel=2)
         elif not input.requires_grad:
             if warn:
                 warnings.warn(
@@ -207,6 +209,7 @@ def _forward_layer_eval(
     attribute_to_layer_input: bool = False,
     grad_enabled: bool = False,
 ) -> Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]:
+    # pyrefly: ignore [no-matching-overload]
     return _forward_layer_eval_with_neuron_grads(
         forward_fn,
         inputs,
@@ -298,10 +301,21 @@ def _forward_layer_distributed_eval(
         # pyre-fixme[2]: Parameter must be annotated.
         def forward_hook(module, inp, out=None):
             eval_tsrs = inp if attribute_to_layer_input else out
-            is_eval_tuple_or_list = isinstance(eval_tsrs, (tuple, list))
+            raw_eval_tsrs = eval_tsrs
+            is_eval_tuple_or_list = isinstance(raw_eval_tsrs, (tuple, list))
 
             if not is_eval_tuple_or_list:
                 eval_tsrs = (eval_tsrs,)
+            else:
+                eval_tsrs = tuple(
+                    eval_tsr
+                    for eval_tsr in raw_eval_tsrs
+                    if isinstance(eval_tsr, Tensor)
+                )
+            assert len(eval_tsrs) > 0, (
+                "Forward hook did not obtain any tensor inputs or outputs for "
+                "given layer."
+            )
             if require_layer_grads:
                 apply_gradient_requirements(eval_tsrs, warn=False)
             with lock:
@@ -312,13 +326,25 @@ def _forward_layer_distributed_eval(
                     saved_layer[original_module][eval_tsrs[0].device] = eval_tsrs
                     if not is_eval_tuple_or_list:
                         eval_tsrs_to_return = eval_tsrs[0].clone()
-                    elif isinstance(eval_tsrs, list):
+                    elif isinstance(raw_eval_tsrs, list):
+                        eval_tsr_iter = iter(eval_tsr.clone() for eval_tsr in eval_tsrs)
                         eval_tsrs_to_return = [
-                            eval_tsr.clone() for eval_tsr in eval_tsrs
+                            (
+                                next(eval_tsr_iter)
+                                if isinstance(eval_tsr, Tensor)
+                                else eval_tsr
+                            )
+                            for eval_tsr in raw_eval_tsrs
                         ]
                     else:
+                        eval_tsr_iter = iter(eval_tsr.clone() for eval_tsr in eval_tsrs)
                         eval_tsrs_to_return = tuple(
-                            eval_tsr.clone() for eval_tsr in eval_tsrs
+                            (
+                                next(eval_tsr_iter)
+                                if isinstance(eval_tsr, Tensor)
+                                else eval_tsr
+                            )
+                            for eval_tsr in raw_eval_tsrs
                         )
                     return eval_tsrs_to_return
                 else:
@@ -436,8 +462,6 @@ def _forward_layer_eval_with_neuron_grads(
 
 
 @typing.overload
-# pyre-fixme[43]: The implementation of `_forward_layer_eval_with_neuron_grads` does
-#  not accept all possible arguments of overload defined on line `405`.
 def _forward_layer_eval_with_neuron_grads(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -468,8 +492,7 @@ def _forward_layer_eval_with_neuron_grads(
 
 
 def _forward_layer_eval_with_neuron_grads(
-    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
-    forward_fn: Callable,
+    forward_fn: Callable[..., object],
     inputs: Union[Tensor, Tuple[Tensor, ...]],
     layer: ModuleOrModuleList,
     additional_forward_args: Optional[object] = None,
@@ -539,7 +562,7 @@ def _forward_layer_eval_with_neuron_grads(
 
 @typing.overload
 # pyre-fixme[43]: The implementation of `compute_layer_gradients_and_eval` does not
-#  accept all possible arguments of overload defined on line `486`.
+#  accept all possible arguments of this overload.
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -555,12 +578,13 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...], Tuple[Tensor, ...]]: ...
 
 
 @typing.overload
 # pyre-fixme[43]: The implementation of `compute_layer_gradients_and_eval` does not
-#  accept all possible arguments of overload defined on line `502`.
+#  accept all possible arguments of this overload.
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -574,12 +598,13 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Tuple[List[Tuple[Tensor, ...]], List[Tuple[Tensor, ...]]]: ...
 
 
 @typing.overload
 # pyre-fixme[43]: The implementation of `compute_layer_gradients_and_eval` does not
-#  accept all possible arguments of overload defined on line `517`.
+#  accept all possible arguments of this overload.
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
@@ -593,13 +618,14 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...]]: ...
 
 
 def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_fn: Callable,
-    layer: ModuleOrModuleList,
+    layer: Module | list[Module],
     inputs: Union[Tensor, Tuple[Tensor, ...]],
     target_ind: TargetType = None,
     additional_forward_args: Optional[object] = None,
@@ -612,6 +638,7 @@ def compute_layer_gradients_and_eval(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     output_fn: Union[None, Callable] = None,
     grad_kwargs: Optional[Dict[str, Any]] = None,
+    offload_to_cpu: bool = False,
 ) -> Union[
     Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...]],
     Tuple[Tuple[Tensor, ...], Tuple[Tensor, ...], Tuple[Tensor, ...]],
@@ -666,13 +693,16 @@ def compute_layer_gradients_and_eval(
         - **evals**:
             Target layer output for given input.
     """
+    all_layers: List[Module] = [layer] if isinstance(layer, Module) else layer
+
     with torch.autograd.set_grad_enabled(True):
         # saved_layer is a dictionary mapping device to a tuple of
         # layer evaluations on that device.
+        saved_layer: Dict[Module, Dict[device, Tuple[Tensor, ...]]]
         saved_layer, output = _forward_layer_distributed_eval(
             forward_fn,
             inputs,
-            layer,
+            all_layers,
             target_ind=target_ind,
             additional_forward_args=additional_forward_args,
             attribute_to_layer_input=attribute_to_layer_input,
@@ -693,35 +723,39 @@ def compute_layer_gradients_and_eval(
             list(next(iter(saved_layer.values())).keys()), device_ids
         )
         all_outputs: Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]
+
+        def _get_layer_output(
+            single_layer: Module, device_id: device
+        ) -> Tuple[Tensor, ...]:
+            layer_out = saved_layer[single_layer][device_id]
+            if output_fn is not None:
+                layer_out = output_fn(layer_out)
+            # When offloading to CPU, move tensors before reduction (torch.cat)
+            # to avoid GPU OOM. This is safe because all_outputs is not used by
+            # torch.autograd.grad, which reads from saved_layer directly.
+            if offload_to_cpu:
+                layer_out = tuple(t.detach().cpu() for t in layer_out)
+            return layer_out
+
+        # Build all_outputs before backward pass. _get_layer_output detaches
+        # and moves tensors to CPU when offload_to_cpu is set, so these copies
+        # do not participate in the autograd graph and won't affect GPU memory
+        # during torch.autograd.grad (which reads from saved_layer directly).
         if isinstance(layer, Module):
             all_outputs = _reduce_list(
-                [
-                    (
-                        saved_layer[layer][device_id]
-                        if output_fn is None
-                        else output_fn(saved_layer[layer][device_id])
-                    )
-                    for device_id in key_list
-                ]
+                [_get_layer_output(layer, device_id) for device_id in key_list]
             )
         else:
             all_outputs = [
                 _reduce_list(
                     [
-                        (
-                            saved_layer[single_layer][device_id]
-                            if output_fn is None
-                            else output_fn(saved_layer[single_layer][device_id])
-                        )
+                        _get_layer_output(single_layer, device_id)
                         for device_id in key_list
                     ]
                 )
                 for single_layer in layer
             ]
-        # pyre-fixme[9]: all_layers has type `List[Module]`; used as
-        #  `Union[List[Variable[ModuleOrModuleList <: [Module, List[Module]]]],
-        #  Variable[ModuleOrModuleList <: [Module, List[Module]]]]`.
-        all_layers: List[Module] = [layer] if isinstance(layer, Module) else layer
+
         grad_inputs = tuple(
             layer_tensor
             for single_layer in all_layers
@@ -733,6 +767,19 @@ def compute_layer_gradients_and_eval(
             inputs=grad_inputs,
             **grad_kwargs or {},
         )
+
+        # When grad_kwargs sets ``allow_unused=True`` (e.g. layer attribution
+        # for multi-task models where some target layers are not connected to
+        # the selected output), ``torch.autograd.grad`` returns ``None`` for
+        # any input that did not contribute to the output. The mathematically
+        # correct gradient in that case is a zero tensor with the same shape
+        # as the layer output. Substitute zeros here so downstream consumers
+        # (e.g. ``_reduce_list``) keep their Tensor-only invariant intact.
+        if any(g is None for g in saved_grads):
+            saved_grads = tuple(
+                torch.zeros_like(layer_tensor) if grad is None else grad
+                for grad, layer_tensor in zip(saved_grads, grad_inputs)
+            )
 
         offset = 0
         all_grads: List[Tuple[Tensor, ...]] = []
@@ -750,7 +797,13 @@ def compute_layer_gradients_and_eval(
                     output_fn(curr_saved_grad) for curr_saved_grad in curr_saved_grads
                 ]
 
-            all_grads.append(_reduce_list(curr_saved_grads))
+            reduced = _reduce_list(curr_saved_grads)
+            # When offloading to CPU, move gradient tensors after reduction
+            # (torch.cat) since reducing on GPU first is slightly more
+            # memory-efficient than moving individual tensors before reduction.
+            if offload_to_cpu:
+                reduced = tuple(t.cpu() for t in reduced)
+            all_grads.append(reduced)
 
         layer_grads: Union[Tuple[Tensor, ...], List[Tuple[Tensor, ...]]]
         layer_grads = all_grads
@@ -909,7 +962,9 @@ def _compute_jacobian_wrt_params_with_sample_wise_trick(
     batch trick to fully vectorize the Jacobian calculation. Currently, only
     linear and conv2d layers are supported.
 
-    User must `add_hooks(model)` before calling this function.
+    Hooks required for sample-wise gradients are registered and removed internally.
+    Users do not need to call `SampleGradientWrapper.add_hooks()` before calling
+    this function.
 
     Args:
         model (torch.nn.Module): The trainable model providing the forward pass

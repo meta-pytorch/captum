@@ -1,5 +1,0 @@
-{
-  "load_extensions": {
-    "jupyter-captum-insights/extension": true
-  }
-}

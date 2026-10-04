@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 import typing
 from typing import Any, Callable, cast, Dict, List, Literal, Optional, Tuple, Union
@@ -319,7 +324,9 @@ class LayerConductance(LayerAttribution, GradientAttribution):
                 target=target,
                 additional_forward_args=additional_forward_args,
             )
+            # pyrefly: ignore [no-matching-overload]
             return _format_output(is_layer_tuple, attributions), delta
+        # pyrefly: ignore [no-matching-overload]
         return _format_output(is_layer_tuple, attributions)
 
     def _attribute(
