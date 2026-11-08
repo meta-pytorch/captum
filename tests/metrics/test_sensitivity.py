@@ -318,6 +318,40 @@ class Test(BaseTest):
         )
         assertTensorAlmostEqual(self, sens1, sens2, 0.0)
 
+    def test_sensitivity_max_mixed_scalar_and_tensor_baselines(self) -> None:
+        r"""
+        Tests that sensitivity_max properly expands baselines when some inputs
+        use scalar baselines and others use per-example tensor baselines.
+        """
+        def model(x: Tensor, y: Tensor) -> Tensor:
+            return x.sum(dim=1) + 2 * y.sum(dim=1)
+
+        def perturb(inputs: Tuple[Tensor, ...]) -> Tuple[Tensor, ...]:
+            return tuple(x + 0.25 for x in inputs)
+
+        inputs = (
+            torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+            torch.tensor([[5.0, 6.0], [8.0, 10.0]]),
+        )
+        ig = IntegratedGradients(model)
+        sens_single = sensitivity_max(
+            ig.attribute,
+            inputs,
+            baselines=(0, torch.tensor([[1.0, 2.0], [3.0, 4.0]])),
+            perturb_func=perturb,
+            n_perturb_samples=1,
+            n_steps=2,
+        )
+        sens_multi = sensitivity_max(
+            ig.attribute,
+            inputs,
+            baselines=(0, torch.tensor([[1.0, 2.0], [3.0, 4.0]])),
+            perturb_func=perturb,
+            n_perturb_samples=3,
+            n_steps=2,
+        )
+        assertTensorAlmostEqual(self, sens_multi, sens_single, 1e-4)
+
     def sensitivity_max_assert(
         self,
         expl_func: Callable[..., Union[Tensor, Tuple[Tensor, ...]]],
