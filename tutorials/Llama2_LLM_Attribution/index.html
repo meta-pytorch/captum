@@ -93,13 +93,13 @@
 <div class="prompt input_prompt">In [1]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
-<span class="kn">import</span> <span class="nn">bitsandbytes</span> <span class="k">as</span> <span class="nn">bnb</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">BitsAndBytesConfig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bitsandbytes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bnb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">BitsAndBytesConfig</span>
 
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FeatureAblation</span><span class="p">,</span> 
     <span class="n">ShapleyValues</span><span class="p">,</span>
     <span class="n">LayerIntegratedGradients</span><span class="p">,</span> 
@@ -130,7 +130,7 @@
 <div class="prompt input_prompt">In [2]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">bnb_config</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">bnb_config</span><span class="p">):</span>
     <span class="n">n_gpus</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span>
     <span class="n">max_memory</span> <span class="o">=</span> <span class="s2">"10000MB"</span>
 
@@ -147,7 +147,7 @@
 
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">tokenizer</span>
 
-<span class="k">def</span> <span class="nf">create_bnb_config</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_bnb_config</span><span class="p">():</span>
     <span class="n">bnb_config</span> <span class="o">=</span> <span class="n">BitsAndBytesConfig</span><span class="p">(</span>
         <span class="n">load_in_4bit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">bnb_4bit_use_double_quant</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -179,10 +179,10 @@
 <div class="output">
 <div class="output_area">
 <div class="prompt"></div>
-<div id="32dc9f87-729d-47c4-9080-55d416c08568"></div>
+<div id="66395a0a-22b4-4366-9737-251f337fd01b"></div>
 <div class="output_subarea output_widget_view">
 <script type="text/javascript">
-var element = $('#32dc9f87-729d-47c4-9080-55d416c08568');
+var element = $('#66395a0a-22b4-4366-9737-251f337fd01b');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "ef21b44fb6dd43c38da954a23fa3d867", "version_major": 2, "version_minor": 0}
@@ -512,7 +512,7 @@ attr to the output tokens: torch.Size([15, 18])
 <div class="prompt input_prompt">In [13]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">prompt_fn</span><span class="p">(</span><span class="o">*</span><span class="n">examples</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prompt_fn</span><span class="p">(</span><span class="o">*</span><span class="n">examples</span><span class="p">):</span>
     <span class="n">main_prompt</span> <span class="o">=</span> <span class="s2">"Decide if the following movie review enclosed in quotes is Positive or Negative:</span><span class="se">\n</span><span class="s2">'I really liked the Avengers, it had a captivating plot!'</span><span class="se">\n</span><span class="s2">Reply only Positive or Negative."</span>
     <span class="n">subset</span> <span class="o">=</span> <span class="p">[</span><span class="n">elem</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">examples</span> <span class="k">if</span> <span class="n">elem</span><span class="p">]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">subset</span><span class="p">:</span>

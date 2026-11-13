@@ -37,13 +37,13 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span><span class="p">,</span> <span class="n">shorten</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">textwrap</span><span class="w"> </span><span class="kn">import</span> <span class="n">dedent</span><span class="p">,</span> <span class="n">shorten</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">cast</span><span class="p">,</span>
@@ -56,35 +56,35 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">mcolors</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">TokenizerLike</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.feature_ablation</span> <span class="kn">import</span> <span class="n">FeatureAblation</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.kernel_shap</span> <span class="kn">import</span> <span class="n">KernelShap</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.layer.layer_gradient_shap</span> <span class="kn">import</span> <span class="n">LayerGradientShap</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.layer.layer_gradient_x_activation</span> <span class="kn">import</span> <span class="n">LayerGradientXActivation</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.layer.layer_integrated_gradients</span> <span class="kn">import</span> <span class="n">LayerIntegratedGradients</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.lime</span> <span class="kn">import</span> <span class="n">Lime</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.remote_provider</span> <span class="kn">import</span> <span class="n">RemoteLLMProvider</span>
-<span class="kn">from</span> <span class="nn">captum.attr._core.shapley_value</span> <span class="kn">import</span> <span class="n">ShapleyValues</span><span class="p">,</span> <span class="n">ShapleyValueSampling</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.attribution</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mcolors</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TokenizerLike</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.feature_ablation</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureAblation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.kernel_shap</span><span class="w"> </span><span class="kn">import</span> <span class="n">KernelShap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.layer.layer_gradient_shap</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerGradientShap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.layer.layer_gradient_x_activation</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerGradientXActivation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.layer.layer_integrated_gradients</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerIntegratedGradients</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.lime</span><span class="w"> </span><span class="kn">import</span> <span class="n">Lime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.remote_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">RemoteLLMProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._core.shapley_value</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShapleyValues</span><span class="p">,</span> <span class="n">ShapleyValueSampling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.attribution</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Attribution</span><span class="p">,</span>
     <span class="n">GradientAttribution</span><span class="p">,</span>
     <span class="n">PerturbationAttribution</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.interpretable_input</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.interpretable_input</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ImageMaskInput</span><span class="p">,</span>
     <span class="n">InterpretableInput</span><span class="p">,</span>
     <span class="n">TextTemplateInput</span><span class="p">,</span>
     <span class="n">TextTokenInput</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.visualization</span> <span class="kn">import</span> <span class="n">draw_mask_border</span><span class="p">,</span> <span class="n">draw_mask_legend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_mask_border</span><span class="p">,</span> <span class="n">draw_mask_legend</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">Figure</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">Figure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
 <span class="n">DEFAULT_GEN_ARGS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"max_new_tokens"</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
@@ -97,7 +97,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="LLMAttributionResult">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttributionResult">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">LLMAttributionResult</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LLMAttributionResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Data class for the return result of LLMAttribution,</span>
 <span class="sd">    which includes the necessary properties of the attribution.</span>
@@ -112,7 +112,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_output_probs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">inp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InterpretableInput</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">input_tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -135,11 +135,11 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">inp</span> <span class="o">=</span> <span class="n">inp</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">seq_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seq_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seq_attr</span>
 
     <span class="nd">@seq_attr</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">seq_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seq_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seq_attr</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_seq_attr</span> <span class="o">=</span> <span class="n">seq_attr</span>
         <span class="k">else</span><span class="p">:</span>
@@ -152,11 +152,11 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">),</span> <span class="s2">"seq_attr and input_tokens must have the same length"</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">token_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">token_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token_attr</span>
 
     <span class="nd">@token_attr</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">token_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_attr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">token_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_attr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">token_attr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_token_attr</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">token_attr</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
@@ -179,11 +179,11 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">output_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_probs</span>
 
     <span class="nd">@output_probs</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">output_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_probs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_probs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">output_probs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_output_probs</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_probs</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
@@ -200,12 +200,12 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">),</span> <span class="s2">"seq_attr and input_tokens must have the same length"</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">seq_attr_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seq_attr_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_attr</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">)}</span>
 
 <div class="viewcode-block" id="LLMAttributionResult.plot_token_attr">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttributionResult.plot_token_attr">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_token_attr</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_token_attr</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">"Figure"</span><span class="p">,</span> <span class="s2">"Axes"</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -235,7 +235,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="c1"># always keep 0 as the mid point to differentiate pos/neg attr</span>
         <span class="n">max_abs_attr_val</span> <span class="o">=</span> <span class="n">token_attr</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
@@ -304,7 +304,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMAttributionResult.plot_seq_attr">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttributionResult.plot_seq_attr">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_seq_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">"Figure"</span><span class="p">,</span> <span class="s2">"Axes"</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_seq_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">"Figure"</span><span class="p">,</span> <span class="s2">"Axes"</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generate a matplotlib plot for visualising the attribution</span>
 <span class="sd">        of the output sequence.</span>
@@ -320,7 +320,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                customization.</span>
 <span class="sd">        """</span>
 
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
@@ -371,7 +371,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMAttributionResult.plot_image_heatmap">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttributionResult.plot_image_heatmap">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_image_heatmap</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_image_heatmap</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">target_token_pos</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -409,7 +409,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">ImageMaskInput</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"plot_image_heatmap is only available for ImageMaskInput"</span><span class="p">)</span>
 
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
         <span class="k">if</span> <span class="n">target_token_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_attr</span>
@@ -483,7 +483,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_get_plot_color_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">mcolors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_plot_color_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">mcolors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="p">:</span>
         <span class="c1"># stays unified with the color convention used in Captum</span>
         <span class="c1"># https://github.com/meta-pytorch/captum/blob/master/captum/attr/_utils/visualization.py</span>
         <span class="k">return</span> <span class="n">mcolors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span>
@@ -492,12 +492,12 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">def</span> <span class="nf">_clean_up_pretty_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_clean_up_pretty_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Remove newlines and leading/trailing whitespace from token."""</span>
     <span class="k">return</span> <span class="n">token</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">n"</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">_encode_with_offsets</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_encode_with_offsets</span><span class="p">(</span>
     <span class="n">txt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
     <span class="n">add_special_tokens</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -529,7 +529,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">input_ids</span><span class="p">,</span> <span class="n">offset_mapping_corrected</span>
 
 
-<span class="k">def</span> <span class="nf">_convert_ids_to_pretty_tokens</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_convert_ids_to_pretty_tokens</span><span class="p">(</span>
     <span class="n">ids</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -586,7 +586,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">pretty_tokens</span>
 
 
-<span class="k">def</span> <span class="nf">_convert_ids_to_pretty_tokens_fallback</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_convert_ids_to_pretty_tokens_fallback</span><span class="p">(</span>
     <span class="n">ids</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""</span>
@@ -621,7 +621,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">pretty_tokens</span>
 
 
-<span class="k">class</span> <span class="nc">BaseLLMAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseLLMAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Base class for LLM Attribution methods"""</span>
 
     <span class="n">SUPPORTED_INPUTS</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">InterpretableInput</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
@@ -631,7 +631,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span>
     <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attr_method</span><span class="p">:</span> <span class="n">Attribution</span><span class="p">,</span>
         <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
@@ -654,7 +654,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">else</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">device</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_target_tokens</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_target_tokens</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -700,7 +700,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="p">)</span>
         <span class="k">return</span> <span class="n">target_tokens</span>
 
-    <span class="k">def</span> <span class="nf">_update_model_input_for_generation</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_model_input_for_generation</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">model_inp</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">gen_args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">input_ids</span> <span class="o">=</span> <span class="n">model_inp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"input_ids"</span><span class="p">)</span>
@@ -714,7 +714,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">if</span> <span class="n">pad_token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">gen_args</span><span class="p">[</span><span class="s2">"pad_token_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pad_token_id</span>
 
-    <span class="k">def</span> <span class="nf">_format_model_input</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_format_model_input</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">model_input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -742,7 +742,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMAttribution">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttribution">[docs]</a>
-<span class="k">class</span> <span class="nc">LLMAttribution</span><span class="p">(</span><span class="n">BaseLLMAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LLMAttribution</span><span class="p">(</span><span class="n">BaseLLMAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Attribution class for large language models. It wraps a perturbation-based</span>
 <span class="sd">    attribution algorthm to produce commonly interested attribution</span>
@@ -767,7 +767,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
     <span class="n">SUPPORTED_INPUTS</span> <span class="o">=</span> <span class="p">(</span><span class="n">TextTemplateInput</span><span class="p">,</span> <span class="n">TextTokenInput</span><span class="p">,</span> <span class="n">ImageMaskInput</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attr_method</span><span class="p">:</span> <span class="n">PerturbationAttribution</span><span class="p">,</span>
         <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
@@ -804,7 +804,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">),</span> <span class="s2">"attr_target should be either 'log_prob' or 'prob'"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attr_target</span> <span class="o">=</span> <span class="n">attr_target</span>
 
-    <span class="k">def</span> <span class="nf">_forward_func_by_seq</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_func_by_seq</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
@@ -867,7 +867,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">target_probs</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_target</span> <span class="o">!=</span> <span class="s2">"log_prob"</span> <span class="k">else</span> <span class="n">target_log_probs</span>
 
-    <span class="k">def</span> <span class="nf">_forward_func_by_tokens</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_func_by_tokens</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
@@ -982,7 +982,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">target_probs</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_target</span> <span class="o">!=</span> <span class="s2">"log_prob"</span> <span class="k">else</span> <span class="n">target_log_probs</span>
 
-    <span class="k">def</span> <span class="nf">_forward_func</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_func</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
@@ -1008,7 +1008,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMAttribution.attribute">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttribution.attribute">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1109,7 +1109,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMAttribution.attribute_future">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMAttribution.attribute_future">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">LLMAttributionResult</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">LLMAttributionResult</span><span class="p">]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This method is not implemented for LLMAttribution.</span>
 <span class="sd">        """</span>
@@ -1122,7 +1122,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMGradientAttribution">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMGradientAttribution">[docs]</a>
-<span class="k">class</span> <span class="nc">LLMGradientAttribution</span><span class="p">(</span><span class="n">BaseLLMAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LLMGradientAttribution</span><span class="p">(</span><span class="n">BaseLLMAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Attribution class for large language models. It wraps a gradient-based</span>
 <span class="sd">    attribution algorthm to produce commonly interested attribution</span>
@@ -1142,7 +1142,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
     <span class="n">SUPPORTED_INPUTS</span> <span class="o">=</span> <span class="p">(</span><span class="n">TextTokenInput</span><span class="p">,)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attr_method</span><span class="p">:</span> <span class="n">GradientAttribution</span><span class="p">,</span>
         <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
@@ -1162,7 +1162,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMGradientAttribution.attribute">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMGradientAttribution.attribute">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1248,7 +1248,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="LLMGradientAttribution.attribute_future">
 <a class="viewcode-back" href="../../../../llm_attr.html#captum.attr.LLMGradientAttribution.attribute_future">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">LLMAttributionResult</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">LLMAttributionResult</span><span class="p">]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This method is not implemented for LLMGradientAttribution.</span>
 <span class="sd">        """</span>
@@ -1259,17 +1259,17 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">class</span> <span class="nc">GradientForwardFunc</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GradientForwardFunc</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A wrapper class for the forward function of a model in LLMGradientAttribution</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="n">LLMGradientAttribution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="n">LLMGradientAttribution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="n">attr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">model</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
@@ -1305,7 +1305,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">token_log_probs</span>
 
 
-<span class="k">class</span> <span class="nc">_PlaceholderModel</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_PlaceholderModel</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Simple placeholder model that can be used with</span>
 <span class="sd">    RemoteLLMAttribution without needing a real model.</span>
@@ -1313,14 +1313,14 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    `device`, so creating this class to set the device.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cpu"</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
 
 
-<span class="k">class</span> <span class="nc">RemoteLLMAttribution</span><span class="p">(</span><span class="n">LLMAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RemoteLLMAttribution</span><span class="p">(</span><span class="n">LLMAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Attribution class for large language models</span>
 <span class="sd">    that are hosted remotely and offer logprob APIs.</span>
@@ -1328,7 +1328,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="n">placeholder_model</span> <span class="o">=</span> <span class="n">_PlaceholderModel</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attr_method</span><span class="p">:</span> <span class="n">PerturbationAttribution</span><span class="p">,</span>
         <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
@@ -1353,7 +1353,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">=</span> <span class="n">provider</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attr_method</span><span class="o">.</span><span class="n">forward_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remote_forward_func</span>
 
-    <span class="k">def</span> <span class="nf">_get_target_tokens</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_target_tokens</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1389,7 +1389,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">target_tokens</span>
 
-    <span class="k">def</span> <span class="nf">_format_remote_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_format_remote_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Format the model input for the remote LLM provider.</span>
 <span class="sd">        Convert tokenized tensor to str</span>
@@ -1401,7 +1401,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">model_input</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">model_input</span>
 
-    <span class="k">def</span> <span class="nf">_remote_forward_func</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_remote_forward_func</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
         <span class="n">inp</span><span class="p">:</span> <span class="n">InterpretableInput</span><span class="p">,</span>

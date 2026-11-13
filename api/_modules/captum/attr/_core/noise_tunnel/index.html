@@ -38,11 +38,11 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_expand_and_update_additional_forward_args</span><span class="p">,</span>
     <span class="n">_expand_and_update_baselines</span><span class="p">,</span>
     <span class="n">_expand_and_update_feature_mask</span><span class="p">,</span>
@@ -51,13 +51,13 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_format_tensor_into_tuples</span><span class="p">,</span>
     <span class="n">_is_tuple</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.attribution</span> <span class="kn">import</span> <span class="n">Attribution</span><span class="p">,</span> <span class="n">GradientAttribution</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.common</span> <span class="kn">import</span> <span class="n">_validate_noise_tunnel_type</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.attribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attribution</span><span class="p">,</span> <span class="n">GradientAttribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">_validate_noise_tunnel_type</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
 
-<span class="k">class</span> <span class="nc">NoiseTunnelType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoiseTunnelType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
     <span class="n">smoothgrad</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">smoothgrad_sq</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">vargrad</span> <span class="o">=</span> <span class="mi">3</span>
@@ -68,7 +68,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="NoiseTunnel">
 <a class="viewcode-back" href="../../../../noise_tunnel.html#captum.attr.NoiseTunnel">[docs]</a>
-<span class="k">class</span> <span class="nc">NoiseTunnel</span><span class="p">(</span><span class="n">Attribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoiseTunnel</span><span class="p">(</span><span class="n">Attribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Adds gaussian noise to each input in the batch `nt_samples` times</span>
 <span class="sd">    and applies the given attribution algorithm to each of the samples.</span>
@@ -99,7 +99,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_multiply_by_inputs</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">is_gradient_method</span><span class="p">:</span> <span class="nb">bool</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribution_method</span><span class="p">:</span> <span class="n">Attribution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribution_method</span><span class="p">:</span> <span class="n">Attribution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            attribution_method (Attribution): An instance of any attribution algorithm</span>
@@ -115,13 +115,13 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">Attribution</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attribution_method</span><span class="o">.</span><span class="n">forward_func</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_multiply_by_inputs</span>
 
 <div class="viewcode-block" id="NoiseTunnel.attribute">
 <a class="viewcode-back" href="../../../../noise_tunnel.html#captum.attr.NoiseTunnel.attribute">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
         <span class="n">nt_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"smoothgrad"</span><span class="p">,</span>
@@ -344,14 +344,14 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="NoiseTunnel.attribute_future">
 <a class="viewcode-back" href="../../../../noise_tunnel.html#captum.attr.NoiseTunnel.attribute_future">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This method is not implemented for NoiseTunnel.</span>
 <span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"attribute_future is not implemented for NoiseTunnel"</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_add_noise_to_inputs</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_noise_to_inputs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">nt_samples_partition</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -382,7 +382,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_add_noise_to_input</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_noise_to_input</span><span class="p">(</span>
         <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">stdev</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">nt_samples_partition</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># batch size</span>
@@ -404,7 +404,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="nb">input</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">nt_samples_partition</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">noise</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_update_sum_attribution_and_sq</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_sum_attribution_and_sq</span><span class="p">(</span>
         <span class="n">sum_attribution</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
         <span class="n">sum_attribution_sq</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
         <span class="n">attribution</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -433,7 +433,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">else</span> <span class="n">sum_attribution_sq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">current_attribution_sq</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_compute_partial_attribution</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_partial_attribution</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs_with_noise_partition</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">kwargs_partition</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
@@ -468,7 +468,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_expand_partial</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_expand_partial</span><span class="p">(</span>
         <span class="n">nt_samples_partition</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">kwargs_partial</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -489,7 +489,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">_expand_and_update_feature_mask</span><span class="p">(</span><span class="n">nt_samples_partition</span><span class="p">,</span> <span class="n">kwargs_partial</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_compute_smoothing</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_smoothing</span><span class="p">(</span>
         <span class="n">expected_attributions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">expected_attributions_sq</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">nt_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -509,7 +509,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">vargrad</span>
 
-    <span class="k">def</span> <span class="nf">_update_partial_attribution_and_delta</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_partial_attribution_and_delta</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attributions_partial</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">delta_partial</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -530,7 +530,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_delta_supported</span> <span class="ow">and</span> <span class="n">return_convergence_delta</span><span class="p">:</span>
             <span class="n">delta_partial_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delta_partial</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_apply_checks_and_return_attributions</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_checks_and_return_attributions</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attributions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">is_attrib_tuple</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
@@ -561,7 +561,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="NoiseTunnel.has_convergence_delta">
 <a class="viewcode-back" href="../../../../noise_tunnel.html#captum.attr.NoiseTunnel.has_convergence_delta">[docs]</a>
-    <span class="k">def</span> <span class="nf">has_convergence_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_convergence_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_delta_supported</span></div>
 </div>
 

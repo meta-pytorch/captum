@@ -38,15 +38,15 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum.module.stochastic_gates_base</span> <span class="kn">import</span> <span class="n">StochasticGatesBase</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.module.stochastic_gates_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">StochasticGatesBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
 
-<span class="k">def</span> <span class="nf">_torch_empty</span><span class="p">(</span><span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_gates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_torch_empty</span><span class="p">(</span><span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_gates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">n_gates</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
 
 
@@ -57,7 +57,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="BinaryConcreteStochasticGates">
 <a class="viewcode-back" href="../../../binary_concrete_stg.html#captum.module.BinaryConcreteStochasticGates">[docs]</a>
-<span class="k">class</span> <span class="nc">BinaryConcreteStochasticGates</span><span class="p">(</span><span class="n">StochasticGatesBase</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BinaryConcreteStochasticGates</span><span class="p">(</span><span class="n">StochasticGatesBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stochastic Gates with binary concrete distribution.</span>
 
@@ -92,7 +92,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_gates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -177,7 +177,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="o">-</span><span class="n">lower_bound</span> <span class="o">/</span> <span class="n">upper_bound</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_sample_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sample gate values for each example in the batch from the binary concrete</span>
 <span class="sd">        distributions</span>
@@ -205,7 +205,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">s_bar</span>
 
-    <span class="k">def</span> <span class="nf">_get_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the raw gate values, which are the means of the underneath gate</span>
 <span class="sd">        distributions, derived from learned log_alpha_param</span>
@@ -219,7 +219,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">gate_values</span>
 
-    <span class="k">def</span> <span class="nf">_get_gate_active_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_gate_active_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the active probability of each gate, i.e, gate value &gt; 0, in the binary</span>
 <span class="sd">        concrete distributions</span>
@@ -231,7 +231,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_alpha_param</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_prob_offset</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_from_pretrained</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_from_pretrained</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">log_alpha_param</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"BinaryConcreteStochasticGates"</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>

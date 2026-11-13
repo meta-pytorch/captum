@@ -38,20 +38,20 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.models.linear_model</span> <span class="kn">import</span> <span class="n">model</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">TensorDataset</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.models.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">TensorDataset</span>
 
 
 <div class="viewcode-block" id="Classifier">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.Classifier">[docs]</a>
-<span class="k">class</span> <span class="nc">Classifier</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Classifier</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    An abstract class definition of any classifier that allows to train a model</span>
 <span class="sd">    and access trained weights of that model.</span>
@@ -99,13 +99,13 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    """</span>
 
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
 <div class="viewcode-block" id="Classifier.train_and_eval">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.Classifier.train_and_eval">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">train_and_eval</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_and_eval</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">dataloader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -138,7 +138,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="Classifier.weights">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.Classifier.weights">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This function returns a C x F tensor weights, where</span>
 <span class="sd">        C is the number of classes and F is the number of features.</span>
@@ -153,7 +153,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="Classifier.classes">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.Classifier.classes">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This function returns the list of all classes that are used by the</span>
 <span class="sd">        classifier to train the model in the `train_and_eval` method.</span>
@@ -169,7 +169,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">class</span> <span class="nc">DefaultClassifier</span><span class="p">(</span><span class="n">Classifier</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DefaultClassifier</span><span class="p">(</span><span class="n">Classifier</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    A default Linear Classifier based on sklearn's SGDClassifier for</span>
 <span class="sd">    learning decision boundaries between concepts.</span>
@@ -180,7 +180,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    class and handles large concept datasets accordingly.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s2">"Using default classifier for TCAV which keeps input"</span>
             <span class="s2">" both train and test datasets in the memory. Consider defining"</span>
@@ -191,7 +191,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">SkLearnSGDClassifier</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">train_and_eval</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_and_eval</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">dataloader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
         <span class="n">test_split_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.33</span><span class="p">,</span>
@@ -250,7 +250,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="p">{</span><span class="s2">"accs"</span><span class="p">:</span> <span class="n">accs</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This function returns a C x F tensor weights, where</span>
 <span class="sd">        C is the number of classes and F is the number of features.</span>
@@ -271,7 +271,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">weights</span>
 
-    <span class="k">def</span> <span class="nf">classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This function returns the list of all classes that are used by the</span>
 <span class="sd">        classifier to train the model in the `train_and_eval` method.</span>
@@ -285,13 +285,13 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="o">.</span><span class="n">classes</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
 
 
-<span class="k">def</span> <span class="nf">_predict_classes</span><span class="p">(</span><span class="n">predict</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">classes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_predict_classes</span><span class="p">(</span><span class="n">predict</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">classes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">predict</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">predict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="o">-</span><span class="n">predict</span><span class="p">,</span> <span class="n">predict</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">classes</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">predict</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()]</span>
 
 
-<span class="k">def</span> <span class="nf">_train_test_split</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_train_test_split</span><span class="p">(</span>
     <span class="n">x_list</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">y_list</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">test_split</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.33</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
     <span class="c1"># Shuffle</span>

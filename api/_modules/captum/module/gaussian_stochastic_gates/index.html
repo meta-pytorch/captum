@@ -38,17 +38,17 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum.module.stochastic_gates_base</span> <span class="kn">import</span> <span class="n">StochasticGatesBase</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.module.stochastic_gates_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">StochasticGatesBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
 
 <div class="viewcode-block" id="GaussianStochasticGates">
 <a class="viewcode-back" href="../../../gaussian_stg.html#captum.module.GaussianStochasticGates">[docs]</a>
-<span class="k">class</span> <span class="nc">GaussianStochasticGates</span><span class="p">(</span><span class="n">StochasticGatesBase</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GaussianStochasticGates</span><span class="p">(</span><span class="n">StochasticGatesBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stochastic Gates with Gaussian distribution.</span>
 
@@ -80,7 +80,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">        &gt;&gt;&gt; gated_inputs, reg = stg(mock_inputs)  # gate the inputs</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_gates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -129,7 +129,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">std</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"the standard deviation should be positive, received </span><span class="si">{</span><span class="n">std</span><span class="si">}</span><span class="s2">"</span>  <span class="c1"># type: ignore  # noqa: E501 line too long</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span>
 
-    <span class="k">def</span> <span class="nf">_sample_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sample gate values for each example in the batch from the Gaussian distribution</span>
 
@@ -147,7 +147,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gates</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_gate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the raw gate values, which are the means of the underneath gate</span>
 <span class="sd">        distributions, the learned mu</span>
@@ -157,7 +157,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
 
-    <span class="k">def</span> <span class="nf">_get_gate_active_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_gate_active_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the active probability of each gate, i.e, gate value &gt; 0, in the</span>
 <span class="sd">        Gaussian distribution</span>
@@ -172,7 +172,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">erf</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_from_pretrained</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_from_pretrained</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"GaussianStochasticGates"</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>

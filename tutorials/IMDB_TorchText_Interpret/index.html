@@ -97,22 +97,22 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">tarfile</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">urllib.request</span> <span class="kn">import</span> <span class="n">urlretrieve</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.request</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlretrieve</span>
 
-<span class="kn">import</span> <span class="nn">captum</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">import</span> <span class="nn">torchtext</span>
-<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">pad_sequence</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
-<span class="kn">from</span> <span class="nn">torchtext.data.utils</span> <span class="kn">import</span> <span class="n">get_tokenizer</span>
-<span class="kn">from</span> <span class="nn">torchtext.vocab</span> <span class="kn">import</span> <span class="n">build_vocab_from_iterator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">captum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torchtext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn.utils.rnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">pad_sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchtext.data.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tokenizer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchtext.vocab</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_vocab_from_iterator</span>
 
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">LayerIntegratedGradients</span><span class="p">,</span> <span class="n">TokenReferenceBase</span><span class="p">,</span> <span class="n">visualization</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerIntegratedGradients</span><span class="p">,</span> <span class="n">TokenReferenceBase</span><span class="p">,</span> <span class="n">visualization</span>
 </pre></div>
 </div>
 </div>
@@ -169,7 +169,7 @@ torchtext 0.18.0+cpu
 <span class="n">IMDB_ARCHIVE</span> <span class="o">=</span> <span class="n">DATA_ROOT</span> <span class="o">/</span> <span class="s2">"aclImdb_v1.tar.gz"</span>
 <span class="n">IMDB_URL</span> <span class="o">=</span> <span class="s2">"https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"</span>
 
-<span class="k">def</span> <span class="nf">extract_archive_safely</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="n">destination</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_archive_safely</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="n">destination</span><span class="p">):</span>
     <span class="n">destination</span> <span class="o">=</span> <span class="n">destination</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
     <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="s2">"r:gz"</span><span class="p">)</span> <span class="k">as</span> <span class="n">archive</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">archive</span><span class="o">.</span><span class="n">getmembers</span><span class="p">():</span>
@@ -178,7 +178,7 @@ torchtext 0.18.0+cpu
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsafe path in archive: </span><span class="si">{</span><span class="n">member</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">archive</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">ensure_imdb_dataset</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_imdb_dataset</span><span class="p">():</span>
     <span class="k">if</span> <span class="n">IMDB_DIR</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">return</span>
     <span class="n">DATA_ROOT</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -186,7 +186,7 @@ torchtext 0.18.0+cpu
         <span class="n">urlretrieve</span><span class="p">(</span><span class="n">IMDB_URL</span><span class="p">,</span> <span class="n">IMDB_ARCHIVE</span><span class="p">)</span>
     <span class="n">extract_archive_safely</span><span class="p">(</span><span class="n">IMDB_ARCHIVE</span><span class="p">,</span> <span class="n">DATA_ROOT</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">load_rows</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">limit</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_rows</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">limit</span><span class="p">):</span>
     <span class="n">ensure_imdb_dataset</span><span class="p">()</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">per_label_limit</span> <span class="o">=</span> <span class="n">limit</span> <span class="o">//</span> <span class="mi">2</span>
@@ -237,7 +237,7 @@ Test examples: 500
 <span class="n">MAX_LEN</span> <span class="o">=</span> <span class="mi">256</span>
 <span class="n">MIN_LEN</span> <span class="o">=</span> <span class="mi">5</span>
 
-<span class="k">def</span> <span class="nf">yield_tokens</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">yield_tokens</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
 
@@ -273,13 +273,13 @@ Padding index: 1
 <div class="prompt input_prompt">In [5]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">encode_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">encode_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
     <span class="n">token_ids</span> <span class="o">=</span> <span class="n">vocab</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">))[:</span><span class="n">MAX_LEN</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_ids</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">MIN_LEN</span><span class="p">:</span>
         <span class="n">token_ids</span> <span class="o">+=</span> <span class="p">[</span><span class="n">PAD_IDX</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">MIN_LEN</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_ids</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">token_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">collate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">collate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
     <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">encode_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">]</span>
     <span class="n">texts</span> <span class="o">=</span> <span class="n">pad_sequence</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">padding_value</span><span class="o">=</span><span class="n">PAD_IDX</span><span class="p">)</span>
@@ -304,8 +304,8 @@ Padding index: 1
 <div class="prompt input_prompt">In [6]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">CNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">n_filters</span><span class="p">,</span> <span class="n">filter_sizes</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">pad_idx</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">n_filters</span><span class="p">,</span> <span class="n">filter_sizes</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">pad_idx</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">padding_idx</span><span class="o">=</span><span class="n">pad_idx</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">convs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
@@ -319,7 +319,7 @@ Padding index: 1
         <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filter_sizes</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_filters</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
         <span class="n">embedded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
         <span class="n">embedded</span> <span class="o">=</span> <span class="n">embedded</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">conved</span> <span class="o">=</span> <span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">embedded</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">conv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">convs</span><span class="p">]</span>
@@ -438,7 +438,7 @@ Epoch 3: loss = 0.5695
 <div class="prompt input_prompt">In [9]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">forward_with_softmax</span><span class="p">(</span><span class="n">input_indices</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">forward_with_softmax</span><span class="p">(</span><span class="n">input_indices</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">input_indices</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="n">lig</span> <span class="o">=</span> <span class="n">LayerIntegratedGradients</span><span class="p">(</span><span class="n">forward_with_softmax</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">embedding</span><span class="p">)</span>
@@ -454,7 +454,7 @@ Epoch 3: loss = 0.5695
 <div class="prompt input_prompt">In [10]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">add_attributions_to_visualizer</span><span class="p">(</span><span class="n">attributions</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">pred_prob</span><span class="p">,</span> <span class="n">pred_idx</span><span class="p">,</span> <span class="n">true_label</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">add_attributions_to_visualizer</span><span class="p">(</span><span class="n">attributions</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">pred_prob</span><span class="p">,</span> <span class="n">pred_idx</span><span class="p">,</span> <span class="n">true_label</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
     <span class="n">attributions</span> <span class="o">=</span> <span class="n">attributions</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">attributions</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">norm</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -476,7 +476,7 @@ Epoch 3: loss = 0.5695
         <span class="p">)</span>
     <span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">interpret_sentence</span><span class="p">(</span><span class="n">sentence</span><span class="p">,</span> <span class="n">true_label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpret_sentence</span><span class="p">(</span><span class="n">sentence</span><span class="p">,</span> <span class="n">true_label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
     <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">sentence</span><span class="p">)[:</span><span class="n">MAX_LEN</span><span class="p">]</span>

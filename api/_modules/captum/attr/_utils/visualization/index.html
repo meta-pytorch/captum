@@ -38,10 +38,10 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">import</span> <span class="nn">html</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">html</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">cast</span><span class="p">,</span>
@@ -56,28 +56,28 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">cm</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
-<span class="kn">from</span> <span class="nn">matplotlib.collections</span> <span class="kn">import</span> <span class="n">LineCollection</span>
-<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">Colormap</span><span class="p">,</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span> <span class="n">Normalize</span>
-<span class="kn">from</span> <span class="nn">matplotlib.figure</span> <span class="kn">import</span> <span class="n">Figure</span>
-<span class="kn">from</span> <span class="nn">matplotlib.image</span> <span class="kn">import</span> <span class="n">AxesImage</span>
-<span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1</span> <span class="kn">import</span> <span class="n">make_axes_locatable</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ndarray</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">cm</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">Colormap</span><span class="p">,</span> <span class="n">LinearSegmentedColormap</span><span class="p">,</span> <span class="n">Normalize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">AxesImage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.axes_grid1</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_axes_locatable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
 
     <span class="n">HAS_IPYTHON</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">HAS_IPYTHON</span> <span class="o">=</span> <span class="kc">False</span>
 
 
-<span class="k">def</span> <span class="nf">draw_mask_border</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_mask_border</span><span class="p">(</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">],</span>
     <span class="n">border_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -112,7 +112,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">return</span>
 
-    <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">binary_erosion</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_erosion</span>
 
     <span class="c1"># Convert string color to RGBA array</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">border_color</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -128,7 +128,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">border_image</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">draw_mask_legend</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_mask_legend</span><span class="p">(</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">],</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -185,7 +185,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ImageVisualizationMethod</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ImageVisualizationMethod</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
     <span class="n">heat_map</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">blended_heat_map</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">original_image</span> <span class="o">=</span> <span class="mi">3</span>
@@ -193,24 +193,24 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">alpha_scaling</span> <span class="o">=</span> <span class="mi">5</span>
 
 
-<span class="k">class</span> <span class="nc">TimeseriesVisualizationMethod</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TimeseriesVisualizationMethod</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
     <span class="n">overlay_individual</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">overlay_combined</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">colored_graph</span> <span class="o">=</span> <span class="mi">3</span>
 
 
-<span class="k">class</span> <span class="nc">VisualizeSign</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VisualizeSign</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
     <span class="n">positive</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">absolute_value</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">negative</span> <span class="o">=</span> <span class="mi">3</span>
     <span class="nb">all</span> <span class="o">=</span> <span class="mi">4</span>
 
 
-<span class="k">def</span> <span class="nf">_prepare_image</span><span class="p">(</span><span class="n">attr_visual</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_image</span><span class="p">(</span><span class="n">attr_visual</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">attr_visual</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_prepare_image_for_display</span><span class="p">(</span><span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_image_for_display</span><span class="p">(</span><span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">original_image</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
         <span class="n">min_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
         <span class="n">max_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
@@ -223,7 +223,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">scale_factor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s2">"No non-zero attribution values found for the selected sign; "</span>
@@ -242,7 +242,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">attr_norm</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_cumulative_sum_threshold</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cumulative_sum_threshold</span><span class="p">(</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="c1"># given values should be non-negative</span>
@@ -255,7 +255,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">sorted_vals</span><span class="p">[</span><span class="n">threshold_id</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_normalize_attr</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_attr</span><span class="p">(</span>
     <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>  <span class="c1"># 2D (H, W)</span>
     <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">outlier_perc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
@@ -284,7 +284,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">_normalize_scale</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_create_default_plot</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_default_plot</span><span class="p">(</span>
     <span class="n">plt_fig_axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]],</span>
     <span class="n">use_pyplot</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">fig_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -303,7 +303,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="c1"># Figure.subplots returns Axes or array of Axes</span>
 
 
-<span class="k">def</span> <span class="nf">_initialize_cmap_and_vmin_vmax</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_initialize_cmap_and_vmin_vmax</span><span class="p">(</span>
     <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
     <span class="k">if</span> <span class="n">VisualizeSign</span><span class="p">[</span><span class="n">sign</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">VisualizeSign</span><span class="o">.</span><span class="n">all</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
@@ -325,7 +325,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">default_cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_original_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_original_image</span><span class="p">(</span>
     <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -339,7 +339,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">original_image</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_heat_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_heat_map</span><span class="p">(</span>
     <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">cmap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Colormap</span><span class="p">],</span>
@@ -352,7 +352,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">heat_map</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_blended_heat_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_blended_heat_map</span><span class="p">(</span>
     <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">norm_attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -377,7 +377,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">heat_map</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_masked_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_masked_image</span><span class="p">(</span>
     <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -392,7 +392,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">plt_axis</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">_prepare_image</span><span class="p">(</span><span class="n">original_image</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">norm_attr</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_alpha_scaling</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_alpha_scaling</span><span class="p">(</span>
     <span class="n">plt_axis</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
     <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -414,7 +414,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_get_image_attr_visualization_array</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">AxesImage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_image_attr_visualization_array</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">AxesImage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
     <span class="n">image_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">get_array</span><span class="p">())</span>
 
     <span class="k">if</span> <span class="n">image_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -426,7 +426,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 <span class="nd">@overload</span>
-<span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visualize_image_attr</span><span class="p">(</span>
     <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"heat_map"</span><span class="p">,</span>
@@ -444,7 +444,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 <span class="nd">@overload</span>
-<span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visualize_image_attr</span><span class="p">(</span>
     <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"heat_map"</span><span class="p">,</span>
@@ -463,7 +463,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="visualize_image_attr">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_image_attr">[docs]</a>
-<span class="k">def</span> <span class="nf">visualize_image_attr</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visualize_image_attr</span><span class="p">(</span>
     <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"heat_map"</span><span class="p">,</span>
@@ -691,7 +691,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="visualize_image_attr_multiple">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_image_attr_multiple">[docs]</a>
-<span class="k">def</span> <span class="nf">visualize_image_attr_multiple</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visualize_image_attr_multiple</span><span class="p">(</span>
     <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">original_image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
     <span class="n">methods</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -805,7 +805,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">def</span> <span class="nf">_plot_attrs_as_axvspan</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_attrs_as_axvspan</span><span class="p">(</span>
     <span class="n">attr_vals</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">x_vals</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
@@ -827,7 +827,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_overlay_individual</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_overlay_individual</span><span class="p">(</span>
     <span class="n">num_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -861,7 +861,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">pass</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_overlay_combined</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_overlay_combined</span><span class="p">(</span>
     <span class="n">num_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -895,7 +895,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">plt_axis_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"best"</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_visualize_colored_graph</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_visualize_colored_graph</span><span class="p">(</span>
     <span class="n">num_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">plt_axis_list</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">x_values</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -932,7 +932,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="visualize_timeseries_attr">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.visualization.visualize_timeseries_attr">[docs]</a>
-<span class="k">def</span> <span class="nf">visualize_timeseries_attr</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visualize_timeseries_attr</span><span class="p">(</span>
     <span class="n">attr</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">x_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1175,7 +1175,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># experiments conducted by Davide Testuggine at Facebook.</span>
 
 
-<span class="k">class</span> <span class="nc">VisualizationDataRecord</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VisualizationDataRecord</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    A data record for storing attribution relevant information</span>
 <span class="sd">    """</span>
@@ -1191,7 +1191,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="s2">"convergence_score"</span><span class="p">,</span>
     <span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">word_attributions</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">pred_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -1220,7 +1220,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">convergence_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">convergence_score</span>
 
 
-<span class="k">def</span> <span class="nf">_get_color</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_color</span><span class="p">(</span><span class="n">attr</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="c1"># clip values to prevent CSS errors (Values should be from [-1,1])</span>
     <span class="n">attr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">attr</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1234,24 +1234,24 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="s2">"hsl(</span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">%, </span><span class="si">{}</span><span class="s2">%)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hue</span><span class="p">,</span> <span class="n">sat</span><span class="p">,</span> <span class="n">lig</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">format_classname</span><span class="p">(</span><span class="n">classname</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_classname</span><span class="p">(</span><span class="n">classname</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">return</span> <span class="s1">'&lt;td&gt;&lt;text style="padding-right:2em"&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s1">&lt;/b&gt;&lt;/text&gt;&lt;/td&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">classname</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">format_special_tokens</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_special_tokens</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"&lt;"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">token</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"&gt;"</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">"#"</span> <span class="o">+</span> <span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"&lt;&gt;"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">token</span>
 
 
-<span class="k">def</span> <span class="nf">format_tooltip</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_tooltip</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">tooltip</span> <span class="o">=</span> <span class="s1">'&lt;div class="tooltip"&gt;</span><span class="si">{item}</span><span class="se">\</span>
 <span class="s1">        &lt;span class="tooltiptext"&gt;</span><span class="si">{text}</span><span class="s1">&lt;/span&gt;</span><span class="se">\</span>
 <span class="s1">        &lt;/div&gt;'</span>
     <span class="k">return</span> <span class="n">tooltip</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">format_word_importances</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_word_importances</span><span class="p">(</span>
     <span class="n">words</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">importances</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1275,7 +1275,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">visualize_text</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">visualize_text</span><span class="p">(</span>
     <span class="n">datarecords</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">VisualizationDataRecord</span><span class="p">],</span> <span class="n">legend</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"HTML"</span><span class="p">:</span>  <span class="c1"># In quotes because this type doesn't exist in standalone mode</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>

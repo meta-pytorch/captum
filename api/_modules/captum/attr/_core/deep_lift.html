@@ -38,9 +38,9 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">import</span> <span class="nn">typing</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">cast</span><span class="p">,</span>
@@ -53,10 +53,10 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_expand_additional_forward_args</span><span class="p">,</span>
     <span class="n">_expand_target</span><span class="p">,</span>
     <span class="n">_format_additional_forward_args</span><span class="p">,</span>
@@ -69,27 +69,27 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_select_targets</span><span class="p">,</span>
     <span class="n">ExpansionTypes</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum._utils.gradient</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.gradient</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">apply_gradient_requirements</span><span class="p">,</span>
     <span class="n">undo_gradient_requirements</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">BaselineType</span><span class="p">,</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.attribution</span> <span class="kn">import</span> <span class="n">GradientAttribution</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaselineType</span><span class="p">,</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.attribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">GradientAttribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_call_custom_attribution_func</span><span class="p">,</span>
     <span class="n">_compute_conv_delta_and_format_attrs</span><span class="p">,</span>
     <span class="n">_format_callable_baseline</span><span class="p">,</span>
     <span class="n">_tensorize_baseline</span><span class="p">,</span>
     <span class="n">_validate_input</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
-<span class="kn">from</span> <span class="nn">torch.overrides</span> <span class="kn">import</span> <span class="n">TorchFunctionMode</span>
-<span class="kn">from</span> <span class="nn">torch.utils.hooks</span> <span class="kn">import</span> <span class="n">RemovableHandle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.overrides</span><span class="w"> </span><span class="kn">import</span> <span class="n">TorchFunctionMode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.hooks</span><span class="w"> </span><span class="kn">import</span> <span class="n">RemovableHandle</span>
 
 
-<span class="k">def</span> <span class="nf">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="c1"># DeepLift runs one combined forward with actual inputs followed by</span>
     <span class="c1"># baselines along batch dimension 0. Functional-op rules are valid only</span>
     <span class="c1"># for tensors that participate in that paired actual / reference batch.</span>
@@ -101,7 +101,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_can_apply_deeplift_binary_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_can_apply_deeplift_binary_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
         <span class="ow">and</span> <span class="n">_can_apply_deeplift_tensor_rule</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
@@ -109,15 +109,15 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_is_square_power</span><span class="p">(</span><span class="n">power</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_square_power</span><span class="p">(</span><span class="n">power</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">power</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">2</span>
 
 
-<span class="k">def</span> <span class="nf">_is_number_or_none</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_number_or_none</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">_forward_deeplift_unary_tensor_op</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_forward_deeplift_unary_tensor_op</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"exp"</span><span class="p">:</span>
@@ -155,7 +155,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor unary op."</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_gradient_deeplift_unary_tensor_op</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_gradient_deeplift_unary_tensor_op</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">"exp"</span><span class="p">:</span>
@@ -222,7 +222,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor unary op."</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_run_deeplift_max_pool</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_deeplift_max_pool</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">pool_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">kernel_size</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -264,7 +264,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor max-pool op."</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_run_deeplift_max_unpool</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_deeplift_max_unpool</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">indices</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">pool_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -282,7 +282,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"Unsupported DeepLift tensor max-pool op."</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorUnaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorUnaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    DeepLift Rescale rule for functional one-input tensor ops.</span>
 
@@ -293,7 +293,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -310,7 +310,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
         <span class="n">delta_in</span><span class="p">,</span> <span class="n">delta_out</span> <span class="o">=</span> <span class="n">_compute_diffs</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
         <span class="n">grad_input</span> <span class="o">=</span> <span class="n">grad_output</span> <span class="o">*</span> <span class="n">_gradient_deeplift_unary_tensor_op</span><span class="p">(</span>
@@ -324,7 +324,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorBinaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorBinaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    DeepLift rule for functional two-input tensor ops where both inputs vary.</span>
 
@@ -335,7 +335,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
@@ -358,7 +358,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
         <span class="nb">input</span><span class="p">,</span> <span class="n">other</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">broadcast_tensors</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
@@ -426,7 +426,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">input_grad</span><span class="p">,</span> <span class="n">other_grad</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorSingleInputBinaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorSingleInputBinaryOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    DeepLift rule for binary nonlinear ops where only one tensor input varies.</span>
 
@@ -438,7 +438,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -462,7 +462,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
@@ -492,7 +492,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">new_grad_input</span><span class="o">.</span><span class="n">sum_to_size</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorMatmulOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorMatmulOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    DeepLift rule for matrix multiplication when both operands vary.</span>
 
@@ -503,7 +503,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="n">ctx</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
@@ -513,7 +513,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="nb">input</span><span class="p">,</span> <span class="n">other</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
         <span class="n">input_actual</span><span class="p">,</span> <span class="n">input_ref</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">other_actual</span><span class="p">,</span> <span class="n">other_ref</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -530,7 +530,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">input_grad</span><span class="p">,</span> <span class="n">other_grad</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorMaxReductionOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorMaxReductionOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    DeepLift rule for max reductions over a non-batch dimension.</span>
 
@@ -541,7 +541,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">keepdim</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">keepdim</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
             <span class="n">output</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">ctx</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
@@ -552,7 +552,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">dim</span>
         <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">keepdim</span> <span class="k">else</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
@@ -577,7 +577,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorMaxPoolOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorMaxPoolOp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    DeepLift rule for functional max-pool operations.</span>
 
@@ -588,7 +588,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -625,7 +625,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">grad_indices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
         <span class="n">Tensor</span><span class="p">,</span>
@@ -679,7 +679,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorSoftmaxShift</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorSoftmaxShift</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Rescale the numerically stable softmax shift back to the original input.</span>
 
@@ -690,7 +690,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">DisableTorchFunction</span><span class="p">():</span>
             <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
         <span class="n">ctx</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
@@ -699,7 +699,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@staticmethod</span>
     <span class="c1"># pyre-fixme[14]: `backward` overrides method defined in `Function` inconsistently.</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
         <span class="n">delta_in</span><span class="p">,</span> <span class="n">delta_out</span> <span class="o">=</span> <span class="n">_compute_diffs</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
         <span class="n">new_grad_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
@@ -710,7 +710,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">new_grad_input</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
 
-<span class="k">class</span> <span class="nc">_DeepLiftTensorOpMode</span><span class="p">(</span><span class="n">TorchFunctionMode</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_DeepLiftTensorOpMode</span><span class="p">(</span><span class="n">TorchFunctionMode</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Intercepts selected functional tensor ops during DeepLift's model forward.</span>
 
@@ -719,11 +719,11 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    ``nn.Module`` boundary, while leaving unrelated tensor operations unchanged.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
 
-    <span class="k">def</span> <span class="nf">__torch_function__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__torch_function__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
         <span class="n">types</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="nb">object</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
@@ -994,7 +994,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="DeepLift">
 <a class="viewcode-back" href="../../../../deep_lift.html#captum.attr.DeepLift">[docs]</a>
-<span class="k">class</span> <span class="nc">DeepLift</span><span class="p">(</span><span class="n">GradientAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepLift</span><span class="p">(</span><span class="n">GradientAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Implements DeepLIFT algorithm based on the following paper:</span>
 <span class="sd">    Learning Important Features Through Propagating Activation Differences,</span>
@@ -1026,7 +1026,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    https://pytorch.org/blog/optimizing-cuda-rnn-with-torchscript/</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">multiply_by_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -1067,7 +1067,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1080,7 +1080,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1093,7 +1093,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="DeepLift.attribute">
 <a class="viewcode-back" href="../../../../deep_lift.html#captum.attr.DeepLift.attribute">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1321,21 +1321,21 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="DeepLift.attribute_future">
 <a class="viewcode-back" href="../../../../deep_lift.html#captum.attr.DeepLift.attribute_future">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute_future</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This method is not implemented for DeepLift.</span>
 <span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"attribute_future is not implemented for DeepLift"</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_construct_forward_func</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_construct_forward_func</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">TargetType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">additional_forward_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="k">def</span> <span class="nf">forward_fn</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">forward_fn</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
             <span class="k">with</span> <span class="n">_DeepLiftTensorOpMode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">):</span>
                 <span class="n">model_out</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
                     <span class="n">Tensor</span><span class="p">,</span>
@@ -1350,10 +1350,10 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">forward_fn</span><span class="o">.</span><span class="n">device_ids</span> <span class="o">=</span> <span class="n">forward_func</span><span class="o">.</span><span class="n">device_ids</span>  <span class="c1"># type: ignore</span>
         <span class="k">return</span> <span class="n">forward_fn</span>
 
-    <span class="k">def</span> <span class="nf">_is_non_linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_non_linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="ow">in</span> <span class="n">SUPPORTED_NON_LINEAR</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_forward_pre_hook_ref</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_pre_hook_ref</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
@@ -1361,7 +1361,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="nb">input</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">inputs</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_forward_pre_hook</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_pre_hook</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -1373,7 +1373,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">inputs</span> <span class="o">=</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
         <span class="n">module</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
 
-    <span class="k">def</span> <span class="nf">_forward_hook</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_hook</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
@@ -1386,7 +1386,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">outputs</span> <span class="o">=</span> <span class="n">_format_tensor_into_tuples</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
         <span class="n">module</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
 
-    <span class="k">def</span> <span class="nf">_backward_hook</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_backward_hook</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">grad_input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -1427,10 +1427,10 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">multipliers</span>
 
-    <span class="k">def</span> <span class="nf">satisfies_attribute_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">satisfies_attribute_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">"input"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_can_register_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_can_register_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="c1"># TODO find a better way of checking if a module is a container or not</span>
         <span class="n">module_fullname</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">))</span>
         <span class="n">has_already_hooks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">_backward_hooks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>  <span class="c1"># type: ignore</span>
@@ -1440,7 +1440,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_non_linear</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_register_hooks</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_register_hooks</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">attribute_to_layer_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_can_register_hook</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
@@ -1455,7 +1455,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward_handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pre_forward_handle</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backward_handles</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">backward_handles</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_remove_hooks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extra_hooks_to_remove</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">RemovableHandle</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_remove_hooks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extra_hooks_to_remove</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">RemovableHandle</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">extra_hooks_to_remove</span><span class="p">:</span>
             <span class="n">handle</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">forward_handle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_handles</span><span class="p">:</span>
@@ -1463,8 +1463,8 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">for</span> <span class="n">backward_handle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backward_handles</span><span class="p">:</span>
             <span class="n">backward_handle</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_hook_main_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">RemovableHandle</span><span class="p">]:</span>
-        <span class="k">def</span> <span class="nf">pre_hook</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hook_main_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">RemovableHandle</span><span class="p">]:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">pre_hook</span><span class="p">(</span>
             <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
             <span class="n">baseline_inputs_add_args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
@@ -1488,7 +1488,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="k">return</span> <span class="p">(</span><span class="o">*</span><span class="n">baseline_input_tsr</span><span class="p">,</span> <span class="o">*</span><span class="n">expanded_additional_args</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">baseline_input_tsr</span>
 
-        <span class="k">def</span> <span class="nf">forward_hook</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">forward_hook</span><span class="p">(</span>
             <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -1508,19 +1508,19 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="DeepLift.has_convergence_delta">
 <a class="viewcode-back" href="../../../../deep_lift.html#captum.attr.DeepLift.has_convergence_delta">[docs]</a>
-    <span class="k">def</span> <span class="nf">has_convergence_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_convergence_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_multiply_by_inputs</span></div>
 
 
 
 <div class="viewcode-block" id="DeepLiftShap">
 <a class="viewcode-back" href="../../../../deep_lift_shap.html#captum.attr.DeepLiftShap">[docs]</a>
-<span class="k">class</span> <span class="nc">DeepLiftShap</span><span class="p">(</span><span class="n">DeepLift</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepLiftShap</span><span class="p">(</span><span class="n">DeepLift</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Extends DeepLift algorithm and approximates SHAP values using Deeplift.</span>
 <span class="sd">    For each input sample it computes DeepLift attribution with respect to</span>
@@ -1539,7 +1539,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    model across multiple explanations can be complex and non-linear.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">multiply_by_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">multiply_by_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 
@@ -1566,7 +1566,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="c1"># DeepLiftShap.attribute, so we ignore typing here</span>
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>  <span class="c1"># type: ignore</span>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -1581,7 +1581,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -1596,7 +1596,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="DeepLiftShap.attribute">
 <a class="viewcode-back" href="../../../../deep_lift_shap.html#captum.attr.DeepLiftShap.attribute">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -1815,7 +1815,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_expand_inputs_baselines_targets</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_expand_inputs_baselines_targets</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -1858,7 +1858,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">input_additional_args</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_compute_mean_across_baselines</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_mean_across_baselines</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">inp_bsz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">base_bsz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">attribution</span><span class="p">:</span> <span class="n">Tensor</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># Average for multiple references</span>
@@ -1869,7 +1869,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">def</span> <span class="nf">nonlinear</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">nonlinear</span><span class="p">(</span>
     <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -1891,7 +1891,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">new_grad_inp</span>
 
 
-<span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">softmax</span><span class="p">(</span>
     <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -1907,7 +1907,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">grad_input_unnorm</span>
 
 
-<span class="k">def</span> <span class="nf">maxpool1d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maxpool1d</span><span class="p">(</span>
     <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -1927,7 +1927,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">maxpool2d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maxpool2d</span><span class="p">(</span>
     <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -1947,7 +1947,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">maxpool3d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maxpool3d</span><span class="p">(</span>
     <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -1967,7 +1967,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">maxpool</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maxpool</span><span class="p">(</span>
     <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
     <span class="n">pool_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">unpool_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
@@ -2034,7 +2034,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">new_grad_inp</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_diffs</span><span class="p">(</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_diffs</span><span class="p">(</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
     <span class="nb">input</span><span class="p">,</span> <span class="n">input_ref</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="c1"># if the model is a single non-linear module and we apply Rescale rule on it</span>
     <span class="c1"># we might not be able to perform chunk-ing because the output of the module is</span>

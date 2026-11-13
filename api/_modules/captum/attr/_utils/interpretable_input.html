@@ -36,9 +36,9 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">cast</span><span class="p">,</span>
@@ -50,18 +50,18 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">TokenizerLike</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.visualization</span> <span class="kn">import</span> <span class="n">draw_mask_border</span><span class="p">,</span> <span class="n">draw_mask_legend</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TokenizerLike</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_mask_border</span><span class="p">,</span> <span class="n">draw_mask_legend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">Figure</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">Figure</span>
 
 
-<span class="k">def</span> <span class="nf">_scatter_itp_attr_by_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_scatter_itp_attr_by_mask</span><span class="p">(</span>
     <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">input_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -119,7 +119,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="InterpretableInput">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.InterpretableInput">[docs]</a>
-<span class="k">class</span> <span class="nc">InterpretableInput</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">InterpretableInput</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    InterpretableInput is an adapter for different kinds of model inputs to</span>
 <span class="sd">    work in Captum's attribution methods. Generally, attribution methods of Captum</span>
@@ -174,7 +174,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="InterpretableInput.to_tensor">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.InterpretableInput.to_tensor">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the interpretable representation of this input as a tensor</span>
 
@@ -188,7 +188,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="InterpretableInput.to_model_input">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.InterpretableInput.to_model_input">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the (perturbed) input in the format required by the model</span>
 <span class="sd">        based on the given (perturbed) interpretable representation.</span>
@@ -211,7 +211,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="InterpretableInput.format_attr">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.InterpretableInput.format_attr">[docs]</a>
-    <span class="k">def</span> <span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Format the attribution of the interpretable feature if needed.</span>
 <span class="sd">        The way of formatting depends on the specific interpretable input type.</span>
@@ -234,7 +234,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TextTemplateInput">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTemplateInput">[docs]</a>
-<span class="k">class</span> <span class="nc">TextTemplateInput</span><span class="p">(</span><span class="n">InterpretableInput</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TextTemplateInput</span><span class="p">(</span><span class="n">InterpretableInput</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    TextTemplateInput is an implementation of InterpretableInput for text inputs, whose</span>
 <span class="sd">    interpretable features are certain segments (e.g., words, phrases) of the text.</span>
@@ -286,7 +286,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">mask</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
     <span class="n">formatted_mask</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">template</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
         <span class="n">values</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
@@ -376,14 +376,14 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TextTemplateInput.to_tensor">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTemplateInput.to_tensor">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># Interpretable representation in shape(1, n_itp_features)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_itp_features</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="TextTemplateInput.to_model_input">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTemplateInput.to_model_input">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>  <span class="c1"># clone</span>
 
         <span class="k">if</span> <span class="n">perturbed_tensor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -426,7 +426,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TextTemplateInput.format_attr">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTemplateInput.format_attr">[docs]</a>
-    <span class="k">def</span> <span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">itp_attr</span>
 
@@ -442,7 +442,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">class</span> <span class="nc">TextSegmentInput</span><span class="p">(</span><span class="n">TextTemplateInput</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TextSegmentInput</span><span class="p">(</span><span class="n">TextTemplateInput</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    TextSegmentInput is an implementation of InterpretableInput that automatically</span>
 <span class="sd">    segments a text string into interpretable features based on a segmentation level.</span>
@@ -510,7 +510,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="s2">"paragraph"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"(\n\s*\n)"</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"word"</span><span class="p">,</span>
@@ -542,7 +542,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">group_size</span> <span class="o">=</span> <span class="n">group_size</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_segment_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_segment_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Segment text by the given level and return (segments, template).</span>
 
@@ -576,13 +576,13 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">segments</span><span class="p">,</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">template_parts</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_escape_braces</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_escape_braces</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"{"</span><span class="p">,</span> <span class="s2">"{{"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"}"</span><span class="p">,</span> <span class="s2">"}}"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="TextTokenInput">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTokenInput">[docs]</a>
-<span class="k">class</span> <span class="nc">TextTokenInput</span><span class="p">(</span><span class="n">InterpretableInput</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TextTokenInput</span><span class="p">(</span><span class="n">InterpretableInput</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    TextTokenInput is an implementation of InterpretableInput for text inputs, whose</span>
 <span class="sd">    interpretable features are the tokens of the text with respect to a given tokenizer.</span>
@@ -630,7 +630,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">n_itp_features</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">baselines</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">tokenizer</span><span class="p">:</span> <span class="n">TokenizerLike</span><span class="p">,</span>
@@ -677,14 +677,14 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TextTokenInput.to_tensor">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTokenInput.to_tensor">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># return the perturbation indicator as interpretable tensor instead of token ids</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">itp_tensor</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TextTokenInput.to_model_input">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTokenInput.to_model_input">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">perturbed_tensor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inp_tensor</span>
 
@@ -712,13 +712,13 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TextTokenInput.format_attr">
 <a class="viewcode-back" href="../../../../utilities.html#captum.attr.TextTokenInput.format_attr">[docs]</a>
-    <span class="k">def</span> <span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">itp_attr</span></div>
 </div>
 
 
 
-<span class="k">class</span> <span class="nc">ImageMaskInput</span><span class="p">(</span><span class="n">InterpretableInput</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ImageMaskInput</span><span class="p">(</span><span class="n">InterpretableInput</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    ImageMaskInput is an implementation of InterpretableInput for the image, whose</span>
 <span class="sd">    interpretable features are certain image segments (e.g., groups of pixels).</span>
@@ -813,7 +813,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">mask_id_to_idx</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
         <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -867,10 +867,10 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">original_model_inputs</span> <span class="o">=</span> <span class="n">processor_fn</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_itp_features</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_model_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbed_tensor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">perturbed_tensor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_model_inputs</span>
 
@@ -891,7 +891,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor_fn</span><span class="p">(</span><span class="n">perturbed_image</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_mask_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_mask_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the list of binary masks for each interpretable feature.</span>
 <span class="sd">        If mask_list is provided, return it directly. Otherwise, create</span>
@@ -904,14 +904,14 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">==</span> <span class="n">mask_id</span> <span class="k">for</span> <span class="n">mask_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_id_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Attribution for interpretable image segments</span>
 <span class="sd">        Returns: 2D tensor of shape (1, n_itp_features)</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="n">itp_attr</span>
 
-    <span class="k">def</span> <span class="nf">format_pixel_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_pixel_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itp_attr</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Attribution for image pixels.</span>
 <span class="sd">        When mask_list is used, attributions from overlapping features are summed.</span>
@@ -950,7 +950,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">formatted_attr</span>
 
-    <span class="k">def</span> <span class="nf">plot_mask_overlay</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_mask_overlay</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">border_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">show_legends</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">"Figure"</span><span class="p">,</span> <span class="s2">"Axes"</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -965,7 +965,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">                          centroid. Default is True.</span>
 <span class="sd">        """</span>
 
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 

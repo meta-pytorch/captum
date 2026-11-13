@@ -98,7 +98,7 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="c1"># Replace &lt;PROJECT-DIR&gt; placeholder with your project directory path</span>
 <span class="n">PROJECT_DIR</span> <span class="o">=</span> <span class="s1">'&lt;PROJECT-DIR&gt;'</span>
@@ -120,24 +120,24 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torchvision</span>
-<span class="kn">import</span> <span class="nn">torchvision.transforms</span> <span class="k">as</span> <span class="nn">transforms</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torchvision</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">transforms</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
 
-<span class="kn">import</span> <span class="nn">resnet</span>  <span class="c1"># from pytorch-resnet</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">resnet</span>  <span class="c1"># from pytorch-resnet</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">LinearSegmentedColormap</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearSegmentedColormap</span>
 
-<span class="kn">from</span> <span class="nn">model</span> <span class="kn">import</span> <span class="n">Net</span><span class="p">,</span> <span class="n">apply_attention</span><span class="p">,</span> <span class="n">tile_2d_over_nd</span> <span class="c1"># from pytorch-vqa</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">get_transform</span> <span class="c1"># from pytorch-vqa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Net</span><span class="p">,</span> <span class="n">apply_attention</span><span class="p">,</span> <span class="n">tile_2d_over_nd</span> <span class="c1"># from pytorch-vqa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_transform</span> <span class="c1"># from pytorch-vqa</span>
 
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">IntegratedGradients</span><span class="p">,</span>
     <span class="n">LayerIntegratedGradients</span><span class="p">,</span>
     <span class="n">TokenReferenceBase</span><span class="p">,</span>
@@ -145,7 +145,7 @@
     <span class="n">remove_interpretable_embedding_layer</span><span class="p">,</span>
     <span class="n">visualization</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.input_layer_wrapper</span> <span class="kn">import</span> <span class="n">ModelInputWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.input_layer_wrapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelInputWrapper</span>
 </pre></div>
 </div>
 </div>
@@ -239,7 +239,7 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">encode_question</span><span class="p">(</span><span class="n">question</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">encode_question</span><span class="p">(</span><span class="n">question</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">""" Turn a question into a vector of indices and a question length """</span>
     <span class="n">question_arr</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
     <span class="n">vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">question_arr</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
@@ -271,8 +271,8 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">ResNetLayer4</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ResNetLayer4</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_model</span> <span class="o">=</span> <span class="n">resnet</span><span class="o">.</span><span class="n">resnet152</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -286,22 +286,22 @@
         <span class="c1"># execution in the forward hook of that layer after obtaining the output of it.</span>
         <span class="c1"># For that reason, we can define a custom Exception class that will be used for</span>
         <span class="c1"># raising early termination error.</span>
-        <span class="k">def</span> <span class="nf">save_output</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">save_output</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
             <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">output</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">r_model</span><span class="o">.</span><span class="n">layer4</span><span class="o">.</span><span class="n">register_forward_hook</span><span class="p">(</span><span class="n">save_output</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>          
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">]</span>
 
-<span class="k">class</span> <span class="nc">VQA_Resnet_Model</span><span class="p">(</span><span class="n">Net</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embedding_tokens</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VQA_Resnet_Model</span><span class="p">(</span><span class="n">Net</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embedding_tokens</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">embedding_tokens</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resnet_layer4</span> <span class="o">=</span> <span class="n">ResNetLayer4</span><span class="p">()</span>
     
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">q_len</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">q_len</span><span class="p">):</span>
         <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">q_len</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
         <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resnet_layer4</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 
@@ -416,7 +416,7 @@
 
 <span class="n">transform</span> <span class="o">=</span> <span class="n">get_transform</span><span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="n">central_fraction</span><span class="o">=</span><span class="n">central_fraction</span><span class="p">)</span>
     
-<span class="k">def</span> <span class="nf">image_to_features</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">image_to_features</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
     <span class="n">img_transformed</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
     <span class="n">img_batch</span> <span class="o">=</span> <span class="n">img_transformed</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">img_batch</span>
@@ -523,7 +523,7 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">vqa_resnet_interpret</span><span class="p">(</span><span class="n">image_filename</span><span class="p">,</span> <span class="n">questions</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">vqa_resnet_interpret</span><span class="p">(</span><span class="n">image_filename</span><span class="p">,</span> <span class="n">questions</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
     <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image_filename</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s1">'RGB'</span><span class="p">)</span>
     <span class="n">original_image</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span><span class="n">transforms</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">image_size</span> <span class="o">/</span> <span class="n">central_fraction</span><span class="p">)),</span>
                                    <span class="n">transforms</span><span class="o">.</span><span class="n">CenterCrop</span><span class="p">(</span><span class="n">image_size</span><span class="p">),</span> <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()])(</span><span class="n">img</span><span class="p">)</span> 
@@ -610,7 +610,7 @@
 <div class="prompt input_prompt">In [1]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">IPython</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">IPython</span>
 <span class="c1"># Above cell generates an output similar to this:</span>
 <span class="n">IPython</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">'img/vqa/elephant_attribution.jpg'</span><span class="p">)</span>
 </pre></div>

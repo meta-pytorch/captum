@@ -39,10 +39,10 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_expand_additional_forward_args</span><span class="p">,</span>
     <span class="n">_expand_target</span><span class="p">,</span>
     <span class="n">_format_additional_forward_args</span><span class="p">,</span>
@@ -52,18 +52,18 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">ExpansionTypes</span><span class="p">,</span>
     <span class="n">safe_div</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaselineTupleType</span><span class="p">,</span>
     <span class="n">BaselineType</span><span class="p">,</span>
     <span class="n">TargetType</span><span class="p">,</span>
     <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">captum.metrics._utils.batching</span> <span class="kn">import</span> <span class="n">_divide_and_aggregate_metrics</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.metrics._utils.batching</span><span class="w"> </span><span class="kn">import</span> <span class="n">_divide_and_aggregate_metrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
 
-<span class="k">def</span> <span class="nf">infidelity_perturb_func_decorator</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">infidelity_perturb_func_decorator</span><span class="p">(</span>
     <span class="n">multiply_by_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="c1"># pyre-ignore[34]: The type variable `Variable[TensorOrTupleOfTensorsGeneric</span>
     <span class="c1"># &lt;: [torch._tensor.Tensor, typing.Tuple[torch._tensor.Tensor, ...]]]` isn't</span>
@@ -95,7 +95,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="nf">sub_infidelity_perturb_func_decorator</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sub_infidelity_perturb_func_decorator</span><span class="p">(</span>
         <span class="n">perturb_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span>
         <span class="p">[</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">BaselineType</span><span class="p">],</span>
@@ -124,7 +124,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="sd">        """</span>
 
-        <span class="k">def</span> <span class="nf">default_perturb_func</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">default_perturb_func</span><span class="p">(</span>
             <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
 <span class="w">            </span><span class="sa">r</span><span class="sd">""" """</span>
@@ -178,7 +178,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="infidelity">
 <a class="viewcode-back" href="../../../../metrics.html#captum.metrics.infidelity">[docs]</a>
 <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">infidelity</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">infidelity</span><span class="p">(</span>
     <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
     <span class="n">perturb_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
         <span class="o">...</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span>
@@ -522,7 +522,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">def</span> <span class="nf">_generate_perturbations</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_generate_perturbations</span><span class="p">(</span>
     <span class="n">current_n_perturb_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">perturb_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
         <span class="o">...</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span>
@@ -539,7 +539,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    repeated instances per example.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="nf">call_perturb_func</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_perturb_func</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="p">(</span>
         <span class="n">Tuple</span><span class="p">[</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">]</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">""" """</span>
@@ -579,7 +579,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">call_perturb_func</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">_validate_inputs_and_perturbations</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_inputs_and_perturbations</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">inputs_perturbed</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">perturbations</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -602,7 +602,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_make_next_infidelity_tensors_func</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_next_infidelity_tensors_func</span><span class="p">(</span>
     <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
     <span class="n">bsz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">perturb_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
@@ -616,7 +616,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]]:</span>
 
-    <span class="k">def</span> <span class="nf">_next_infidelity_tensors</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_next_infidelity_tensors</span><span class="p">(</span>
         <span class="n">current_n_perturb_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]:</span>
         <span class="n">perturbations</span><span class="p">,</span> <span class="n">inputs_perturbed</span> <span class="o">=</span> <span class="n">_generate_perturbations</span><span class="p">(</span>
@@ -701,7 +701,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">_next_infidelity_tensors</span>
 
 
-<span class="k">def</span> <span class="nf">_sum_infidelity_tensors</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_sum_infidelity_tensors</span><span class="p">(</span>
     <span class="n">agg_tensors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">tensors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">agg_t</span> <span class="o">+</span> <span class="n">t</span> <span class="k">for</span> <span class="n">agg_t</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">agg_tensors</span><span class="p">,</span> <span class="n">tensors</span><span class="p">))</span>

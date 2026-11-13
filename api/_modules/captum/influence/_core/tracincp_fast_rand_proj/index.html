@@ -39,10 +39,10 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">import</span> <span class="nn">threading</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">cast</span><span class="p">,</span>
@@ -55,16 +55,16 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="n">_get_module_from_name</span><span class="p">,</span> <span class="n">_sort_key_list</span>
-<span class="kn">from</span> <span class="nn">captum._utils.gradient</span> <span class="kn">import</span> <span class="n">_gather_distributed_tensors</span>
-<span class="kn">from</span> <span class="nn">captum._utils.progress</span> <span class="kn">import</span> <span class="n">NullProgress</span><span class="p">,</span> <span class="n">progress</span>
-<span class="kn">from</span> <span class="nn">captum.influence._core.tracincp</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_module_from_name</span><span class="p">,</span> <span class="n">_sort_key_list</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.gradient</span><span class="w"> </span><span class="kn">import</span> <span class="n">_gather_distributed_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.progress</span><span class="w"> </span><span class="kn">import</span> <span class="n">NullProgress</span><span class="p">,</span> <span class="n">progress</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.influence._core.tracincp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_influence_route_to_helpers</span><span class="p">,</span>
     <span class="n">KMostInfluentialResults</span><span class="p">,</span>
     <span class="n">TracInCPBase</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.influence._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.influence._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_check_loss_fn</span><span class="p">,</span>
     <span class="n">_format_inputs_dataset</span><span class="p">,</span>
     <span class="n">_get_k_most_influential_helper</span><span class="p">,</span>
@@ -73,14 +73,14 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_self_influence_by_batches_helper</span><span class="p">,</span>
     <span class="n">_tensor_batch_dot</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.influence._utils.nearest_neighbors</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.influence._utils.nearest_neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">AnnoyNearestNeighbors</span><span class="p">,</span>
     <span class="n">NearestNeighbors</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">device</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">device</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
 
 <span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">Implements abstract DataInfluence class and also provides implementation details for</span>
@@ -110,7 +110,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TracInCPFast">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFast">[docs]</a>
-<span class="k">class</span> <span class="nc">TracInCPFast</span><span class="p">(</span><span class="n">TracInCPBase</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TracInCPFast</span><span class="p">(</span><span class="n">TracInCPBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    In Appendix F, Page 14 of the TracIn paper, they show that the calculation</span>
 <span class="sd">    of the influence score of between a test example x' and a training example x,</span>
@@ -130,7 +130,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">final_fc_layer</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Module</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -256,12 +256,12 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">final_fc_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Module</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">final_fc_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Module</span><span class="p">:</span>
         <span class="c1"># pyre-fixme[16]: `TracInCPFast` has no attribute `_final_fc_layer`.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_final_fc_layer</span>
 
     <span class="nd">@final_fc_layer</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">final_fc_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Module</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">final_fc_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Module</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_final_fc_layer</span> <span class="o">=</span> <span class="n">_get_module_from_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">layer</span><span class="p">)</span>
@@ -270,14 +270,14 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s1">'Invalid final_fc_layer str: "</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s1">" provided!'</span>
-                <span class="p">)</span> <span class="kn">from</span> <span class="nn">ex</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">ex</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_final_fc_layer</span> <span class="o">=</span> <span class="n">layer</span>
 
 <div class="viewcode-block" id="TracInCPFast.influence">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFast.influence">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">k</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -368,7 +368,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
     <span class="c1"># pyre-fixme[3]: Return type must be annotated.</span>
-    <span class="k">def</span> <span class="nf">_influence_batch_tracincp_fast</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_influence_batch_tracincp_fast</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">test_batch</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">train_batch</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -381,7 +381,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="c1"># pyre-fixme[3]: Return type must be annotated.</span>
         <span class="c1"># pyre-fixme[2]: Parameter must be annotated.</span>
-        <span class="k">def</span> <span class="nf">get_checkpoint_contribution</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_checkpoint_contribution</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">):</span>
 
             <span class="k">assert</span> <span class="p">(</span>
                 <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -424,7 +424,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">batch_tracin_scores</span>
 
-    <span class="k">def</span> <span class="nf">_influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -488,7 +488,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_k_most_influential</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_k_most_influential</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
@@ -559,7 +559,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_self_influence_by_checkpoints</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_self_influence_by_checkpoints</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">],</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -634,7 +634,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="c1"># pyre-fixme[53]: Captured variable `inputs_len` is not annotated.</span>
         <span class="c1"># pyre-fixme[3]: Return type must be annotated.</span>
         <span class="c1"># pyre-fixme[2]: Parameter must be annotated.</span>
-        <span class="k">def</span> <span class="nf">get_checkpoint_contribution</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_checkpoint_contribution</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">):</span>
             <span class="c1"># This function returns a 1D tensor representing the contribution to the</span>
             <span class="c1"># self influence score for the given checkpoint, for all batches in</span>
             <span class="c1"># `inputs`. The length of the 1D tensor is the total number of</span>
@@ -715,7 +715,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="TracInCPFast.self_influence">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFast.self_influence">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">self_influence</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">self_influence</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -793,7 +793,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 
 
-<span class="k">def</span> <span class="nf">_basic_computation_tracincp_fast</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_basic_computation_tracincp_fast</span><span class="p">(</span>
     <span class="n">influence_instance</span><span class="p">:</span> <span class="n">TracInCPFast</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">targets</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -844,10 +844,10 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="c1"># pyre-fixme[3]: Return type must be annotated.</span>
     <span class="c1"># pyre-fixme[2]: Parameter must be annotated.</span>
-    <span class="k">def</span> <span class="nf">hook_wrapper</span><span class="p">(</span><span class="n">original_module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hook_wrapper</span><span class="p">(</span><span class="n">original_module</span><span class="p">):</span>
         <span class="c1"># pyre-fixme[53]: Captured variable `lock` is not annotated.</span>
         <span class="c1"># pyre-fixme[2]: Parameter must be annotated.</span>
-        <span class="k">def</span> <span class="nf">_capture_inputs</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_capture_inputs</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">            </span><span class="sa">r</span><span class="sd">"""Save activations into layer_inputs in forward pass"""</span>
             <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
                 <span class="n">is_eval_tuple</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
@@ -898,7 +898,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TracInCPFastRandProj">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFastRandProj">[docs]</a>
-<span class="k">class</span> <span class="nc">TracInCPFastRandProj</span><span class="p">(</span><span class="n">TracInCPFast</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TracInCPFastRandProj</span><span class="p">(</span><span class="n">TracInCPFast</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    A version of TracInCPFast which is optimized for "interactive" calls to</span>
 <span class="sd">    `influence` for the purpose of calculating proponents / opponents, or</span>
@@ -950,7 +950,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    example is the concatenation of the contributions from each checkpoint.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">final_fc_layer</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
@@ -1122,7 +1122,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="bp">self</span><span class="o">.</span><span class="n">src_intermediate_quantities</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
@@ -1158,7 +1158,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">input_projections</span><span class="p">,</span> <span class="n">src_projections</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_k_most_influential</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_k_most_influential</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
@@ -1216,7 +1216,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="TracInCPFastRandProj.self_influence">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFastRandProj.self_influence">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">self_influence</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">self_influence</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1292,7 +1292,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="TracInCPFastRandProj.influence">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFastRandProj.influence">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
@@ -1370,7 +1370,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_set_projections_tracincp_fast_rand_proj</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_projections_tracincp_fast_rand_proj</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">dataloader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
@@ -1461,7 +1461,7 @@ src="/_sphinx/documentation_options.js"></script>
 
         <span class="k">return</span> <span class="n">projection_quantities</span>
 
-    <span class="k">def</span> <span class="nf">_process_src_intermediate_quantities_tracincp_fast_rand_proj</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_src_intermediate_quantities_tracincp_fast_rand_proj</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">src_intermediate_quantities</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1486,7 +1486,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nearest_neighbors</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">src_intermediate_quantities</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_intermediate_quantities_tracincp_fast_rand_proj</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_intermediate_quantities_tracincp_fast_rand_proj</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">],</span>
         <span class="n">projection_quantities</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
@@ -1649,7 +1649,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="TracInCPFastRandProj.compute_intermediate_quantities">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.TracInCPFastRandProj.compute_intermediate_quantities">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">compute_intermediate_quantities</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_intermediate_quantities</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>

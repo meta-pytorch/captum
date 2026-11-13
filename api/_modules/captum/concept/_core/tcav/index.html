@@ -38,34 +38,34 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.multiprocessing</span> <span class="k">as</span> <span class="nn">multiprocessing</span>
-<span class="kn">from</span> <span class="nn">captum._utils.av</span> <span class="kn">import</span> <span class="n">AV</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="n">_format_tensor_into_tuples</span><span class="p">,</span> <span class="n">_get_module_from_name</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">LayerActivation</span><span class="p">,</span> <span class="n">LayerAttribution</span><span class="p">,</span> <span class="n">LayerGradientXActivation</span>
-<span class="kn">from</span> <span class="nn">captum.concept._core.cav</span> <span class="kn">import</span> <span class="n">CAV</span>
-<span class="kn">from</span> <span class="nn">captum.concept._core.concept</span> <span class="kn">import</span> <span class="n">Concept</span><span class="p">,</span> <span class="n">ConceptInterpreter</span>
-<span class="kn">from</span> <span class="nn">captum.concept._utils.classifier</span> <span class="kn">import</span> <span class="n">Classifier</span><span class="p">,</span> <span class="n">DefaultClassifier</span>
-<span class="kn">from</span> <span class="nn">captum.concept._utils.common</span> <span class="kn">import</span> <span class="n">concepts_to_str</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.multiprocessing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">multiprocessing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.av</span><span class="w"> </span><span class="kn">import</span> <span class="n">AV</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">_format_tensor_into_tuples</span><span class="p">,</span> <span class="n">_get_module_from_name</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerActivation</span><span class="p">,</span> <span class="n">LayerAttribution</span><span class="p">,</span> <span class="n">LayerGradientXActivation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.concept._core.cav</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAV</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.concept._core.concept</span><span class="w"> </span><span class="kn">import</span> <span class="n">Concept</span><span class="p">,</span> <span class="n">ConceptInterpreter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.concept._utils.classifier</span><span class="w"> </span><span class="kn">import</span> <span class="n">Classifier</span><span class="p">,</span> <span class="n">DefaultClassifier</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.concept._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">concepts_to_str</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
 
 
-<span class="k">class</span> <span class="nc">LabelledDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LabelledDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A torch Dataset whose __getitem__ returns both a batch of activation vectors,</span>
 <span class="sd">    as well as a batch of labels associated with those activation vectors.</span>
 <span class="sd">    It is used to train a classifier in train_tcav</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AV</span><span class="o">.</span><span class="n">AVDataset</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AV</span><span class="o">.</span><span class="n">AVDataset</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Creates the LabelledDataset given a list of K Datasets, and a length K</span>
 <span class="sd">        list of integer labels representing K different concepts.</span>
@@ -88,7 +88,7 @@ src="/_sphinx/documentation_options.js"></script>
             <span class="n">labels</span>
         <span class="p">),</span> <span class="s2">"number of datasets does not match the number of concepts"</span>
 
-        <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">accumulate</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">accumulate</span>
 
         <span class="n">offsets</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">accumulate</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">datasets</span><span class="p">),</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -97,7 +97,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="bp">self</span><span class="o">.</span><span class="n">lowers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">uppers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
-    <span class="k">def</span> <span class="nf">_i_to_k</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_i_to_k</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 
         <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uppers</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
@@ -111,7 +111,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 
     <span class="c1"># pyrefly: ignore [bad-override-param-name]</span>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a batch of activation vectors, as well as a batch of labels</span>
 <span class="sd">        indicating which concept the batch of activation vectors is associated</span>
@@ -140,14 +140,14 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span> <span class="o">*</span> <span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">inputs</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># type: ignore # noqa: E501 line too long</span>
         <span class="k">return</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        returns the total number of batches in the labelled_dataset</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
 
 
-<span class="k">def</span> <span class="nf">train_cav</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_cav</span><span class="p">(</span>
     <span class="n">model_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Concept</span><span class="p">],</span>
     <span class="n">layers</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
@@ -208,7 +208,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">labelled_dataset</span> <span class="o">=</span> <span class="n">LabelledDataset</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
 
         <span class="c1"># pyre-fixme[2]: Parameter must be annotated.</span>
-        <span class="k">def</span> <span class="nf">batch_collate</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">batch_collate</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
             <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">inputs</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
 
@@ -252,7 +252,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TCAV">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV">[docs]</a>
-<span class="k">class</span> <span class="nc">TCAV</span><span class="p">(</span><span class="n">ConceptInterpreter</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TCAV</span><span class="p">(</span><span class="n">ConceptInterpreter</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    This class implements ConceptInterpreter abstract class using an</span>
 <span class="sd">    approach called Testing with Concept Activation Vectors (TCAVs),</span>
@@ -292,7 +292,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    2. magnitude_score = SUM(ABS(TCAV * (TCAV &gt; 0))) / SUM(ABS(TCAV))</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">layers</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
@@ -398,7 +398,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TCAV.generate_all_activations">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV.generate_all_activations">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_all_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_all_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Computes layer activations for all concepts and layers that are</span>
 <span class="sd">        defined in `self.layers` and `self.concepts` instance variables.</span>
@@ -409,7 +409,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TCAV.generate_activation">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV.generate_activation">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_activation</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_activation</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">layers</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">concept</span><span class="p">:</span> <span class="n">Concept</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
@@ -452,7 +452,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TCAV.generate_activations">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV.generate_activations">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept_layers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Concept</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept_layers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Concept</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Computes layer activations for the concepts and layers specified in</span>
 <span class="sd">        `concept_layers` dictionary.</span>
@@ -469,7 +469,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TCAV.load_cavs">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV.load_cavs">[docs]</a>
-    <span class="k">def</span> <span class="nf">load_cavs</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_cavs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Concept</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Concept</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
@@ -528,7 +528,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="TCAV.compute_cavs">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV.compute_cavs">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_cavs</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_cavs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">experimental_sets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Concept</span><span class="p">]],</span>
         <span class="n">force_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -645,7 +645,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="TCAV.interpret">
 <a class="viewcode-back" href="../../../../concept.html#captum.concept.TCAV.interpret">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">interpret</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpret</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">experimental_sets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Concept</span><span class="p">]],</span>
@@ -848,7 +848,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">ordered_scores</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_tcav_sub_computation</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tcav_sub_computation</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scores</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]],</span>
         <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>

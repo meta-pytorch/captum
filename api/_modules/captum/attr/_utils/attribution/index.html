@@ -38,39 +38,39 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 <span class="c1"># pyre-strict</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_format_additional_forward_args</span><span class="p">,</span>
     <span class="n">_format_tensor_into_tuples</span><span class="p">,</span>
     <span class="n">_run_forward</span><span class="p">,</span>
     <span class="n">_validate_target</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum._utils.gradient</span> <span class="kn">import</span> <span class="n">compute_gradients</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">ModuleOrModuleList</span><span class="p">,</span> <span class="n">TargetType</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.gradient</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_gradients</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModuleOrModuleList</span><span class="p">,</span> <span class="n">TargetType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_format_input_baseline</span><span class="p">,</span>
     <span class="n">_sum_rows</span><span class="p">,</span>
     <span class="n">_tensorize_baseline</span><span class="p">,</span>
     <span class="n">_validate_input</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span>
 
 
 <div class="viewcode-block" id="Attribution">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.Attribution">[docs]</a>
-<span class="k">class</span> <span class="nc">Attribution</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Attribution</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    All attribution algorithms extend this class. It enforces its child classes</span>
 <span class="sd">    to extend and override core `attribute` method.</span>
 <span class="sd">    """</span>
 
     <span class="c1"># pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            forward_func (Callable or torch.nn.Module): This can either be an instance</span>
@@ -144,12 +144,12 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    """</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="Attribution.has_convergence_delta">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.Attribution.has_convergence_delta">[docs]</a>
-    <span class="k">def</span> <span class="nf">has_convergence_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_convergence_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        This method informs the user whether the attribution algorithm provides</span>
 <span class="sd">        a convergence delta (aka an approximation error) or not. Convergence</span>
@@ -203,7 +203,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="Attribution.get_name">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.Attribution.get_name">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">"Attribution"</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">"Attribution"</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Create readable class name by inserting a space before any capital</span>
 <span class="sd">        characters besides the very first.</span>
@@ -226,7 +226,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="GradientAttribution">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.GradientAttribution">[docs]</a>
-<span class="k">class</span> <span class="nc">GradientAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GradientAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    All gradient based attribution algorithms extend this class. It requires a</span>
 <span class="sd">    forward function, which most commonly is the forward function of the model</span>
@@ -234,7 +234,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    """</span>
 
     <span class="c1"># pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 
@@ -249,7 +249,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="GradientAttribution.compute_convergence_delta">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.GradientAttribution.compute_convergence_delta">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">compute_convergence_delta</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_convergence_delta</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">attributions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
         <span class="n">start_point</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -395,19 +395,19 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="PerturbationAttribution">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.PerturbationAttribution">[docs]</a>
-<span class="k">class</span> <span class="nc">PerturbationAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PerturbationAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    All perturbation based attribution algorithms extend this class. It requires a</span>
 <span class="sd">    forward function, which most commonly is the forward function of the model</span>
 <span class="sd">    that we want to interpret or the model itself.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init_subclass__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">_raise_if_runs_with_grad</span><span class="p">()</span>
 
     <span class="c1"># pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 
@@ -418,11 +418,11 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">Attribution</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forward_func</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multiplies_by_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_is_decorated_with_no_grad</span><span class="p">(</span><span class="n">method</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_decorated_with_no_grad</span><span class="p">(</span><span class="n">method</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="c1"># torch.no_grad()(fn) closes over the context manager itself, so the</span>
         <span class="c1"># decorator is identified by the object rather than by any name torch</span>
         <span class="c1"># may change.</span>
@@ -440,7 +440,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_raise_if_runs_with_grad</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_raise_if_runs_with_grad</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">method</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"attribute"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_decorated_with_no_grad</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
             <span class="k">return</span>
@@ -454,7 +454,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># mypy false positive "Free type variable expected in Generic[...]" but</span>
 <span class="c1"># ModuleOrModuleList is a TypeVar</span>
-<span class="k">class</span> <span class="nc">InternalAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ModuleOrModuleList</span><span class="p">]):</span>  <span class="c1"># type: ignore</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">InternalAttribution</span><span class="p">(</span><span class="n">Attribution</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ModuleOrModuleList</span><span class="p">]):</span>  <span class="c1"># type: ignore</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Shared base class for LayerAttrubution and NeuronAttribution,</span>
 <span class="sd">    attribution types that require a model and a particular layer.</span>
@@ -462,7 +462,7 @@ src="/_sphinx/documentation_options.js"></script>
 
     <span class="n">layer</span><span class="p">:</span> <span class="n">ModuleOrModuleList</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="c1"># pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.</span>
         <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
@@ -491,7 +491,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># pyre-fixme[24]: Generic type `InternalAttribution` expects 1 type parameter.</span>
 <div class="viewcode-block" id="LayerAttribution">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.LayerAttribution">[docs]</a>
-<span class="k">class</span> <span class="nc">LayerAttribution</span><span class="p">(</span><span class="n">InternalAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LayerAttribution</span><span class="p">(</span><span class="n">InternalAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Layer attribution provides attribution values for the given layer, quantifying</span>
 <span class="sd">    the importance of each neuron within the given layer's output. The output</span>
@@ -499,7 +499,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    the size of the layer output.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="c1"># pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.</span>
         <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
@@ -525,7 +525,7 @@ src="/_sphinx/documentation_options.js"></script>
 <div class="viewcode-block" id="LayerAttribution.interpolate">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.LayerAttribution.interpolate">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span>
         <span class="n">layer_attribution</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">interpolate_dims</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
         <span class="n">interpolate_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"nearest"</span><span class="p">,</span>
@@ -566,7 +566,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="c1"># pyre-fixme[24]: Generic type `InternalAttribution` expects 1 type parameter.</span>
 <div class="viewcode-block" id="NeuronAttribution">
 <a class="viewcode-back" href="../../../../base_classes.html#captum.attr.NeuronAttribution">[docs]</a>
-<span class="k">class</span> <span class="nc">NeuronAttribution</span><span class="p">(</span><span class="n">InternalAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuronAttribution</span><span class="p">(</span><span class="n">InternalAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Neuron attribution provides input attribution for a given neuron, quantifying</span>
 <span class="sd">    the importance of each input feature in the activation of a particular neuron.</span>
@@ -577,7 +577,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    always matches the size of the input.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="c1"># pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.</span>
         <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>

@@ -101,21 +101,21 @@
 <div class="prompt input_prompt">In [1]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">BertTokenizer</span><span class="p">,</span> <span class="n">BertForQuestionAnswering</span><span class="p">,</span> <span class="n">BertConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BertTokenizer</span><span class="p">,</span> <span class="n">BertForQuestionAnswering</span><span class="p">,</span> <span class="n">BertConfig</span>
 
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">visualization</span> <span class="k">as</span> <span class="n">viz</span>
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">IntegratedGradients</span><span class="p">,</span> <span class="n">LayerConductance</span><span class="p">,</span> <span class="n">LayerIntegratedGradients</span><span class="p">,</span> <span class="n">LayerActivation</span>
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">configure_interpretable_embedding_layer</span><span class="p">,</span> <span class="n">remove_interpretable_embedding_layer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualization</span> <span class="k">as</span> <span class="n">viz</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntegratedGradients</span><span class="p">,</span> <span class="n">LayerConductance</span><span class="p">,</span> <span class="n">LayerIntegratedGradients</span><span class="p">,</span> <span class="n">LayerActivation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_interpretable_embedding_layer</span><span class="p">,</span> <span class="n">remove_interpretable_embedding_layer</span>
 </pre></div>
 </div>
 </div>
@@ -180,7 +180,7 @@
 <div class="prompt input_prompt">In [4]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">position_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">position_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="n">token_type_ids</span><span class="p">,</span>
                  <span class="n">position_ids</span><span class="o">=</span><span class="n">position_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span> <span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">start_logits</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">end_logits</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">attentions</span>
@@ -201,7 +201,7 @@
 <div class="prompt input_prompt">In [5]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">squad_pos_forward_func</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">position_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">squad_pos_forward_func</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">position_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs_embeds</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="n">token_type_ids</span><span class="p">,</span>
                  <span class="n">position_ids</span><span class="o">=</span><span class="n">position_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span> <span class="p">)</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="n">pred</span><span class="p">[</span><span class="n">position</span><span class="p">]</span>
@@ -245,7 +245,7 @@
 <div class="prompt input_prompt">In [7]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">construct_input_ref_pair</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ref_token_id</span><span class="p">,</span> <span class="n">sep_token_id</span><span class="p">,</span> <span class="n">cls_token_id</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">construct_input_ref_pair</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ref_token_id</span><span class="p">,</span> <span class="n">sep_token_id</span><span class="p">,</span> <span class="n">cls_token_id</span><span class="p">):</span>
     <span class="n">question_ids</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">add_special_tokens</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">text_ids</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">add_special_tokens</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -258,13 +258,13 @@
 
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">input_ids</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">ref_input_ids</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">question_ids</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">construct_input_ref_token_type_pair</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">sep_ind</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_input_ref_token_type_pair</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">sep_ind</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="n">seq_len</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">token_type_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">sep_ind</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">seq_len</span><span class="p">)]],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
     <span class="n">ref_token_type_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">token_type_ids</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="c1"># * -1</span>
     <span class="k">return</span> <span class="n">token_type_ids</span><span class="p">,</span> <span class="n">ref_token_type_ids</span>
 
-<span class="k">def</span> <span class="nf">construct_input_ref_pos_id_pair</span><span class="p">(</span><span class="n">input_ids</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_input_ref_pos_id_pair</span><span class="p">(</span><span class="n">input_ids</span><span class="p">):</span>
     <span class="n">seq_length</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">position_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">seq_length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
     <span class="c1"># we could potentially also use random permutation with `torch.randperm(seq_length, device=device)`</span>
@@ -274,10 +274,10 @@
     <span class="n">ref_position_ids</span> <span class="o">=</span> <span class="n">ref_position_ids</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">position_ids</span><span class="p">,</span> <span class="n">ref_position_ids</span>
     
-<span class="k">def</span> <span class="nf">construct_attention_mask</span><span class="p">(</span><span class="n">input_ids</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_attention_mask</span><span class="p">(</span><span class="n">input_ids</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
     
-<span class="k">def</span> <span class="nf">construct_whole_bert_embeddings</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">ref_input_ids</span><span class="p">,</span> \
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_whole_bert_embeddings</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">ref_input_ids</span><span class="p">,</span> \
                                     <span class="n">token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref_token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> \
                                     <span class="n">position_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref_position_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">input_embeddings</span> <span class="o">=</span> <span class="n">interpretable_embedding</span><span class="o">.</span><span class="n">indices_to_embeddings</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
@@ -436,7 +436,7 @@ Predicted Answer:  to include , em ##power and support humans of all kinds
 <div class="prompt input_prompt">In [13]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">visualize_token2token_scores</span><span class="p">(</span><span class="n">scores_mat</span><span class="p">,</span> <span class="n">x_label_name</span><span class="o">=</span><span class="s1">'Head'</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">visualize_token2token_scores</span><span class="p">(</span><span class="n">scores_mat</span><span class="p">,</span> <span class="n">x_label_name</span><span class="o">=</span><span class="s1">'Head'</span><span class="p">):</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
 
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scores_mat</span><span class="p">):</span>
@@ -481,7 +481,7 @@ Predicted Answer:  to include , em ##power and support humans of all kinds
 <div class="prompt input_prompt">In [14]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">visualize_token2head_scores</span><span class="p">(</span><span class="n">scores_mat</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">visualize_token2head_scores</span><span class="p">(</span><span class="n">scores_mat</span><span class="p">):</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
 
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scores_mat</span><span class="p">):</span>
@@ -645,7 +645,7 @@ Predicted Answer:  to include , em ##power and support humans of all kinds
 <div class="prompt input_prompt">In [19]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">summarize_attributions</span><span class="p">(</span><span class="n">attributions</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">summarize_attributions</span><span class="p">(</span><span class="n">attributions</span><span class="p">):</span>
     <span class="n">attributions</span> <span class="o">=</span> <span class="n">attributions</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">attributions</span> <span class="o">=</span> <span class="n">attributions</span> <span class="o">/</span> <span class="n">norm_fn</span><span class="p">(</span><span class="n">attributions</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">attributions</span>

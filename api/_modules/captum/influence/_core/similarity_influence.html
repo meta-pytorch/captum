@@ -39,25 +39,25 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">captum._utils.common</span> <span class="k">as</span> <span class="nn">common</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.av</span> <span class="kn">import</span> <span class="n">AV</span>
-<span class="kn">from</span> <span class="nn">captum.attr</span> <span class="kn">import</span> <span class="n">LayerActivation</span>
-<span class="kn">from</span> <span class="nn">captum.influence._core.influence</span> <span class="kn">import</span> <span class="n">DataInfluence</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">common</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.av</span><span class="w"> </span><span class="kn">import</span> <span class="n">AV</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerActivation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.influence._core.influence</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataInfluence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Dataset</span>
 
 <span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">Additional helper functions to calculate similarity metrics.</span>
 <span class="sd">"""</span>
 
 
-<span class="k">def</span> <span class="nf">euclidean_distance</span><span class="p">(</span><span class="n">test</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">train</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">euclidean_distance</span><span class="p">(</span><span class="n">test</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">train</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Calculates the pairwise euclidean distance for batches of feature vectors.</span>
 <span class="sd">    Tensors test and train have shape (batch_size_1, *), and (batch_size_2, *).</span>
@@ -70,7 +70,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="n">similarity</span>
 
 
-<span class="k">def</span> <span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">test</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">train</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">replace_nan</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">test</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">train</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">replace_nan</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Calculates the pairwise cosine similarity for batches of feature vectors.</span>
 <span class="sd">    Tensors test and train have shape (batch_size_1, *), and (batch_size_2, *).</span>
@@ -102,8 +102,8 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="SimilarityInfluence">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.SimilarityInfluence">[docs]</a>
-<span class="k">class</span> <span class="nc">SimilarityInfluence</span><span class="p">(</span><span class="n">DataInfluence</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SimilarityInfluence</span><span class="p">(</span><span class="n">DataInfluence</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
         <span class="n">layers</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
@@ -206,7 +206,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="SimilarityInfluence.influence">
 <a class="viewcode-back" href="../../../../influence.html#captum.influence.SimilarityInfluence.influence">[docs]</a>
-    <span class="k">def</span> <span class="nf">influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">influence</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
         <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>

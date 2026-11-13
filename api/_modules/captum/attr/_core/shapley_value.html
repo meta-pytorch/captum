@@ -39,11 +39,11 @@ src="/_sphinx/documentation_options.js"></script>
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">cast</span><span class="p">,</span>
@@ -57,8 +57,8 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">captum._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_expand_additional_forward_args</span><span class="p">,</span>
     <span class="n">_expand_target</span><span class="p">,</span>
     <span class="n">_format_additional_forward_args</span><span class="p">,</span>
@@ -69,31 +69,31 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="n">_is_tuple</span><span class="p">,</span>
     <span class="n">_run_forward</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum._utils.exceptions</span> <span class="kn">import</span> <span class="n">ShapleyValueFutureError</span>
-<span class="kn">from</span> <span class="nn">captum._utils.progress</span> <span class="kn">import</span> <span class="n">progress</span>
-<span class="kn">from</span> <span class="nn">captum._utils.typing</span> <span class="kn">import</span> <span class="n">BaselineType</span><span class="p">,</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.attribution</span> <span class="kn">import</span> <span class="n">PerturbationAttribution</span>
-<span class="kn">from</span> <span class="nn">captum.attr._utils.common</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShapleyValueFutureError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.progress</span><span class="w"> </span><span class="kn">import</span> <span class="n">progress</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum._utils.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaselineType</span><span class="p">,</span> <span class="n">TargetType</span><span class="p">,</span> <span class="n">TensorOrTupleOfTensorsGeneric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.attribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerturbationAttribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.attr._utils.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_find_output_mode_and_verify</span><span class="p">,</span>
     <span class="n">_format_input_baseline</span><span class="p">,</span>
     <span class="n">_tensorize_baseline</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">captum.log</span> <span class="kn">import</span> <span class="n">log_usage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">Size</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.futures</span> <span class="kn">import</span> <span class="n">collect_all</span><span class="p">,</span> <span class="n">Future</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">captum.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_usage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">Size</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">collect_all</span><span class="p">,</span> <span class="n">Future</span>
 
 
-<span class="k">def</span> <span class="nf">_all_perm_generator</span><span class="p">(</span><span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_all_perm_generator</span><span class="p">(</span><span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
     <span class="k">for</span> <span class="n">perm</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_features</span><span class="p">)):</span>
         <span class="k">yield</span> <span class="n">perm</span>
 
 
-<span class="k">def</span> <span class="nf">_perm_generator</span><span class="p">(</span><span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_perm_generator</span><span class="p">(</span><span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_samples</span><span class="p">):</span>
         <span class="k">yield</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">num_features</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">_get_feature_ids</span><span class="p">(</span><span class="n">feature_mask</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_feature_ids</span><span class="p">(</span><span class="n">feature_mask</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Sorted non-negative feature IDs present in the mask. Negative IDs are never</span>
 <span class="sd">    perturbed.</span>
@@ -106,7 +106,7 @@ src="/_sphinx/documentation_options.js"></script>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">feature_id</span> <span class="k">for</span> <span class="n">feature_id</span> <span class="ow">in</span> <span class="n">feature_ids</span> <span class="k">if</span> <span class="n">feature_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_shape_feature_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_shape_feature_mask</span><span class="p">(</span>
     <span class="n">feature_mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""</span>
@@ -129,7 +129,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="ShapleyValueSampling">
 <a class="viewcode-back" href="../../../../shapley_value_sampling.html#captum.attr.ShapleyValueSampling">[docs]</a>
-<span class="k">class</span> <span class="nc">ShapleyValueSampling</span><span class="p">(</span><span class="n">PerturbationAttribution</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ShapleyValueSampling</span><span class="p">(</span><span class="n">PerturbationAttribution</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A perturbation based approach to compute attribution, based on the concept</span>
 <span class="sd">    of Shapley Values from cooperative game theory. This method involves taking</span>
@@ -153,7 +153,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    https://pdfs.semanticscholar.org/7715/bb1070691455d1fcfc6346ff458dbca77b2c.pdf</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
             <span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Future</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Future</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]</span>
@@ -175,7 +175,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="ShapleyValueSampling.expected_forward_count">
 <a class="viewcode-back" href="../../../../shapley_value_sampling.html#captum.attr.ShapleyValueSampling.expected_forward_count">[docs]</a>
-    <span class="k">def</span> <span class="nf">expected_forward_count</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expected_forward_count</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
@@ -206,7 +206,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_expected_forward_count</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_expected_forward_count</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -239,7 +239,7 @@ src="/_sphinx/documentation_options.js"></script>
 <a class="viewcode-back" href="../../../../shapley_value_sampling.html#captum.attr.ShapleyValueSampling.attribute">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -580,7 +580,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="ShapleyValueSampling.attribute_future">
 <a class="viewcode-back" href="../../../../shapley_value_sampling.html#captum.attr.ShapleyValueSampling.attribute_future">[docs]</a>
-    <span class="k">def</span> <span class="nf">attribute_future</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute_future</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -721,7 +721,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Future</span><span class="p">[</span><span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">],</span> <span class="n">formatted_attr</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_initial_eval_to_prev_results_tuple</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_eval_to_prev_results_tuple</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">initial_eval</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
         <span class="n">num_examples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -766,10 +766,10 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="k">except</span> <span class="n">ShapleyValueFutureError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ShapleyValueFutureError</span><span class="p">(</span>
                 <span class="s2">"_initial_eval_to_prev_results_tuple func failed"</span>
-            <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
         <span class="k">return</span> <span class="n">result</span>
 
-    <span class="k">def</span> <span class="nf">_set_prev_results_to_initial_eval</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_prev_results_to_initial_eval</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">processed_initial_eval</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Size</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Size</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
@@ -781,7 +781,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">prev_results</span> <span class="o">=</span> <span class="n">initial_eval</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">initial_eval</span><span class="p">,</span> <span class="n">prev_results</span><span class="p">,</span> <span class="n">output_shape</span><span class="p">,</span> <span class="n">total_attrib</span><span class="p">,</span> <span class="n">agg_output_mode</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_eval_fut_to_prev_results_tuple</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_eval_fut_to_prev_results_tuple</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">eval_futs</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span>
             <span class="n">List</span><span class="p">[</span>
@@ -867,7 +867,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
-    <span class="k">def</span> <span class="nf">_prev_result_tuple_to_formatted_attr</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prev_result_tuple_to_formatted_attr</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">prev_result_tuple</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span>
             <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
@@ -892,7 +892,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="n">formatted_attr</span> <span class="o">=</span> <span class="n">_format_output</span><span class="p">(</span><span class="n">is_inputs_tuple</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">formatted_attr</span>
 
-    <span class="k">def</span> <span class="nf">_update_current_tensors</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_current_tensors</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">current_tensors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">input_tensors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -915,7 +915,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">output_tensors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_tensors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">output_tensors</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_construct_selected_mask</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_construct_selected_mask</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">feature_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">mask</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -932,7 +932,7 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">output_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">empty_mask</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">output_mask</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_perturbation_generator</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_perturbation_generator</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">additional_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
@@ -1039,14 +1039,14 @@ src="/_sphinx/documentation_options.js"></script>
                 <span class="n">current_feat_list</span><span class="p">,</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_n_evaluations</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_n_evaluations</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">total_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""return the total number of forward evaluations needed"""</span>
         <span class="c1"># _perm_generator yields no permutations for negative n_samples.</span>
         <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">total_features</span> <span class="o">/</span> <span class="n">perturbations_per_eval</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_strict_run_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_strict_run_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        A temp wrapper for global _run_forward util to force forward output</span>
 <span class="sd">        type assertion &amp; conversion.</span>
@@ -1071,14 +1071,14 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="c1"># ref: https://github.com/pytorch/pytorch/pull/21215</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">forward_output</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">output_type</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">_strict_run_forward_future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_strict_run_forward_future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        A temp wrapper for global _run_forward util to force</span>
 <span class="sd">        forward outputtype assertion &amp; conversion, but takes</span>
 <span class="sd">        into account the Future tensor type</span>
 <span class="sd">        """</span>
 
-        <span class="k">def</span> <span class="nf">process_strict_run_forward</span><span class="p">(</span><span class="n">fut</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">process_strict_run_forward</span><span class="p">(</span><span class="n">fut</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">fut</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
                 <span class="c1"># format scalar to shape (1) so we can always</span>
@@ -1107,7 +1107,7 @@ src="/_sphinx/documentation_options.js"></script>
 
 <div class="viewcode-block" id="ShapleyValues">
 <a class="viewcode-back" href="../../../../shapley_value_sampling.html#captum.attr.ShapleyValues">[docs]</a>
-<span class="k">class</span> <span class="nc">ShapleyValues</span><span class="p">(</span><span class="n">ShapleyValueSampling</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ShapleyValues</span><span class="p">(</span><span class="n">ShapleyValueSampling</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A perturbation based approach to compute attribution, based on the concept</span>
 <span class="sd">    of Shapley Values from cooperative game theory. This method involves taking</span>
@@ -1138,7 +1138,7 @@ src="/_sphinx/documentation_options.js"></script>
 <span class="sd">    evaluations, and we plan to add this approach in the future.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">forward_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
             <span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Future</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Future</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Future</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]</span>
@@ -1163,7 +1163,7 @@ src="/_sphinx/documentation_options.js"></script>
 <a class="viewcode-back" href="../../../../shapley_value_sampling.html#captum.attr.ShapleyValues.attribute">[docs]</a>
     <span class="nd">@log_usage</span><span class="p">(</span><span class="n">part_of_slo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">attribute</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorOrTupleOfTensorsGeneric</span><span class="p">,</span>
         <span class="n">baselines</span><span class="p">:</span> <span class="n">BaselineType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1377,7 +1377,7 @@ src="/_sphinx/documentation_options.js"></script>
         <span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_get_n_evaluations</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_n_evaluations</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">total_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">perturbations_per_eval</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""return the total number of forward evaluations needed"""</span>
