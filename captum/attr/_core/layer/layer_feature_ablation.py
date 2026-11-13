@@ -279,7 +279,7 @@ class LayerFeatureAblation(LayerAttribution, PerturbationAttribution):
                     hook = self.layer.register_forward_pre_hook(forward_hook)
                 else:
                     hook = self.layer.register_forward_hook(forward_hook)
-                eval = _run_forward(self.forward_func, original_inputs, target=target)
+                eval = _run_forward(self.forward_func, original_inputs)
             finally:
                 if hook is not None:
                     hook.remove()
@@ -315,6 +315,7 @@ class LayerFeatureAblation(LayerAttribution, PerturbationAttribution):
                 ablator,  # self
                 layer_eval,
                 baselines=layer_baselines,
+                target=target,
                 additional_forward_args=all_inputs,
                 feature_mask=layer_mask,
                 perturbations_per_eval=perturbations_per_eval,
