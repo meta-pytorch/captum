@@ -969,10 +969,12 @@ class TracInCP(TracInCPBase):
         aggregate: bool,
         # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
         loss_fn: Optional[Union[Module, Callable]] = None,
+        reduction_type: Optional[str] = None,
     ) -> List[Tuple[Tensor, ...]]:
         """
         computes the jacobians of all examples in `inputs_dataset`, for all
         checkpoints. if `aggregate` is True, the jacobians for examples are summed.
+        `reduction_type` is the reduction type of `loss_fn`.
         returns a list where each element corresponds to a checkpoint. this logic is
         separated into a helper function because it is used by both `_influence` and
         `_get_k_most_influential`.
@@ -982,11 +984,11 @@ class TracInCP(TracInCPBase):
             self.checkpoints_load_func(self.model, checkpoint)
             if aggregate:
                 inputs_checkpoint_jacobians.append(
-                    self._sum_jacobians(inputs_dataset, loss_fn, self.reduction_type)
+                    self._sum_jacobians(inputs_dataset, loss_fn, reduction_type)
                 )
             else:
                 inputs_checkpoint_jacobians.append(
-                    self._concat_jacobians(inputs_dataset, loss_fn, self.reduction_type)
+                    self._concat_jacobians(inputs_dataset, loss_fn, reduction_type)
                 )
         return inputs_checkpoint_jacobians
 
@@ -1058,7 +1060,7 @@ class TracInCP(TracInCPBase):
         # create list of the outputs of `_basic_computation_tracincp`, for each
         # checkpoint, which are jacobians
         inputs_checkpoint_jacobians = self._get_checkpoint_jacobians(
-            inputs, aggregate, self.test_loss_fn
+            inputs, aggregate, self.test_loss_fn, self.test_reduction_type
         )
 
         return torch.cat(
@@ -1144,7 +1146,7 @@ class TracInCP(TracInCPBase):
         # create list of the outputs of `_basic_computation_tracincp`, for each
         # checkpoint, which are jacobians
         inputs_checkpoint_jacobians = self._get_checkpoint_jacobians(
-            inputs, aggregate, self.test_loss_fn
+            inputs, aggregate, self.test_loss_fn, self.test_reduction_type
         )
 
         return KMostInfluentialResults(
