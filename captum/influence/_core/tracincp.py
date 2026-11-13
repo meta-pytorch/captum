@@ -885,6 +885,9 @@ class TracInCP(TracInCPBase):
             ), "None returned from `checkpoints`, cannot load."
 
             learning_rate = self.checkpoints_load_func(self.model, checkpoint)
+            # the influence score sums `learning_rate` times a dot product of
+            # jacobians, so each vector is scaled by the square root of it
+            learning_rate_root = learning_rate**0.5
             # get jacobians as tuple of tensors
             if aggregate:
                 inputs_jacobians = self._sum_jacobians(
@@ -899,7 +902,7 @@ class TracInCP(TracInCPBase):
                     self.reduction_type,
                 )
             # flatten into single tensor
-            return learning_rate * torch.cat(
+            return learning_rate_root * torch.cat(
                 [
                     input_jacobian.flatten(start_dim=1)
                     for input_jacobian in inputs_jacobians
