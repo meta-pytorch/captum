@@ -224,12 +224,11 @@ class PGD(Perturbation):
             u = torch.randn_like(center)
             unit_u = F.normalize(u.view(u.size(0), -1)).view(u.size())
             d = torch.numel(center[0])
-            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
-            #  `float`.
-            r = (torch.rand(u.size(0)) ** (1.0 / d)) * radius
-            # pyre-fixme[16]: `float` has no attribute `__getitem__`.
-            # pyre-fixme[16]: `float` has no attribute `dim`.
-            r = r[(...,) + (None,) * (r.dim() - 1)]
+            r = torch.rand(u.size(0), device=center.device, dtype=center.dtype)
+            r = (r ** (1.0 / d)) * radius
+            # Reshape to (batch_size, 1, ..., 1) so each example is scaled by
+            # its own radius.
+            r = r.view((-1,) + (1,) * (center.dim() - 1))
             x = r * unit_u
             return center + (x * mask)
         elif norm == "Linf":
