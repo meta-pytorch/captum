@@ -26,9 +26,17 @@ class Test(unittest.TestCase):
         with self.assertRaises(AssertionError):
             alphas(0)
 
+    def test_riemann_step_sizes_sum_to_one(self) -> None:
+        # Every rule integrates a constant exactly, so its weights must sum to one
+        # (the trapezoid weights used to sum to (n - 1) / n).
+        for method in Riemann:
+            step_sizes, _ = riemann_builders(method)
+            for n in (2, 3, 8, 50):
+                self.assertAlmostEqual(sum(step_sizes(n)), 1.0, places=12)
+
     def test_riemann_2(self) -> None:
         expected_step_sizes_lrm = [0.5, 0.5]
-        expected_step_sizes_trapezoid = [0.25, 0.25]
+        expected_step_sizes_trapezoid = [0.5, 0.5]
         expected_left = [0.0, 0.5]
         expected_right = [0.5, 1.0]
         expected_middle = [0.25, 0.75]
@@ -45,7 +53,7 @@ class Test(unittest.TestCase):
 
     def test_riemann_3(self) -> None:
         expected_step_sizes = [1 / 3] * 3
-        expected_step_sizes_trapezoid = [1 / 6, 1 / 3, 1 / 6]
+        expected_step_sizes_trapezoid = [1 / 4, 1 / 2, 1 / 4]
         expected_left = [0.0, 1 / 3, 2 / 3]
         expected_right = [1 / 3, 2 / 3, 1.0]
         expected_middle = [1 / 6, 0.5, 1 - 1 / 6]
@@ -62,7 +70,7 @@ class Test(unittest.TestCase):
 
     def test_riemann_4(self) -> None:
         expected_step_sizes = [1 / 4] * 4
-        expected_step_sizes_trapezoid = [1 / 8, 1 / 4, 1 / 4, 1 / 8]
+        expected_step_sizes_trapezoid = [1 / 6, 1 / 3, 1 / 3, 1 / 6]
         expected_left = [0.0, 0.25, 0.5, 0.75]
         expected_right = [0.25, 0.5, 0.75, 1.0]
         expected_middle = [0.125, 0.375, 0.625, 0.875]

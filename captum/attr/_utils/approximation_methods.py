@@ -59,7 +59,7 @@ def riemann_builders(
         - **step_sizes** (*Callable*):
                     `step_sizes` takes the number of steps as an
                     input argument and returns an array of steps sizes which
-                    sum is smaller than or equal to one.
+                    sum to one.
 
         - **alphas** (*Callable*):
                     `alphas` takes the number of steps as an input argument
@@ -70,11 +70,14 @@ def riemann_builders(
 
     def step_sizes(n: int) -> List[float]:
         assert n > 1, "The number of steps has to be larger than one"
-        deltas = [1 / n] * n
         if method == Riemann.trapezoid:
+            # The trapezoid nodes are linspace(0, 1, n), spaced 1 / (n - 1) apart,
+            # so the weights are 1 / (n - 1) with both ends halved (they sum to one).
+            deltas = [1 / (n - 1)] * n
             deltas[0] /= 2
             deltas[-1] /= 2
-        return deltas
+            return deltas
+        return [1 / n] * n
 
     def alphas(n: int) -> List[float]:
         assert n > 1, "The number of steps has to be larger than one"
@@ -115,7 +118,7 @@ def gauss_legendre_builders() -> (
         - **step_sizes** (*Callable*):
                     `step_sizes` takes the number of steps as an
                     input argument and returns an array of steps sizes which
-                    sum is smaller than or equal to one.
+                    sum to one.
 
         - **alphas** (*Callable*):
                     `alphas` takes the number of steps as an input argument
