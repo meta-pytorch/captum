@@ -122,6 +122,32 @@ class Test(BaseTest):
         norm = torch.norm((perturbed_input - input).squeeze()).numpy()
         self.assertLessEqual(norm, 0.25)
 
+    def test_attack_random_start_l2_batched(self) -> None:
+        model = BasicModel()
+        adv = PGD(model)
+        # (3, 3) has batch size equal to the last dimension, where a radius
+        # broadcast along the wrong axis would not raise an error.
+        for shape in ((4, 3), (3, 3), (2, 3, 8, 8)):
+            input = torch.randn(shape)
+            torch.manual_seed(0)
+            direction = torch.randn_like(input).view(shape[0], -1)
+            torch.manual_seed(0)
+            perturbed_input = adv.perturb(
+                input, 0.25, 0.1, 0, 0, norm="L2", random_start=True
+            )
+            self.assertEqual(perturbed_input.shape, input.shape)
+            delta = (perturbed_input - input).view(shape[0], -1)
+            self.assertLessEqual(delta.norm(dim=1).max().item(), 0.25 + 1e-6)
+            # Each example should be moved along its own random direction,
+            # scaled by a single radius.
+            assertTensorAlmostEqual(
+                self,
+                torch.cosine_similarity(delta, direction, dim=1),
+                torch.ones(shape[0]),
+                delta=1e-4,
+                mode="max",
+            )
+
     def test_attack_masked_nontargeted(self) -> None:
         model = BasicModel()
         input = torch.tensor([[2.0, -9.0, 9.0, 1.0, -3.0]])
