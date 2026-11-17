@@ -517,6 +517,7 @@ class LimeBase(PerturbationAttribution):
             outputs.append(model_out)
 
         if show_progress:
+            # pyrefly: ignore [unbound-name]
             attr_progress.close()
 
         # Argument 1 to "cat" has incompatible type

@@ -480,6 +480,7 @@ class ShapleyValueSampling(PerturbationAttribution):
                         current_add_args,
                     )
                     if show_progress:
+                        # pyrefly: ignore [unbound-name]
                         attr_progress.update()
                     if agg_output_mode:
                         eval_diff = (modified_eval - prev_results).to(
@@ -528,6 +529,7 @@ class ShapleyValueSampling(PerturbationAttribution):
                         # (*output_shape, *input_feature_shape)
                         total_attrib[j] += cur_attr
             if show_progress:
+                # pyrefly: ignore [unbound-name]
                 attr_progress.close()
 
             # Divide total attributions by number of random permutations and return
@@ -634,6 +636,7 @@ class ShapleyValueSampling(PerturbationAttribution):
                         current_add_args,
                     )
                     if show_progress:
+                        # pyrefly: ignore [unbound-name]
                         attr_progress.update()
 
                     assert isinstance(modified_eval, torch.Future), (
@@ -662,6 +665,7 @@ class ShapleyValueSampling(PerturbationAttribution):
                     )
 
             if show_progress:
+                # pyrefly: ignore [unbound-name]
                 attr_progress.close()
 
             # Divide total attributions by number of random permutations and return
