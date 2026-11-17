@@ -519,6 +519,7 @@ src="/_sphinx/documentation_options.js"></script>
                         <span class="n">current_add_args</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                        <span class="c1"># pyrefly: ignore [unbound-name]</span>
                         <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
                     <span class="k">if</span> <span class="n">agg_output_mode</span><span class="p">:</span>
                         <span class="n">eval_diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">modified_eval</span> <span class="o">-</span> <span class="n">prev_results</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
@@ -567,6 +568,7 @@ src="/_sphinx/documentation_options.js"></script>
                         <span class="c1"># (*output_shape, *input_feature_shape)</span>
                         <span class="n">total_attrib</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">cur_attr</span>
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unbound-name]</span>
                 <span class="n">attr_progress</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
             <span class="c1"># Divide total attributions by number of random permutations and return</span>
@@ -676,6 +678,7 @@ src="/_sphinx/documentation_options.js"></script>
                         <span class="n">current_add_args</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                        <span class="c1"># pyrefly: ignore [unbound-name]</span>
                         <span class="n">attr_progress</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
 
                     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">modified_eval</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Future</span><span class="p">),</span> <span class="p">(</span>
@@ -704,6 +707,7 @@ src="/_sphinx/documentation_options.js"></script>
                     <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unbound-name]</span>
                 <span class="n">attr_progress</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
             <span class="c1"># Divide total attributions by number of random permutations and return</span>
