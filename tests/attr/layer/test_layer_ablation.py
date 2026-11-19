@@ -11,7 +11,7 @@ import unittest
 from typing import Any, List, Tuple, Union
 
 import torch
-from captum._utils.typing import BaselineType
+from captum._utils.typing import BaselineType, TargetType
 from captum.attr._core.layer.layer_feature_ablation import LayerFeatureAblation
 from captum.testing.helpers.basic import assertTensorTuplesAlmostEqual, BaseTest
 from captum.testing.helpers.basic_models import (
@@ -36,6 +36,22 @@ class Test(BaseTest):
             perturbations_per_eval=(1, 2, 3),
             attribute_to_layer_input=True,
         )
+
+    def test_simple_ablation_with_per_example_targets(self) -> None:
+        net = BasicModel_MultiLayer()
+        inp = torch.tensor([[20.0, 50.0, 30.0], [10.0, -4.0, 6.0]])
+        for target in (torch.tensor([0, 1]), [0, 1]):
+            self._ablation_test_assert(
+                model=net,
+                layer=net.linear1,
+                test_input=inp,
+                expected_ablation=[
+                    [90.0, 101.0, 101.0, 101.0],
+                    [2.0, 13.0, 13.0, 13.0],
+                ],
+                perturbations_per_eval=(1, 2, 4),
+                target=target,
+            )
 
     def test_multi_input_ablation(self) -> None:
         net = BasicModel_MultiLayer_MultiInput()
@@ -159,7 +175,7 @@ class Test(BaseTest):
         additional_input: Any = None,
         perturbations_per_eval: Tuple[int, ...] = (1,),
         baselines: BaselineType = None,
-        target: Union[None, int] = 0,
+        target: TargetType = 0,
         attribute_to_layer_input: bool = False,
     ) -> None:
         for batch_size in perturbations_per_eval:
