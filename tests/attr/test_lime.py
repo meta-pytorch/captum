@@ -85,15 +85,11 @@ def alt_to_interp_rep(
     feature_mask = kwargs["feature_mask"]
     for i in range(kwargs["num_interp_features"]):
         curr_total = 1
-        if isinstance(curr_sample, Tensor):
+        if isinstance(curr_sample, Tensor) and isinstance(original_input, Tensor):
             if (
                 torch.sum(
                     torch.abs(
-                        (feature_mask == i).float()
-                        * (
-                            curr_sample  # pyrefly: ignore [unsupported-operation]
-                            - original_input  # pyrefly: ignore [unsupported-operation]
-                        )  # pyrefly: ignore [unsupported-operation]
+                        (feature_mask == i).float() * (curr_sample - original_input)
                     )
                 )
                 > 0.001
