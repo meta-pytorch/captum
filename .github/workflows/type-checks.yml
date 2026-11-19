@@ -14,12 +14,11 @@ jobs:
       matrix:
         pytorch_args: ["", "-n"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@main
     with:
-      runner: linux.12xlarge
-      docker-image: cimg/python:3.11
+      runner: mt-l-x86iavx512-48-384
+      docker-image: python:3.11
       script: |
-        sudo chmod -R 777 .
         ./scripts/install_via_pip.sh ${{ matrix.pytorch_args }} -d
         pip install pyrefly
         pyrefly --version
