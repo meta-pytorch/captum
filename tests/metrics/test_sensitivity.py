@@ -318,6 +318,50 @@ class Test(BaseTest):
         )
         assertTensorAlmostEqual(self, sens1, sens2, 0.0)
 
+    def test_sensitivity_max_bare_tensor(self) -> None:
+        def perturb(
+            inputs: Union[Tensor, Tuple[Tensor, ...]],
+        ) -> Union[Tensor, Tuple[Tensor, ...]]:
+            if isinstance(inputs, tuple):
+                return tuple(x + 0.1 for x in inputs)
+            return inputs + 0.1
+
+        # Bare tensor explanation function (e.g. LayerGradCam returning a single Tensor)
+        def expl_bare(inputs: Union[Tensor, Tuple[Tensor, ...]]) -> Tensor:
+            inp = inputs[0] if isinstance(inputs, tuple) else inputs
+            return (inp**2).view(-1, 1, 2, 2)
+
+        def expl_tuple(inputs: Union[Tensor, Tuple[Tensor, ...]]) -> Tuple[Tensor, ...]:
+            return (expl_bare(inputs),)
+
+        # Single example (batch size 1)
+        x1 = torch.tensor([[1.0, 2.0, 3.0, 4.0]])
+        sens_tuple = sensitivity_max(
+            expl_tuple, x1, perturb_func=perturb, n_perturb_samples=10
+        )
+        sens_bare = sensitivity_max(
+            expl_bare, x1, perturb_func=perturb, n_perturb_samples=10
+        )
+        assertTensorAlmostEqual(self, sens_bare, sens_tuple, delta=0.0)
+
+        # Multiple examples with batched computation
+        x2 = torch.tensor([[1.0, 2.0, 3.0, 4.0], [4.0, 3.0, 2.0, 1.0]])
+        sens_tuple_batched = sensitivity_max(
+            expl_tuple,
+            x2,
+            perturb_func=perturb,
+            n_perturb_samples=10,
+            max_examples_per_batch=2,
+        )
+        sens_bare_batched = sensitivity_max(
+            expl_bare,
+            x2,
+            perturb_func=perturb,
+            n_perturb_samples=10,
+            max_examples_per_batch=2,
+        )
+        assertTensorAlmostEqual(self, sens_bare_batched, sens_tuple_batched, delta=0.0)
+
     def sensitivity_max_assert(
         self,
         expl_func: Callable[..., Union[Tensor, Tuple[Tensor, ...]]],
