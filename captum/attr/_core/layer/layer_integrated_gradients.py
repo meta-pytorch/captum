@@ -7,6 +7,7 @@
 
 # pyre-strict
 import functools
+import itertools
 import warnings
 from typing import (
     Any,
@@ -127,7 +128,7 @@ class LayerIntegratedGradients(LayerAttribution, GradientAttribution):
 
     def _make_gradient_func(
         self,
-        num_outputs_cumsum: Tensor,
+        num_outputs_cumsum: List[int],
         attribute_to_layer_input: bool,
         grad_kwargs: Optional[Dict[str, Any]],
     ) -> Callable[..., Tuple[Tensor, ...]]:
@@ -559,9 +560,10 @@ class LayerIntegratedGradients(LayerAttribution, GradientAttribution):
             input_layer_list = inputs_layer
 
         num_outputs = [1 if isinstance(x, Tensor) else len(x) for x in input_layer_list]
-        num_outputs_cumsum = torch.cumsum(
-            torch.IntTensor([0] + num_outputs), dim=0  # type: ignore
-        )
+        # Plain ints rather than a tensor: the forward hook indexes with these
+        # values, and a tensor would be captured by torch.compile as a CPU
+        # graph input (and force a graph break at the indexing).
+        num_outputs_cumsum = list(itertools.accumulate([0] + num_outputs))
         inputs_layer = flatten_tuple(input_layer_list)
 
         baselines_layer = _forward_layer_eval(
@@ -599,11 +601,7 @@ class LayerIntegratedGradients(LayerAttribution, GradientAttribution):
 
         # handle multiple outputs
         output: List[Tuple[Tensor, ...]] = [
-            tuple(
-                attributions[
-                    int(num_outputs_cumsum[i]) : int(num_outputs_cumsum[i + 1])
-                ]
-            )
+            tuple(attributions[num_outputs_cumsum[i] : num_outputs_cumsum[i + 1]])
             for i in range(len(num_outputs))
         ]
 
