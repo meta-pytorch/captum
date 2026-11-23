@@ -26,6 +26,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
 ]
 dependencies = [
     "matplotlib",
@@ -69,6 +70,9 @@ dev = [
     "sphinx-autodoc-typehints",
     "sphinxcontrib-katex",
 ]
+
+[tool.setuptools.package-data]
+captum = ["py.typed"]
 
 [tool.setuptools.packages.find]
 include = ["captum", "captum.*"]
