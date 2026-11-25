@@ -136,9 +136,8 @@ def compute_gradients(
             "Target not provided when necessary, cannot"
             " take gradient with respect to multiple outputs."
         )
-        # torch.unbind(forward_out) is a list of scalar tensor tuples and
-        # contains batch_size * #steps elements
-        grads = torch.autograd.grad(torch.unbind(outputs), inputs)
+        # torch.sum() reduces the overhead so only one gradient call is made.
+        grads = torch.autograd.grad(outputs.sum(), inputs)
     return grads
 
 
