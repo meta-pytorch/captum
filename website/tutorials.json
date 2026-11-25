@@ -31,6 +31,10 @@
       "title": "Interpreting a regression model of California house prices"
     },
     {
+      "id": "Forecast_Components_Interpret",
+      "title": "Explaining the trend and seasonal components of a forecast"
+    },
+    {
       "id": "Segmentation_Interpret",
       "title": "Interpreting semantic segmentation models"
     },
