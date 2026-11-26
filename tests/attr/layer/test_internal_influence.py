@@ -74,8 +74,10 @@ class Test(BaseTest):
         net = BasicModel_MultiLayer()
         inp = torch.tensor([[0.0, 80.0, 0.0]])
         base = torch.tensor([[0.0, -20.0, 0.0]])
+        # Exact path integrals: the hidden units are active for alpha > 0.3 (unit 0)
+        # and alpha > 0.19 (units 1-3) on the path from base to inp.
         self._internal_influence_test_assert(
-            net, net.linear1, inp, [[0.7, 0.8, 0.8, 0.8]], base
+            net, net.linear1, inp, [[0.7, 0.81, 0.81, 0.81]], base
         )
 
     def test_simple_multi_input_linear2_internal_inf(self) -> None:
@@ -147,7 +149,11 @@ class Test(BaseTest):
             [[0.0, -20.0, 0.0], [-20.0, -20.0, 0.0]], requires_grad=True
         )
         self._internal_influence_test_assert(
-            net, net.linear1, inp, [[0.7, 0.8, 0.8, 0.8], [0.5, 0.6, 0.6, 0.6]], base
+            net,
+            net.linear1,
+            inp,
+            [[0.7, 0.81, 0.81, 0.81], [0.5, 0.61, 0.61, 0.61]],
+            base,
         )
 
     def test_simple_input_internal_inf_with_unused_layer(self) -> None:
