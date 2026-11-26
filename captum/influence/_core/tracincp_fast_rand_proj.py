@@ -850,6 +850,15 @@ def _basic_computation_tracincp_fast(
 
     _layer_inputs = _gather_distributed_tensors(layer_inputs, key_list=key_list)[0]
 
+    # The gradient w.r.t. the bias equals the output-gradient, i.e. the bias acts as a
+    # weight on a constant input of 1. Appending that input to the layer inputs makes
+    # the factorized dot product include the bias gradients, so the scores match
+    # those computed with all parameters of the last layer.
+    if getattr(influence_instance.final_fc_layer, "bias", None) is not None:
+        _layer_inputs = torch.cat(
+            [_layer_inputs, torch.ones_like(_layer_inputs[:, :1])], dim=1
+        )
+
     assert len(input_jacobians.shape) == 2
 
     return input_jacobians, _layer_inputs
