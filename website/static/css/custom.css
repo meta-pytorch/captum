@@ -1,367 +1,75 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the BSD license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 @import url('https://fonts.googleapis.com/css?family=Montserrat');
 @import url('https://fonts.googleapis.com/css?family=IBM+Plex+Mono');
 
-html body {
-  font-family: 'Montserrat', sans-serif;
-  overflow-x: hidden;
+:root {
+  --ifm-color-primary: #f29837;
+  --ifm-color-primary-dark: #f08915;
+  --ifm-color-primary-darker: #e58210;
+  --ifm-color-primary-darkest: #bd6b0d;
+  --ifm-color-primary-light: #f4a759;
+  --ifm-color-primary-lighter: #f5af67;
+  --ifm-color-primary-lightest: #f8c690;
+  --ifm-color-secondary: #f0bc40;
+  --ifm-link-color: #1c60f7;
+  --ifm-link-hover-color: #f15a24;
+  --ifm-font-family-base: 'Montserrat', sans-serif;
+  --ifm-font-family-monospace: 'IBM Plex Mono', monospace;
 }
 
-.navSearchWrapper{
-  display: none;
-}
-
-.fixedHeaderContainer {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e2e2e2;
-}
-
-.fixedHeaderContainer header .headerTitleWithLogo {
-  display: block;
-  color: #222222;
-}
-
-.navigationSlider .slidingNav ul {
-    background: #ffffff;
-}
-
-.navigationSlider .slidingNav ul li a {
-  color: #222222;
-  background-color: #ffffff;
-}
-
-.navigationSlider .slidingNav ul li a:hover,
-.navigationSlider .slidingNav ul li a:focus {
-  color: #f15a24;
-  background-color: inherit;
-}
-
-.navigationSlider .slidingNav ul li.siteNavItemActive > a,
-.navigationSlider .slidingNav ul li.siteNavGroupActive > a {
-  color: #222222;
-  background-color: inherit;
+[data-theme='dark'] {
+  --ifm-color-primary: #f29837;
+  --ifm-color-primary-dark: #f08915;
+  --ifm-color-primary-darker: #e58210;
+  --ifm-color-primary-darkest: #bd6b0d;
+  --ifm-color-primary-light: #f4a759;
+  --ifm-color-primary-lighter: #f5af67;
+  --ifm-color-primary-lightest: #f8c690;
+  --ifm-link-color: #6fa3ff;
+  --ifm-link-hover-color: #f29837;
 }
 
 .homeContainer {
- background-image: url(/img/landing-background.jpg);
- padding: 30px 0px;
+  background: rgb(2, 0, 36);
+  background: linear-gradient(
+    180deg,
+    rgba(2, 0, 36, 1),
+    rgba(34, 34, 34, 1) 0%,
+    rgba(28, 96, 247, 1) 100%
+  );
+  padding: 30px 0px;
+  color: #ffffff;
 }
 
-.productTitle{
+.homeContainer .button.button--secondary.button--outline:not(.button--active):not(:hover) {
   color: #ffffff;
-  font-family: FreightSans, Helvetica Neue, Helvetica, Arial, sans-serif;
+  border-color: #ffffff;
+}
+
+.productTitle {
+  color: #ffffff;
+  font-family: 'Montserrat', Helvetica, Arial, sans-serif;
   font-size: 48px;
   font-weight: 400;
 }
 
-.splashLogo {
-  display: block;
-  margin: 0 auto;
-  height: 150px;
-  width: 150px;
+.header-github-link::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  display: flex;
+  background-color: var(--ifm-navbar-link-color);
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E");
+  transition: background-color var(--ifm-transition-fast)
+    var(--ifm-transition-timing-default);
 }
 
-.primaryLogoImage{
-  height: 100%;
-  width:100%;
-}
-
-.projectTitle {
-  color: #ffffff;
-  /*font-variant: small-caps;*/
-  font-weight: 300;
-}
-
-.promoSection .button {
-  border: 1px solid #fff;
-  color: #ffffff;
-}
-
-.promoSection .button:hover {
-  background-color: inherit;
-  border: 1px solid #f15a24;
-  color: #f15a24;
-}
-
-.landingPage {
-  padding: 0px;
-}
-
-div.productShowcaseSection {
-  padding-top: 40px;
-  color: #6c6c6c;
-}
-
-.productShowcaseSection > h2 {
-  font-variant: small-caps;
-  font-weight: 360;
-  margin: 0px;
-  padding: 0px;
-  color: #222222;
-}
-
-.productShowcaseSection p {
-  font-weight: 360;
-}
-
-.productShowcaseSection div.container {
-  padding: 40px 0px;
-}
-
-.productShowcaseSection div.blockImage {
-  height: 80px;
-}
-
-.productShowcaseSection li {
-  padding: 10px 0;
-}
-
-.productShowcaseSection pre {
-  margin: 10px 0;
-}
-
-.productShowcaseSection code {
-  background: #fff;
-}
-
-.container .wrapper .alignCenter h2 {
-  color: #222222;
-}
-
-div#quickstart {
-  background: #efefef;
-}
-
-div#quickstart ol {
-  margin-bottom: 0px;
-}
-
-.nav-footer {
-  background-color: #222222;
-}
-
-.nav-footer .sitemap a {
-  color: #efefef;
-}
-
-.nav-footer .sitemap a:hover {
-  color: #f15a24;
-}
-
-a,
-p a {
-  color: #1c60f7;
-}
-
-a:hover,
-p a:hover {
-  color: #1c60f7;
-}
-
-/* Style docs */
-.toc .toggleNav .navGroup .navGroupCategoryTitle {
-  color: #222222;
-}
-
-.toc .toggleNav ul li a {
-  color: #6c6c6c;
-}
-
-.toc .toggleNav ul li a:hover {
-  color: #f15a24;
-}
-
-.toc .toggleNav .navGroup .navListItemActive a {
-  color: #1c60f7;
-}
-
-.mainContainer .wrapper .post .postHeaderTitle {
-  color: #222222;
-}
-
-.mainContainer .wrapper .post h1,
-.mainContainer .wrapper .post h2,
-.mainContainer .wrapper .post h3 {
-  color: #222222;
-}
-
-.mainContainer .wrapper .post {
-  color: #6c6c6c;
-}
-
-.mainContainer .wrapper .post strong {
-  color: #222222;
-}
-
-a.edit-page-link {
-  color: #1c60f7;
-  border: 1px solid #1c60f7;
-}
-
-a.edit-page-link:hover {
-  color: #f15a24;
-  border: 1px solid #f15a24;
-  background-color: inherit;
-}
-
-a.docs-next,
-a.docs-prev {
-  color: #1c60f7;
-  border: 1px solid #1c60f7;
-}
-
-a.docs-next:hover,
-a.docs-prev:hover {
-  color: #f15a24;
-  border: 1px solid #f15a24;
-  background-color: inherit;
-}
-
-/* Style tutorials */
-.tutorialBody {
-  margin-top: -20px;
-  color: #6c6c6c;
-}
-
-.tutorialBody h1 {
-  margin: 0px;
-}
-
-.tutorialBody h1,
-.tutorialBody h2,
-.tutorialBody h3 {
-  color: #222222;
-}
-
-.tutorialBody pre {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
-  margin: 0px;
-}
-
-.tutorialBody .input_prompt,
-.tutorialBody .output_prompt {
-  color: darkred;
-  font-size: 12px;
-}
-
-.tutorialBody .highlight {
-  background: #f3f4f7;
-  padding: 10px 20px;
-  border: lightgray 1px solid;
-  border-radius: 3px;
-}
-
-.tutorialBody .cell {
-  margin: 20px;
-}
-
-.tutorialBody .output_stderr {
-  background-color: #fdede9;
-}
-
-.tutorialBody .anchor-link {
-  color: lightgray;
-}
-
-.tutorialButtonWrapper {
-  margin: 20px;
-}
-
-.tutorialButton {
-  color: #1c60f7;
-  border: 1px solid #1c60f7;
-}
-
-.tutorialButton svg {
-  height: 15px;
-  margin-right: 5px;
-}
-
-.tutorialButton:hover {
-  color: #f15a24;
-  border: 1px solid #f15a24;
-  background-color: inherit;
-}
-
-/* Style api refs */
-div.sphinx div.document {
-  margin: 0 0;
-  padding: 40px 0;
-  width: auto;
-}
-
-div.sphinx div.body {
-  max-width: 950px;
-}
-
-.wrapper {
-  max-width: 1400px;
-}
-
-div.sphinx div.body h1 {
-  margin-bottom: 1.375rem;
-}
-
-div.sphinx .function dd,
-div.sphinx .attribute dd,
-div.sphinx .class dd {
-  margin-left: 3.75rem;
-}
-
-div.sphinx .function > dt,
-div.sphinx .function .field-list > dt,
-div.sphinx .method > dt,
-div.sphinx .method .field-list > dt,
-div.sphinx .attribute > dt,
-div.sphinx .attribute .field-list > dt,
-div.sphinx .class > dt,
-div.sphinx .class .field-list > dt {
-  position: relative;
-  background: #f3f4f7;
-  padding: 0.5rem;
-  padding-right: 100px;
-  line-height: 1.5rem;
-}
-
-div.sphinx .class > dt em.property {
-  position: absolute;
-  left: 0.5rem;
-  font-size: 18px;
-}
-
-div.sphinx .class > dt,
-div.sphinx .class .field-list > dt {
-  border-left: none;
-  border-top: 3px solid #ee4c2c;
-  padding-left: 4rem;
-}
-
-div.sphinx .function > dt,
-div.sphinx .function .field-list > dt,
-div.sphinx .method > dt,
-div.sphinx .method .field-list > dt,
-div.sphinx .attribute > dt,
-div.sphinx .attribute .field-list > dt {
-  border-left: 3px solid #ee4c2c;
-  border-top: none;
-  padding-left: 0.5rem;
-}
-
-@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
-}
-
-@media only screen and (min-width: 1024px) {
-}
-
-@media only screen and (max-width: 1023px) {
-}
-
-@media only screen and (min-width: 1400px) {
-}
-
-@media only screen and (min-width: 1500px) {
+.header-github-link:hover::before {
+  background-color: var(--ifm-navbar-link-hover-color);
 }

@@ -1,7 +1,0 @@
-{
-  "docs": {
-    "About": ["introduction"],
-    "General": ["getting_started", "attribution_algorithms", "algorithms_comparison_matrix", "faq", "contribution_guidelines"],
-    "Usage": ["extension/integrated_gradients"]
-  }
-}

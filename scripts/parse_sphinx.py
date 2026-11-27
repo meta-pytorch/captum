@@ -5,81 +5,64 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
-import os
+"""Build the Sphinx API docs and copy the rendered HTML into the
+Docusaurus static/ directory so it is served at /api/.
 
-from bs4 import BeautifulSoup
-
-# no need to import css from built path
-# coz docusaurus merge all css files within static folder automatically
-# https://v1.docusaurus.io/docs/en/api-pages#styles
-base_scripts = """
-<script type="text/javascript" id="documentation_options" data-url_root="./"
-src="/_sphinx/documentation_options.js"></script>
-<script type="text/javascript" src="/_sphinx/jquery.js"></script>
-<script type="text/javascript" src="/_sphinx/underscore.js"></script>
-<script type="text/javascript" src="/_sphinx/doctools.js"></script>
-<script type="text/javascript" src="/_sphinx/language_data.js"></script>
-<script type="text/javascript" src="/_sphinx/searchtools.js"></script>
-"""  # noqa: E501
-
-search_js_scripts = """
-<script type="text/javascript">
-    jQuery(function() { Search.loadIndex("/_sphinx/searchindex.js"); });
-</script>
-
-<script type="text/javascript" id="searchindexloader"></script>
+Docusaurus serves anything under ``website/static/`` verbatim at the
+site root, so HTML at ``website/static/api/foo.html`` is reachable at
+``https://captum.ai/api/foo.html``. Under v1 the Sphinx HTML was
+wrapped in Docusaurus' ``<header>``/``<footer>`` via
+``wrapPagesHTML`` — v3 has no such hook, so we serve the raw Sphinx
+output directly.
 """
 
-katex_scripts = """
-<script src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"></script>
-<script src="/_sphinx/katex_autorenderer.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css" />
-"""  # noqa: E501
+import argparse
+import os
+import shutil
+
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DEFAULT_INPUT_DIR = os.path.join(REPO_ROOT, "sphinx", "build", "html")
+DEFAULT_OUTPUT_DIR = os.path.join(REPO_ROOT, "website", "static", "api")
 
 
-def parse_sphinx(input_dir, output_dir):
-    for cur, _, files in os.walk(input_dir):
-        for fname in files:
-            if fname.endswith(".html"):
-                with open(os.path.join(cur, fname), "r") as f:
-                    soup = BeautifulSoup(f.read(), "html.parser")
-                    doc = soup.find("div", {"class": "document"})
-                    wrapped_doc = doc.wrap(
-                        soup.new_tag("div", **{"class": "sphinx wrapper"})
-                    )
-                # add scripts that sphinx pages need
-                if fname == "search.html":
-                    out = (
-                        base_scripts
-                        + search_js_scripts
-                        + katex_scripts
-                        + str(wrapped_doc)
-                    )
-                else:
-                    out = base_scripts + katex_scripts + str(wrapped_doc)
-                output_path = os.path.join(output_dir, os.path.relpath(cur, input_dir))
-                os.makedirs(output_path, exist_ok=True)
-                with open(os.path.join(output_path, fname), "w") as fout:
-                    fout.write(out)
+def parse_sphinx(input_dir: str, output_dir: str) -> None:
+    """Mirror ``input_dir`` (Sphinx build output) into ``output_dir``.
+
+    We copy every file (HTML, CSS, JS, images, search index, etc.)
+    so that intra-Sphinx relative links keep working when served from
+    the Docusaurus static/api/ tree.
+    """
+    if not os.path.isdir(input_dir):
+        raise FileNotFoundError(
+            f"Sphinx build output not found: {input_dir!r}. "
+            "Run `make html` inside sphinx/ first."
+        )
+
+    if os.path.isdir(output_dir):
+        shutil.rmtree(output_dir)
+    shutil.copytree(input_dir, output_dir)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Strip HTML body from Sphinx docs.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Copy Sphinx-built API HTML into website/static/api/ so it is "
+            "served at /api/ by Docusaurus v3."
+        )
+    )
     parser.add_argument(
         "-i",
         "--input_dir",
         metavar="path",
-        required=True,
-        help="Input directory for Sphinx HTML.",
+        default=DEFAULT_INPUT_DIR,
+        help="Sphinx HTML build directory (default: sphinx/build/html).",
     )
     parser.add_argument(
         "-o",
         "--output_dir",
         metavar="path",
-        required=True,
-        help="Output directory in website.",
+        default=DEFAULT_OUTPUT_DIR,
+        help="Destination directory (default: website/static/api).",
     )
     args = parser.parse_args()
     parse_sphinx(args.input_dir, args.output_dir)

@@ -216,8 +216,8 @@ between approximation speed and the accuracy.
 
 #### More details on how to apply integrated gradients on larger DNN networks can be found here
 
-* [A simple classification model and CIFAR Dataset](/tutorials/CIFAR_TorchVision_Interpret)
-* [Torchvision's ResNet18 Model using handpicked images](/tutorials/Resnet_TorchVision_Interpret)
-* [Sentiment classification model using TorchText and IMDB Dataset](/tutorials/IMDB_TorchText_Interpret)
-* [Visual Question Answering Model](/tutorials/Multimodal_VQA_Interpret)
-* [A simple DNN with 2 hidden layers and Titanic Dataset](/tutorials/Titanic_Basic_Interpret)
+* [A simple classification model and CIFAR Dataset](/docs/tutorials/CIFAR_TorchVision_Interpret)
+* [Torchvision's ResNet18 Model using handpicked images](/docs/tutorials/TorchVision_Interpret)
+* [Sentiment classification model using TorchText and IMDB Dataset](/docs/tutorials/IMDB_TorchText_Interpret)
+* [Visual Question Answering Model](/docs/tutorials/Multimodal_VQA_Interpret)
+* [A simple DNN with 2 hidden layers and Titanic Dataset](/docs/tutorials/Titanic_Basic_Interpret)

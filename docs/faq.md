@@ -12,7 +12,7 @@ title: FAQ
 * [Can my model use functional non-linearities (E.g. nn.functional.ReLU) or can reused modules be used with Captum?](#can-my-model-use-functional-non-linearities-eg-nnfunctionalrelu-or-can-reused-modules-be-used-with-captum)
 * [Do JIT models, DataParallel models, or DistributedDataParallel models work with Captum?](#do-jit-models-dataparallel-models-or-distributeddataparallel-models-work-with-captum)
 * [I am working on a new interpretability or attribution method and would like to add it to Captum. How do I proceed?](#i-am-working-on-a-new-interpretability-or-attribution-method-and-would-like-to-add-it-to-captum-how-do-i-proceed)
-* [I am using a gradient-based attribution algorithm such as integrated gradients for a RNN or LSTM network and I see 'cudnn RNN backward can only be called in training mode'. How can I resolve this issue ?](#how-can-I-resolve-cudnn-RNN-backward-error-for-RNN-or-LSTM-network)
+* [I am using a gradient-based attribution algorithm such as integrated gradients for a RNN or LSTM network and I see 'cudnn RNN backward can only be called in training mode'. How can I resolve this issue ?](#how-can-i-resolve-cudnn-rnn-backward-error-for-rnn-or-lstm-network)
 * [My model expects multiple tensors as input. How do I use Captum with such models?](#my-model-expects-multiple-tensors-as-input-how-do-i-use-captum-with-such-models)
 
 ### **How do I set the target parameter to an attribution method?**
@@ -98,7 +98,7 @@ class ModelWrapper(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    
+
     def forward(self, inputs):
         # Unpack the tuple of inputs
         x, embeddings = inputs
