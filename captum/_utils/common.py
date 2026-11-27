@@ -117,6 +117,7 @@ def _validate_input(
     inputs: Tuple[Tensor, ...],
     baselines: Tuple[Union[Tensor, int, float], ...],
     draw_baseline_from_distrib: bool = False,
+    allow_broadcastable_baselines: bool = False,
 ) -> None:
     assert len(inputs) == len(baselines), (
         "Input and baseline must have the same "
@@ -137,10 +138,24 @@ def _validate_input(
                 " Found baseline: {} and input: {} ".format(baseline, input)
             )
         else:
+            baseline_is_broadcastable = False
+            if allow_broadcastable_baselines and isinstance(baseline, Tensor):
+                try:
+                    baseline_is_broadcastable = (
+                        torch.broadcast_shapes(input.shape, baseline.shape)
+                        == input.shape
+                    )
+                except RuntimeError:
+                    pass
             assert (
                 isinstance(baseline, (int, float))
                 or input.shape == baseline.shape
-                or baseline.shape[0] == 1
+                or (
+                    baseline.dim() > 0
+                    and baseline.shape[0] == 1
+                    and input.shape[1:] == baseline.shape[1:]
+                )
+                or baseline_is_broadcastable
             ), (
                 "Baseline can be provided as a tensor for just one input and"
                 " broadcasted to the batch or input and baseline must have the"
