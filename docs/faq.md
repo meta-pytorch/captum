@@ -14,6 +14,7 @@ title: FAQ
 * [I am working on a new interpretability or attribution method and would like to add it to Captum. How do I proceed?](#i-am-working-on-a-new-interpretability-or-attribution-method-and-would-like-to-add-it-to-captum-how-do-i-proceed)
 * [I am using a gradient-based attribution algorithm such as integrated gradients for a RNN or LSTM network and I see 'cudnn RNN backward can only be called in training mode'. How can I resolve this issue ?](#how-can-I-resolve-cudnn-RNN-backward-error-for-RNN-or-LSTM-network)
 * [My model expects multiple tensors as input. How do I use Captum with such models?](#my-model-expects-multiple-tensors-as-input-how-do-i-use-captum-with-such-models)
+* [How do I use Captum with PyTorch Geometric or graph neural networks?](#how-do-i-use-captum-with-pytorch-geometric-or-graph-neural-networks)
 
 ### **How do I set the target parameter to an attribution method?**
 
@@ -126,3 +127,29 @@ attributions = ig.attribute(
 ```
 
 This approach ensures that both inputs are properly scaled along the integration path, and you receive attributions for each input tensor.
+
+### **How do I use Captum with PyTorch Geometric or graph neural networks?**
+
+Captum attribution methods operate on tensors. For PyTorch Geometric (PyG) models, this means that node features, edge features, or differentiable masks should be passed as Captum inputs, while graph structure tensors such as `edge_index` and `batch` are usually passed as `additional_forward_args`.
+
+For PyG models, the recommended high-level integration is PyG's Captum wrapper support, including `torch_geometric.explain.CaptumExplainer`, `torch_geometric.nn.to_captum_model`, and `torch_geometric.nn.to_captum_input`. These utilities convert graph node / edge masks into the tensor format Captum expects and return PyG explanation objects. See the PyG [explaining graph neural networks tutorial](https://pytorch-geometric.readthedocs.io/en/latest/tutorial/explain.html) and [Captum explainer example](https://github.com/pyg-team/pytorch_geometric/blob/master/examples/explain/captum_explainer.py) for graph-native usage.
+
+You can also call Captum directly when your model forward can be expressed in terms of tensor arguments:
+
+```python
+import torch
+from captum.attr import IntegratedGradients
+
+def forward_func(x, edge_index, batch):
+    return model(x, edge_index, batch)
+
+ig = IntegratedGradients(forward_func)
+attributions = ig.attribute(
+    data.x,
+    baselines=torch.zeros_like(data.x),
+    additional_forward_args=(data.edge_index, data.batch),
+    target=target,
+)
+```
+
+Do not attribute `edge_index` itself as a differentiable input, since it is an integer index tensor describing graph topology. If you need edge or topology importance, use an edge mask, edge weight, or edge feature tensor representation. PyG's Captum wrappers provide this masking pattern for common graph explanation workflows.
