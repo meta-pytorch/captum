@@ -258,9 +258,10 @@ def sensitivity_max(
                 baselines = _format_baseline(
                     baselines, cast(Tuple[Tensor, ...], inputs)
                 )
-                if (
-                    isinstance(baselines[0], Tensor)
-                    and cast(Tensor, baselines[0]).shape == inputs[0].shape
+                if any(
+                    isinstance(baseline, Tensor)
+                    and baseline.shape == inp.shape
+                    for inp, baseline in zip(inputs, baselines)
                 ):
                     _expand_and_update_baselines(
                         cast(Tuple[Tensor, ...], inputs),
