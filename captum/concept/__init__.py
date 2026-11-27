@@ -3,7 +3,11 @@
 from captum.concept._core.cav import CAV
 from captum.concept._core.concept import Concept, ConceptInterpreter
 from captum.concept._core.tcav import TCAV
-from captum.concept._utils.classifier import Classifier, DefaultClassifier
+from captum.concept._utils.classifier import (
+    Classifier,
+    DefaultClassifier,
+    FastCAVClassifier,
+)
 
 __all__ = [
     "CAV",
@@ -12,4 +16,5 @@ __all__ = [
     "TCAV",
     "Classifier",
     "DefaultClassifier",
+    "FastCAVClassifier",
 ]
