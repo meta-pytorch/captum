@@ -258,16 +258,21 @@ def sensitivity_max(
                 baselines = _format_baseline(
                     baselines, cast(Tuple[Tensor, ...], inputs)
                 )
-                if (
-                    isinstance(baselines[0], Tensor)
-                    and cast(Tensor, baselines[0]).shape == inputs[0].shape
+                # Expand baselines whenever any input/baseline pair needs it:
+                # a per-example baseline must be repeated along with its input.
+                # The helper leaves scalars, broadcast (1-row) baselines and
+                # baseline distributions untouched per pair.
+                if any(
+                    isinstance(baseline, torch.Tensor)
+                    and baseline.shape[0] == input.shape[0]
+                    and baseline.shape[0] > 1
+                    for input, baseline in zip(inputs, baselines)
                 ):
                     _expand_and_update_baselines(
                         cast(Tuple[Tensor, ...], inputs),
                         current_n_perturb_samples,
                         kwargs_copy,
                     )
-
         expl_perturbed_inputs = explanation_func(inputs_perturbed, **kwargs_copy)
 
         # tuplize `expl_perturbed_inputs` in case it is not

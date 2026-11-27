@@ -318,6 +318,48 @@ class Test(BaseTest):
         )
         assertTensorAlmostEqual(self, sens1, sens2, 0.0)
 
+    def test_sensitivity_max_mixed_scalar_and_per_example_baselines(self) -> None:
+        r"""
+        Regression test for #1944: sensitivity_max must expand per-example
+        baselines alongside repeated inputs even when another baseline is a
+        scalar or a broadcast (1-row) tensor.
+        """
+        def model(x, y):
+            return x.sum(dim=1) + 2 * y.sum(dim=1)
+
+        def perturb_func(inputs: Tuple[Tensor, ...]) -> Tuple[Tensor, ...]:
+            return tuple(input + 0.25 for input in inputs)
+
+        inputs = (
+            torch.tensor([[1.0, 2.0], [3.0, 4.0]]),
+            torch.tensor([[5.0, 6.0], [8.0, 10.0]]),
+        )
+        baselines = (0, torch.tensor([[1.0, 2.0], [3.0, 4.0]]))
+
+        # n_perturb_samples=1 works today
+        sens1 = sensitivity_max(
+            IntegratedGradients(model).attribute,
+            inputs,
+            baselines=baselines,
+            perturb_func=perturb_func,
+            n_perturb_samples=1,
+            n_steps=2,
+        )
+        assertTensorAlmostEqual(
+            self, sens1, torch.tensor([0.0686, 0.0482]), delta=1e-4
+        )
+
+        # n_perturb_samples>1 must not raise and must match
+        sens2 = sensitivity_max(
+            IntegratedGradients(model).attribute,
+            inputs,
+            baselines=baselines,
+            perturb_func=perturb_func,
+            n_perturb_samples=3,
+            n_steps=2,
+        )
+        assertTensorAlmostEqual(self, sens1, sens2, delta=1e-4)
+
     def sensitivity_max_assert(
         self,
         expl_func: Callable[..., Union[Tensor, Tuple[Tensor, ...]]],
