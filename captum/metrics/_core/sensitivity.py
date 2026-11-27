@@ -320,7 +320,9 @@ def sensitivity_max(
     bsz: int = inputs[0].size(0)
 
     with torch.no_grad():
-        expl_inputs: TensorOrTupleOfTensorsGeneric = explanation_func(inputs, **kwargs)
+        expl_inputs: Tuple[Tensor, ...] = _format_tensor_into_tuples(
+            explanation_func(inputs, **kwargs)
+        )
         metrics_max = _divide_and_aggregate_metrics(
             cast(Tuple[Tensor, ...], inputs),
             n_perturb_samples,
