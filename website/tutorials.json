@@ -31,6 +31,10 @@
       "title": "Interpreting a regression model of California house prices"
     },
     {
+      "id": "Recurrent_Model_Interpret",
+      "title": "Interpreting recurrent models"
+    },
+    {
       "id": "Segmentation_Interpret",
       "title": "Interpreting semantic segmentation models"
     },
