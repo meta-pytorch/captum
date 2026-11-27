@@ -89,7 +89,11 @@ def alt_to_interp_rep(
             if (
                 torch.sum(
                     torch.abs(
-                        (feature_mask == i).float() * (curr_sample - original_input)
+                        (feature_mask == i).float()
+                        * (
+                            curr_sample
+                            - original_input  # pyrefly: ignore [unsupported-operation]
+                        )  # pyrefly: ignore [unsupported-operation]
                     )
                 )
                 > 0.001
