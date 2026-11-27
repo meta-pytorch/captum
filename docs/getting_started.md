@@ -38,13 +38,13 @@ on GitHub.
 
 We have several tutorials to help get you off the ground with Captum.  The tutorials are Jupyter notebooks and cover the basics along with demonstrating usage of Captum with models of different modalities.
 
-View the tutorials page [here](../tutorials/).
+View the tutorials page [here](/docs/tutorials/).
 
 
 ## API Reference
 
 For an in-depth reference of the various Captum internals, see our
-[API Reference](../api/).
+[API Reference](pathname:///api/).
 
 
 ## Contributing

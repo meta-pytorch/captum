@@ -92,13 +92,12 @@ sphinx/build/
 website/build/
 website/i18n/
 website/node_modules/
+website/.docusaurus/
 
 ## Generated for tutorials
-website/_tutorials/
+docs/tutorials/*
+!docs/tutorials/index.md
 website/static/files/
-website/pages/tutorials/*
-!website/pages/tutorials/index.js
 
 ## Generated for Sphinx
-website/pages/api/
-website/static/_sphinx/
+website/static/api/

@@ -78,7 +78,7 @@ To learn more about Deconvolution, visit the following resources:
 - [Salient Deconvolutional Networks](https://link.springer.com/chapter/10.1007/978-3-319-46466-4_8)
 
 ### Guided GradCAM
-Guided GradCAM computes the element-wise product of [guided backpropagation](###Guided-Backpropagation) attributions with upsampled (layer) [GradCAM](###GradCAM) attributions. GradCAM attributions are computed
+Guided GradCAM computes the element-wise product of [guided backpropagation](#guided-backpropagation-and-deconvolution) attributions with upsampled (layer) [GradCAM](#gradcam) attributions. GradCAM attributions are computed
 with respect to a given layer, and attributions are upsampled to match the input size.
 This approach is designed for convolutional neural networks. The chosen layer is often the last convolutional layer in the network, but any layer that is spatially aligned with the input can be provided.
 
@@ -196,23 +196,23 @@ To learn more about GradCAM, visit the following resources:
 ### Layer Integrated Gradients
 Layer integrated gradients represents the integral of gradients with respect to the layer inputs / outputs along the straight-line path from the layer activations at the given baseline to the layer activation at the input.
 
-To learn more about Integrated Gradients, see this [section](###Integrated-Gradients) above.
+To learn more about Integrated Gradients, see this [section](#integrated-gradients) above.
 
 ### Layer GradientSHAP
 Layer GradientSHAP is the analog of GradientSHAP for a particular layer. Layer GradientSHAP adds Gaussian noise to each input sample multiple times, selects a random point along the path between baseline and input, and computes the gradient of the output with respect to the identified layer. The final SHAP values approximate the expected value of gradients * (layer activation of inputs - layer activation of baselines).
 
-To learn more about Gradient SHAP, see this [section](###Gradient-SHAP) above.
+To learn more about Gradient SHAP, see this [section](#gradient-shap) above.
 
 ### Layer DeepLIFT
 Layer DeepLIFT is the analog of the DeepLIFT method for hidden layers in a network.
 
-To learn more about DeepLIFT, see this [section](###DeepLIFT) above.
+To learn more about DeepLIFT, see this [section](#deeplift) above.
 
 ### Layer DeepLIFT SHAP
 
 Layer DeepLIFT SHAP is the analog of DeepLIFT SHAP for a particular layer. Layer DeepLIFT SHAP takes a distribution of baselines and computes the Layer DeepLIFT attribution for each input-baseline pair and averages the resulting attributions per input example.
 
-To learn more about DeepLIFT SHAP, see this [section](###DeepLIFT-SHAP) above.
+To learn more about DeepLIFT SHAP, see this [section](#deeplift-shap) above.
 
 ### Layer Feature Ablation
 Layer feature ablation is the analog of feature ablation for an identified layer input or output. It is a perturbation based approach to compute attribution, involving replacing each value in the identified layer with a given baseline / reference value (e.g. 0), and computing the difference in output. Values within the layer can also be grouped and ablated together rather than individually.
@@ -237,28 +237,28 @@ Neuron gradient is the analog of the saliency method for a particular neuron in 
 Neuron Integrated Gradients approximates the integral of input gradients with respect to a particular neuron along the path from a baseline input to the given input. This method is equivalent to applying integrated gradients
       considering the output to be simply the output of the identified neuron.
 
-To learn more about Integrated Gradients, see this [section](###Integrated-Gradients) above.
+To learn more about Integrated Gradients, see this [section](#integrated-gradients) above.
 
 ### Neuron Guided Backpropagation and Deconvolution
 Neuron guided backpropagation and neuron deconvolution are the analogs of guided backpropagation and deconvolution for a particular neuron.
 
-To learn more about Guided Backpropagation and Deconvolution, see this [section](###Guided-Backpropagation-and-Deconvolution) above.
+To learn more about Guided Backpropagation and Deconvolution, see this [section](#guided-backpropagation-and-deconvolution) above.
 
 ### Neuron GradientSHAP
 Neuron GradientSHAP is the analog of GradientSHAP for a particular neuron. Neuron GradientSHAP adds Gaussian noise to each input sample multiple times, selects a random point along the path between baseline and input, and computes the gradient of the target neuron with respect to each selected random points. The final SHAP values approximate the expected value of gradients * (inputs - baselines).
 
-To learn more about GradientSHAP, see this [section](###Gradient-SHAP) above.
+To learn more about GradientSHAP, see this [section](#gradient-shap) above.
 
 ### Neuron DeepLIFT
 Neuron DeepLIFT is the analog of the DeepLIFT method for a particular neuron.
 
-To learn more about DeepLIFT, see this [section](###DeepLIFT) above.
+To learn more about DeepLIFT, see this [section](#deeplift) above.
 
 ### Neuron DeepLIFT SHAP
 
 Neuron DeepLIFT SHAP is the analog of DeepLIFT SHAP for a particular neuron. Neuron DeepLIFT SHAP takes a distribution of baselines and computes the Neuron DeepLIFT attribution for each input-baseline pair and averages the resulting attributions per input example.
 
-To learn more about DeepLIFT SHAP, see this [section](###DeepLIFT-SHAP) above.
+To learn more about DeepLIFT SHAP, see this [section](#deeplift-shap) above.
 
 ### Neuron Feature Ablation
 Neuron feature ablation is the analog of feature ablation for a particular neuron. It is a perturbation based approach to compute attribution, involving replacing each input feature with a given baseline / reference value (e.g. 0), and computing the difference in the target neuron's value. Input features can also be grouped and ablated together rather than individually.

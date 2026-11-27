@@ -10,13 +10,18 @@ jobs:
     name: Test deployment
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'  # LTS, EOL: 2027-04
 
       - name: Setup / build docs
         run: |
           sudo chmod -R 777 .
           python3 -m pip install --upgrade pip --progress-bar off
           python3 -m pip install -e .[dev] --progress-bar off
-          python3 -m pip install beautifulsoup4 ipython jinja2==3.0.0 nbconvert==5.6.1 ipython_genutils --progress-bar off
-          ./scripts/build_docs.sh -b
-          cd website
+          python3 -m pip install nbconvert==7.17.2 mdformat==1.0.0 mdformat-myst==0.3.0 pandas==3.1.1 lxml==6.1.3 tabulate==0.10.0 --progress-bar off
+          ./scripts/build_docs.sh
+          python3 scripts/check_website_links.py website/build

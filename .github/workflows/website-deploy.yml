@@ -1,11 +1,13 @@
 name: Deploy to GitHub Pages
 
+# Pushes to master on meta-pytorch/captum deploy https://captum.ai.
+# On a fork, running this workflow manually deploys a preview to the fork's
+# GitHub Pages (https://<owner>.github.io/<repo>/): no CNAME, not indexed.
 on:
   push:
     branches:
       - master
-    # Review gh actions docs if you want to further define triggers, paths, etc
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,25 +16,39 @@ permissions:
 jobs:
   deploy:
     name: Deploy to GitHub Pages
+    if: >-
+      (github.event_name == 'push' && github.repository == 'meta-pytorch/captum') ||
+      (github.event_name == 'workflow_dispatch' && github.repository != 'meta-pytorch/captum')
     runs-on: ubuntu-latest
+    env:
+      CAPTUM_PREVIEW: ${{ github.repository != 'meta-pytorch/captum' }}
+      CAPTUM_URL: ${{ github.repository != 'meta-pytorch/captum' && format('https://{0}.github.io', github.repository_owner) || '' }}
+      CAPTUM_BASE_URL: ${{ github.repository != 'meta-pytorch/captum' && format('/{0}/', github.event.repository.name) || '' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'  # LTS, EOL: 2027-04
 
       - name: Setup / build docs
         run: |
           sudo chmod -R 777 .
           python3 -m pip install --upgrade pip --progress-bar off
           python3 -m pip install -e .[dev] --progress-bar off
-          python3 -m pip install beautifulsoup4 ipython jinja2==3.0.0 nbconvert==5.6.1 ipython_genutils --progress-bar off
-          ./scripts/build_docs.sh -b
-          cd website
+          python3 -m pip install nbconvert==7.17.2 mdformat==1.0.0 mdformat-myst==0.3.0 pandas==3.1.1 lxml==6.1.3 tabulate==0.10.0 --progress-bar off
+          ./scripts/build_docs.sh
+          python3 scripts/check_website_links.py website/build --base-url "${CAPTUM_BASE_URL:-/}"
 
+      - name: Remove CNAME from preview builds
+        if: ${{ env.CAPTUM_PREVIEW == 'true' }}
+        run: rm -f website/build/CNAME
 
-      # Popular action to deploy to GitHub Pages:
       # Docs: https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-docusaurus
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Build output to publish to the `gh-pages` branch:
-          publish_dir: ./website/build/captum/
+          publish_dir: ./website/build/
