@@ -36,6 +36,7 @@ from captum._utils.common import (
     _is_mask_valid,
     _is_tuple,
     _run_forward,
+    _validate_input,
 )
 from captum._utils.exceptions import ShapleyValueFutureError
 from captum._utils.progress import progress
@@ -93,6 +94,21 @@ def _shape_feature_mask(
         mask_list.append(mask.to(inp.device))
 
     return tuple(mask_list)
+
+
+def _validate_shapley_feature_mask(feature_mask: Tuple[Tensor, ...]) -> None:
+    for mask in feature_mask:
+        if mask.is_complex():
+            values_are_integral = False
+        elif mask.is_floating_point():
+            values_are_integral = bool(
+                torch.isfinite(mask).all() and (mask == mask.round()).all()
+            )
+        else:
+            values_are_integral = True
+        assert values_are_integral and (
+            mask.numel() == 0 or bool((mask >= 0).all())
+        ), "Feature mask values must be non-negative integers."
 
 
 class ShapleyValueSampling(PerturbationAttribution):
@@ -391,10 +407,12 @@ class ShapleyValueSampling(PerturbationAttribution):
         # converting it into a tuple.
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(inputs_tuple, baselines)
         additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
         formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        _validate_shapley_feature_mask(formatted_feature_mask)
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
@@ -553,10 +571,12 @@ class ShapleyValueSampling(PerturbationAttribution):
     ) -> Future[TensorOrTupleOfTensorsGeneric]:
         is_inputs_tuple = _is_tuple(inputs)
         inputs_tuple, baselines = _format_input_baseline(inputs, baselines)
+        _validate_input(inputs_tuple, baselines)
         additional_forward_args = _format_additional_forward_args(
             additional_forward_args
         )
         formatted_feature_mask = _format_feature_mask(feature_mask, inputs_tuple)
+        _validate_shapley_feature_mask(formatted_feature_mask)
         reshaped_feature_mask = _shape_feature_mask(
             formatted_feature_mask, inputs_tuple
         )
@@ -815,7 +835,11 @@ class ShapleyValueSampling(PerturbationAttribution):
             )
 
             # aggregate n_perturb
-            cur_attr = (formatted_eval_diff * cur_mask.float()).sum(dim=0)
+            cur_attr = torch.where(
+                cur_mask.to(device=formatted_eval_diff.device, dtype=torch.bool),
+                formatted_eval_diff,
+                torch.zeros_like(formatted_eval_diff),
+            ).sum(dim=0)
             # (*output_shape, *input_feature_shape)
             total_attrib[j] += cur_attr
 
@@ -866,10 +890,11 @@ class ShapleyValueSampling(PerturbationAttribution):
         for i in range(len(current_tensors)):
             if i in feat_list:
                 output_tensors.append(
-                    current_tensors[i]
-                    * (~(mask[i] == feature_index)).to(current_tensors[i].dtype)
-                    + input_tensors[i]
-                    * (mask[i] == feature_index).to(input_tensors[i].dtype)
+                    torch.where(
+                        (mask[i] == feature_index).to(current_tensors[i].device),
+                        input_tensors[i],
+                        current_tensors[i],
+                    )
                 )
 
             else:

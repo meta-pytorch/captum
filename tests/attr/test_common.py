@@ -9,12 +9,33 @@
 
 import torch
 from captum.attr._core.noise_tunnel import SUPPORTED_NOISE_TUNNEL_TYPES
-from captum.attr._utils.common import _validate_input, _validate_noise_tunnel_type
+from captum.attr._utils.common import (
+    _tensorize_baseline,
+    _validate_input,
+    _validate_noise_tunnel_type,
+)
 from captum.testing.helpers import BaseTest
 
 
 # pyrefly: ignore [invalid-inheritance]
 class Test(BaseTest):
+    def test_tensorize_scalar_baseline_preserves_value_dtype_and_layout(self) -> None:
+        integer_input = torch.tensor([[1, 2]])
+        integer_baseline = _tensorize_baseline((integer_input,), (0.5,))[0]
+        torch.testing.assert_close(integer_baseline, torch.tensor([[0.5, 0.5]]))
+
+        boolean_input = torch.tensor([[True, False]])
+        boolean_baseline = _tensorize_baseline((boolean_input,), (0,))[0]
+        self.assertEqual(boolean_baseline.dtype, torch.bool)
+
+        channels_last_input = torch.empty((2, 3, 4, 5)).to(
+            memory_format=torch.channels_last
+        )
+        channels_last_baseline = _tensorize_baseline((channels_last_input,), (0.5,))[0]
+        self.assertTrue(
+            channels_last_baseline.is_contiguous(memory_format=torch.channels_last)
+        )
+
     def test_validate_input(self) -> None:
         with self.assertRaises(AssertionError) as err:
             _validate_input(
@@ -55,6 +76,12 @@ class Test(BaseTest):
         _validate_input(
             (torch.tensor([-1.0]),), (torch.tensor([-2.0]),), method="gausslegendre"
         )
+
+        with self.assertRaisesRegex(AssertionError, "Baseline can be provided"):
+            _validate_input(
+                (torch.zeros((2, 3)),),
+                (torch.zeros((1, 4)),),
+            )
 
     def test_validate_nt_type(self) -> None:
         with self.assertRaises(
